@@ -25,6 +25,17 @@ public class TinyORMTest extends TestBase {
 		assertEquals(member.getId(), 1);
 	}
 
+	@Test
+	public void insertByVean() throws SQLException {
+		MemberForm form = new MemberForm();
+		form.setName("Nick");
+		Member member = orm.insert(Member.class)
+				.valueBean(form)
+				.executeSelect();
+		assertEquals(member.getName(), "Nick");
+		assertEquals(member.getId(), 1);
+	}
+
 	@SuppressWarnings("unused")
 	@Test
 	public void single() throws SQLException {
