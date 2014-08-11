@@ -30,18 +30,6 @@ public class UpdateRowStatement {
 		return this;
 	}
 
-	public UpdateRowStatement setByBean(Object bean) {
-		try {
-			Map<String, String> describe = BeanUtils.describe(bean);
-			describe.remove("class");
-			this.set.putAll(describe);
-			return this;
-		} catch (IllegalAccessException | InvocationTargetException
-				| NoSuchMethodException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	public void execute() {
 		Query where = row.where();
 		StringBuilder buf = new StringBuilder();

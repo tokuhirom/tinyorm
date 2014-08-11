@@ -18,7 +18,8 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 
 /**
- *
+ * Tiny O/R Mapper implementation.
+ * 
  * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
  */
 public abstract class TinyORM {
@@ -92,13 +93,29 @@ public abstract class TinyORM {
 			throw new RuntimeException(ex);
 		}
 	}
-	
+
+	/**
+	 * Create new <code>BeanSelectStatement</code> for selecting 1 row.
+	 * 
+	 * @param klass
+	 *            Target entity class.
+	 * @return
+	 */
 	public <T extends Row> BeanSelectStatement<T> single(Class<T> klass) {
-		return new BeanSelectStatement<>(this.getConnection(), TinyORM.getTableName(klass), klass);
+		return new BeanSelectStatement<>(this.getConnection(),
+				TinyORM.getTableName(klass), klass);
 	}
 
+	/**
+	 * Create new <code>ListSelectStatement</code> for selecting rows.
+	 * 
+	 * @param klass
+	 *            Target entity class.
+	 * @return
+	 */
 	public <T extends Row> ListSelectStatement<T> search(Class<T> klass) {
-		return new ListSelectStatement<>(this.getConnection(), TinyORM.getTableName(klass), klass);
+		return new ListSelectStatement<>(this.getConnection(),
+				TinyORM.getTableName(klass), klass);
 	}
 
 	/**
@@ -125,7 +142,7 @@ public abstract class TinyORM {
 			throw new RuntimeException(ex);
 		}
 	}
-	
+
 	/**
 	 * Quote SQL identifier. You should get identifierQuoteString from
 	 * DatabaseMetadata.

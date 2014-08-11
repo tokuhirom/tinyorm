@@ -5,14 +5,20 @@
  */
 package me.geso.tinyorm;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.BeanUtilsBean2;
+import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 
@@ -143,12 +149,49 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	}
 
 	/**
-	 * Create UpdateRowStatement object for send UPDATE statement.
+	 * Update row's properties by bean. And send UPDATE statement to the server.
 	 * 
-	 * @return
+	 * @param bean
 	 */
-	public UpdateRowStatement update() {
-		return new UpdateRowStatement(this);
+	public void updateByBean(Object bean) {
+		try {
+			UpdateRowStatement stmt = new UpdateRowStatement(this);
+			PropertyUtilsBean propertyUtils = BeanUtilsBean.getInstance()
+					.getPropertyUtils();
+			PropertyDescriptor[] propertyDescriptors = propertyUtils
+					.getPropertyDescriptors(bean);
+			Arrays.stream(propertyDescriptors)
+					.map(prop -> prop.getName())
+					.filter(key -> !"class".equals(key))
+					.forEach(
+							name -> {
+								try {
+									Object current = propertyUtils.getProperty(
+											this, name);
+									Object newval = propertyUtils.getProperty(
+											bean, name);
+									if (newval != null) {
+										if (!newval.equals(current)) {
+											stmt.set(name, newval);
+											propertyUtils.setProperty(this,
+													name, newval);
+										}
+									} else {
+										// newval IS NULL.
+										if (current != null) {
+											stmt.set(name, newval);
+											propertyUtils.setProperty(this,
+													name, newval);
+										}
+									}
+								} catch (Exception e) {
+									throw new RuntimeException(e);
+								}
+							});
+			stmt.execute();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private String quoteIdentifier(String identifier) {
