@@ -31,6 +31,7 @@
 	    <groupId>mysql</groupId>
 	    <artifactId>mysql-connector-java</artifactId>
 	    <version>5.1.31</version>
+	    <scope>test</scope>
 	</dependency>
 	<dependency>
 	    <groupId>commons-dbutils</groupId>
@@ -52,11 +53,13 @@
 	    <groupId>org.slf4j</groupId>
 	    <artifactId>slf4j-simple</artifactId>
 	    <version>1.7.7</version>
+	    <scope>test</scope>
 	</dependency>
 	<dependency>
 	    <groupId>com.googlecode.log4jdbc</groupId>
 	    <artifactId>log4jdbc</artifactId>
 	    <version>1.2</version>
+	    <scope>test</scope>
 	</dependency>
 	<dependency>
 	    <groupId>commons-beanutils</groupId>
