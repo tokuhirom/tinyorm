@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>me.geso</groupId>
     <artifactId>tinyorm</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.3-SNAPSHOT</version>
     <name>tinyorm</name>
     <description>tinyorm</description>
 
@@ -13,12 +13,30 @@
 	<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
+
+	<distributionManagement>
+		<repository>
+			<id>repo</id>
+			<url>https://github.com/tokuhirom/maven/raw/master/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>snapshot-repo</id>
+			<url>https://github.com/tokuhirom/maven/raw/master/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+
     <repositories>
 	<repository>
 	    <id>tokuhirom</id>
 	    <url>https://tokuhirom.github.io/maven/releases/</url>
 	</repository>
     </repositories>
+
+    <scm>
+      <url>https://github.com/tokuhirom/tinyorm/</url>
+      <connection>scm:git:git://github.com/tokuhirom/tinyorm.git</connection>
+      <developerConnection>scm:git:git@github.com:tokuhirom/tinyorm.git</developerConnection>
+    </scm>
 
     <dependencies>
 	<dependency>
