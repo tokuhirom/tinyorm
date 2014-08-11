@@ -55,7 +55,7 @@ public class InsertStatement<T extends Row> {
 	 * @param valueBean
 	 * @return
 	 */
-	public InsertStatement<T> valueBean(Object valueBean) {
+	public InsertStatement<T> valueByBean(Object valueBean) {
 		try {
 			Map<String, String> describe = BeanUtils.describe(valueBean);
 			describe.keySet().stream().filter(it -> !"class".equals(it))

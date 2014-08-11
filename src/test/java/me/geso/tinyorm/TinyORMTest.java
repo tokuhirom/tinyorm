@@ -26,11 +26,11 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
-	public void insertByVean() throws SQLException {
+	public void insertByBean() throws SQLException {
 		MemberForm form = new MemberForm();
 		form.setName("Nick");
 		Member member = orm.insert(Member.class)
-				.valueBean(form)
+				.valueByBean(form)
 				.executeSelect();
 		assertEquals(member.getName(), "Nick");
 		assertEquals(member.getId(), 1);
@@ -105,6 +105,12 @@ public class TinyORMTest extends TestBase {
 		assertEquals(got.size(), 2);
 		assertEquals(got.get(0).getName(), "m2");
 		assertEquals(got.get(1).getName(), "m1");
+	}
+	
+	@Test
+	public void testQuoteIdentifier() throws SQLException {
+		String got = TinyORM.quoteIdentifier("hoge", connection);
+		assertEquals("`hoge`", got);
 	}
 
 }

@@ -125,7 +125,7 @@ public abstract class TinyORM {
 			throw new RuntimeException(ex);
 		}
 	}
-
+	
 	/**
 	 * Quote SQL identifier. You should get identifierQuoteString from
 	 * DatabaseMetadata.

@@ -73,4 +73,13 @@ public class RowTest extends TestBase {
 		assertEquals("Nick", member.refetch().get().getName());
 	}
 
+	@Test
+	public void testUpdateByBean() {
+		Member taro = orm.insert(Member.class).value("name", "Taro").executeSelect();
+		Member member = orm.insert(Member.class).value("name", "John").executeSelect();
+		MemberUpdateForm memberUpdateForm = new MemberUpdateForm("Nick");
+		member.update().setByBean(memberUpdateForm).execute();
+		assertEquals("Taro", taro.refetch().get().getName());
+		assertEquals("Nick", member.refetch().get().getName());
+	}
 }

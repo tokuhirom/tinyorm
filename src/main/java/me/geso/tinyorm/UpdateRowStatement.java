@@ -1,10 +1,13 @@
 package me.geso.tinyorm;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.dbutils.QueryRunner;
 
 /**
@@ -25,6 +28,18 @@ public class UpdateRowStatement {
 	public UpdateRowStatement set(String column, Object value) {
 		this.set.put(column, value);
 		return this;
+	}
+
+	public UpdateRowStatement setByBean(Object bean) {
+		try {
+			Map<String, String> describe = BeanUtils.describe(bean);
+			describe.remove("class");
+			this.set.putAll(describe);
+			return this;
+		} catch (IllegalAccessException | InvocationTargetException
+				| NoSuchMethodException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public void execute() {

@@ -1,17 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>me.geso</groupId>
-    <artifactId>tinyorm</artifactId>
-    <version>0.0.4-SNAPSHOT</version>
-    <name>tinyorm</name>
-    <description>tinyorm</description>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>me.geso</groupId>
+	<artifactId>tinyorm</artifactId>
+	<version>0.0.5-SNAPSHOT</version>
+	<name>tinyorm</name>
+	<description>tinyorm</description>
 
-    <properties>
-	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    </properties>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+	</properties>
 
 
 	<distributionManagement>
@@ -25,80 +25,75 @@
 		</snapshotRepository>
 	</distributionManagement>
 
-    <repositories>
-	<repository>
-	    <id>tokuhirom</id>
-	    <url>https://tokuhirom.github.io/maven/releases/</url>
-	</repository>
-    </repositories>
+	<repositories>
+		<repository>
+			<id>tokuhirom</id>
+			<url>https://tokuhirom.github.io/maven/releases/</url>
+		</repository>
+	</repositories>
 
-    <scm>
-      <url>https://github.com/tokuhirom/tinyorm/</url>
-      <connection>scm:git:git://github.com/tokuhirom/tinyorm.git</connection>
-      <developerConnection>scm:git:git@github.com:tokuhirom/tinyorm.git</developerConnection>
-    </scm>
+	<scm>
+		<url>https://github.com/tokuhirom/tinyorm/</url>
+		<connection>scm:git:git://github.com/tokuhirom/tinyorm.git</connection>
+		<developerConnection>scm:git:git@github.com:tokuhirom/tinyorm.git</developerConnection>
+	</scm>
 
-    <dependencies>
-	<dependency>
-	    <groupId>junit</groupId>
-	    <artifactId>junit</artifactId>
-	    <version>4.11</version>
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>mysql</groupId>
-	    <artifactId>mysql-connector-java</artifactId>
-	    <version>5.1.31</version>
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>commons-dbutils</groupId>
-	    <artifactId>commons-dbutils</artifactId>
-	    <version>1.6</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.projectlombok</groupId>
-	    <artifactId>lombok</artifactId>
-	    <version>1.14.4</version>
-	    <scope>provided</scope>
-	</dependency>
-	<dependency>
-	    <groupId>org.slf4j</groupId>
-	    <artifactId>slf4j-api</artifactId>
-	    <version>1.7.7</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.slf4j</groupId>
-	    <artifactId>slf4j-simple</artifactId>
-	    <version>1.7.7</version>
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>com.googlecode.log4jdbc</groupId>
-	    <artifactId>log4jdbc</artifactId>
-	    <version>1.2</version>
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>commons-beanutils</groupId>
-	    <artifactId>commons-beanutils</artifactId>
-	    <version>1.9.2</version>
-	    <type>jar</type>
-	</dependency>
-    </dependencies>
+	<dependencies>
+		<dependency>
+			<groupId>commons-dbutils</groupId>
+			<artifactId>commons-dbutils</artifactId>
+			<version>1.6</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-beanutils</groupId>
+			<artifactId>commons-beanutils</artifactId>
+			<version>1.9.2</version>
+			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.7</version>
+		</dependency>
+		<!--  testing deps. -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.31</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.7</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.googlecode.log4jdbc</groupId>
+			<artifactId>log4jdbc</artifactId>
+			<version>1.2</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
-    <build>
-	<pluginManagement>
-	    <plugins>
-		<plugin>
-		    <artifactId>maven-compiler-plugin</artifactId>
-		    <configuration>
-			<source>1.8</source>
-			<target>1.8</target>
-			<encoding>UTF-8</encoding>
-		    </configuration>
-		</plugin>
-	    </plugins>
-	</pluginManagement>
-    </build>
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.8</source>
+						<target>1.8</target>
+						<encoding>UTF-8</encoding>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 </project>
