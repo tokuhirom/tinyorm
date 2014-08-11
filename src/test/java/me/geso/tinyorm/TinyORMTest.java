@@ -53,7 +53,7 @@ public class TinyORMTest extends TestBase {
 
 		Member got = orm.single(Member.class)
 				.where("name=?", "m2")
-				.execute();
+				.execute().get();
 		assertEquals(got.getId(), member2.getId());
 		assertEquals(got.getName(), "m2");
 	}

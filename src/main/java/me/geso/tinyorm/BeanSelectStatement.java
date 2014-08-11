@@ -1,5 +1,7 @@
 package me.geso.tinyorm;
 
+import java.util.Optional;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -13,11 +15,12 @@ public class BeanSelectStatement<T extends Row> extends AbstractSelectStatement<
 		super(connection, tableName, klass);
 	}
 
-	public T execute() {
+	public Optional<T> execute() {
 		Query query = this.buildQuery();
 		try {
-			return new QueryRunner().query(connection, query.getSQL(),
+			T row = new QueryRunner().query(connection, query.getSQL(),
 					new BeanHandler<T>(klass), query.getValues());
+            return Optional.ofNullable(row);
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}

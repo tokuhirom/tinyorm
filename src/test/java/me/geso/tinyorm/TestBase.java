@@ -25,7 +25,7 @@ public class TestBase {
             if (dburl == null) {
                 dburl = "jdbc:log4jdbc:mysql://localhost/test";
                 dbuser = "root";
-                dbpassword = null;
+                dbpassword = "root";
             }
 
             connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
