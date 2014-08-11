@@ -19,7 +19,16 @@ public class TestBase {
 			Class.forName("net.sf.log4jdbc.DriverSpy");
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 
-			connection = DriverManager.getConnection("jdbc:log4jdbc:mysql://localhost/test", "root", null);
+            String dburl = System.getProperty("test.dburl");
+            String dbuser = System.getProperty("test.dbuser");
+            String dbpassword = System.getProperty("test.dbpassword");
+            if (dburl == null) {
+                dburl = "jdbc:log4jdbc:mysql://localhost/test";
+                dbuser = "root";
+                dbpassword = null;
+            }
+
+            connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
 			// connection = DriverManager.getConnection("jdbc:mysql://localhost/test?profileSQL=true&logger=com.mysql.jdbc.log.Slf4JLogger", "root", null);
 			this.orm = new ORM();
 			this.setupSchema();
