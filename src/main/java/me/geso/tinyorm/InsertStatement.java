@@ -31,11 +31,14 @@ public class InsertStatement<T extends Row> {
 	private final TinyORM orm;
 
 	InsertStatement(TinyORM orm, Class<T> klass) {
+		if (orm == null) {
+			throw new RuntimeException("orm should not be null");
+		}
 		this.orm = orm;
 		this.klass = klass;
 		this.table = TinyORM.getTableName(klass);
 	}
-	
+
 	public Class<T> getRowClass() {
 		return this.klass;
 	}
@@ -88,8 +91,9 @@ public class InsertStatement<T extends Row> {
 		try {
 			this.orm.BEFORE_INSERT(this);
 			String sql = buildSQL();
-			int inserted = new QueryRunner().update(orm.getConnection(), sql, values.values()
-					.toArray());
+			int inserted = new QueryRunner().update(orm.getConnection(), sql,
+					values.values()
+							.toArray());
 			if (inserted != 1) {
 				throw new RuntimeException("Cannot insert to database:" + sql);
 			}
@@ -111,9 +115,15 @@ public class InsertStatement<T extends Row> {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
 			}
-			T row = new QueryRunner().query(this.orm.getConnection(), "SELECT * FROM " + table
-					+ " WHERE " + primaryKeys.get(0) + "=last_insert_id()",
+			T row = new QueryRunner().query(this.orm.getConnection(),
+					"SELECT * FROM " + table
+							+ " WHERE " + primaryKeys.get(0)
+							+ "=last_insert_id()",
 					new BeanHandler<>(klass));
+			if (row == null) {
+				throw new RuntimeException(
+						"Cannot get the row after insertion: " + table);
+			}
 			row.setConnection(this.orm.getConnection());
 			return row;
 		} catch (SQLException ex) {
