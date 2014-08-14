@@ -27,7 +27,29 @@ public abstract class TinyORM {
 	public abstract Connection getConnection();
 
 	public <T extends Row> InsertStatement<T> insert(Class<T> klass) {
-		return new InsertStatement<>(this.getConnection(), klass);
+		return new InsertStatement<>(this, klass);
+	}
+	
+	/**
+	 * User can override this method for hooking.
+	 * For example, you can set the "created_on" value at here.
+	 * 
+	 * @param insert
+	 */
+	public <T extends Row> void BEFORE_INSERT(InsertStatement<T> insert) {
+		// Do nothing.
+
+		/*
+		// Here is a example implementation.
+
+		try {
+			if (insert.getRowClass().getField("created_on") != null) {
+				insert.value("created_on", System.currentMillis()/1000);
+			}
+		} catch (NoSuchFieldException | SecurityException e) {
+			throw new RuntimeException(e);
+		}
+		*/
 	}
 
 	/**

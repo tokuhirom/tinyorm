@@ -70,6 +70,11 @@ Create new database object.
   Member member = db.single(Member.class).where("id=?", 1).execute().get();
   member.delete();
 
+## HOOKS
+
+You can override `TinyORM#BEFORE_INSERT` and `TinyORM#BEFORE_UPDATE` methods.
+You can fill createdOn and updatedOn columns by this.
+
 ## LICENSE
 
   The MIT License (MIT)

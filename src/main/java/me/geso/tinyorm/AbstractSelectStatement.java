@@ -20,8 +20,6 @@ public abstract class AbstractSelectStatement<T extends Row, Impl> {
 		this.klass = klass;
 	}
 
-	// TODO support where.
-
 	@SuppressWarnings("unchecked")
 	public Impl where(String query, Object... params) {
 		this.whereQuery.add(query);

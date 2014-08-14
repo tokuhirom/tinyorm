@@ -72,5 +72,6 @@ public class RowTest extends TestBase {
 		member.updateByBean(memberUpdateForm);
 		assertEquals("Taro", taro.refetch().get().getName());
 		assertEquals("Nick", member.refetch().get().getName());
+		assertNotEquals(0, member.refetch().get().getUpdatedOn()); // hook works.
 	}
 }

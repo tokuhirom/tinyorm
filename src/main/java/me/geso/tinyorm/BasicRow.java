@@ -11,13 +11,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
-import org.apache.commons.beanutils.BeanUtilsBean2;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
@@ -178,20 +175,40 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 										}
 									} else {
 										// newval IS NULL.
-										if (current != null) {
-											stmt.set(name, newval);
-											propertyUtils.setProperty(this,
-													name, newval);
-										}
-									}
-								} catch (Exception e) {
-									throw new RuntimeException(e);
-								}
-							});
+							if (current != null) {
+								stmt.set(name, newval);
+								propertyUtils.setProperty(this,
+										name, newval);
+							}
+						}
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				}	);
+			this.BEFORE_UPDATE(stmt);
 			stmt.execute();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Here is a hook point when updating row.
+	 * 
+	 * @param stmt
+	 */
+	public void BEFORE_UPDATE(UpdateRowStatement stmt) {
+		// Do nothing.
+		
+		/*
+		try {
+			if (this.getClass().getField("updated_on") != null) {
+				stmt.set("updated_on", System.currentTimeMillis()/1000);
+			}
+		} catch (NoSuchFieldException | SecurityException e) {
+			throw new RuntimeException(e);
+		}
+		*/
 	}
 
 	private String quoteIdentifier(String identifier) {

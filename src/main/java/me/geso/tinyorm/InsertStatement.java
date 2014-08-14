@@ -6,7 +6,6 @@
 package me.geso.tinyorm;
 
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -28,13 +27,17 @@ public class InsertStatement<T extends Row> {
 
 	// it should be ordered.
 	private final Map<String, Object> values = new TreeMap<>();
-	private final Connection conn;
 	private final Class<T> klass;
+	private final TinyORM orm;
 
-	InsertStatement(Connection conn, Class<T> klass) {
-		this.conn = conn;
+	InsertStatement(TinyORM orm, Class<T> klass) {
+		this.orm = orm;
 		this.klass = klass;
 		this.table = TinyORM.getTableName(klass);
+	}
+	
+	public Class<T> getRowClass() {
+		return this.klass;
 	}
 
 	/**
@@ -83,8 +86,9 @@ public class InsertStatement<T extends Row> {
 
 	public void execute() {
 		try {
+			this.orm.BEFORE_INSERT(this);
 			String sql = buildSQL();
-			int inserted = new QueryRunner().update(conn, sql, values.values()
+			int inserted = new QueryRunner().update(orm.getConnection(), sql, values.values()
 					.toArray());
 			if (inserted != 1) {
 				throw new RuntimeException("Cannot insert to database:" + sql);
@@ -96,7 +100,8 @@ public class InsertStatement<T extends Row> {
 
 	public T executeSelect() {
 		try {
-			execute();
+			this.execute();
+
 			List<String> primaryKeys = TinyORM.getPrimaryKeys(klass);
 			if (primaryKeys.isEmpty()) {
 				throw new RuntimeException(
@@ -106,10 +111,10 @@ public class InsertStatement<T extends Row> {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
 			}
-			T row = new QueryRunner().query(conn, "SELECT * FROM " + table
+			T row = new QueryRunner().query(this.orm.getConnection(), "SELECT * FROM " + table
 					+ " WHERE " + primaryKeys.get(0) + "=last_insert_id()",
 					new BeanHandler<>(klass));
-			row.setConnection(conn);
+			row.setConnection(this.orm.getConnection());
 			return row;
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);

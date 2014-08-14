@@ -1,6 +1,7 @@
 package me.geso.tinyorm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -23,6 +24,7 @@ public class TinyORMTest extends TestBase {
 				.executeSelect();
 		assertEquals(member.getName(), "John");
 		assertEquals(member.getId(), 1);
+		assertNotEquals(0, member.getCreatedOn());
 	}
 
 	@Test
