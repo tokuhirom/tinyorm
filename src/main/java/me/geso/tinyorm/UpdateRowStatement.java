@@ -1,5 +1,6 @@
 package me.geso.tinyorm;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -18,9 +19,11 @@ public class UpdateRowStatement {
 	private final Row row;
 	private final Map<String, Object> set = new TreeMap<>();
 	private boolean executed = false;
+	private final Connection connection;
 
-	UpdateRowStatement(Row row) {
+	UpdateRowStatement(Row row, Connection connection) {
 		this.row = row;
+		this.connection = connection;
 	}
 
 	public UpdateRowStatement set(String column, Object value) {
@@ -49,7 +52,7 @@ public class UpdateRowStatement {
 
 		try {
 			new QueryRunner()
-					.update(row.getConnection(), sql, values.toArray());
+					.update(this.connection, sql, values.toArray());
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}

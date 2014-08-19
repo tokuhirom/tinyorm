@@ -47,7 +47,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	/**
 	 * Get connection from row object.
 	 */
-	public Connection getConnection() {
+	protected Connection getConnection() {
 		if (this.connection == null) {
 			throw new RuntimeException(
 					"This row object doesn't have a connection information.");
@@ -153,7 +153,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 */
 	public void updateByBean(Object bean) {
 		try {
-			UpdateRowStatement stmt = new UpdateRowStatement(this);
+			UpdateRowStatement stmt = new UpdateRowStatement(this, this.getConnection());
 			PropertyUtilsBean propertyUtils = BeanUtilsBean.getInstance()
 					.getPropertyUtils();
 			PropertyDescriptor[] propertyDescriptors = propertyUtils

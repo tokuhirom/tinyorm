@@ -1,7 +1,6 @@
 package me.geso.tinyorm;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -91,7 +90,6 @@ public class TinyORMTest extends TestBase {
 		assertEquals(got.get(1).getName(), "m1");
 	}
 
-	@SuppressWarnings("unused")
 	@Test
 	public void searchWithPager() throws SQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {

@@ -1,7 +1,6 @@
 package me.geso.tinyorm;
 
 import java.util.List;
-import java.util.OptionalLong;
 
 public class PaginatedWithCurrentPage<T> {
 	private final List<T> rows;
