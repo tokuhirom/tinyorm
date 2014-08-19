@@ -153,7 +153,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 */
 	public void updateByBean(Object bean) {
 		try {
-			UpdateRowStatement stmt = new UpdateRowStatement(this, this.getConnection());
+			UpdateRowStatement stmt = new UpdateRowStatement(this, this.getConnection(), this.getTableName());
 			PropertyUtilsBean propertyUtils = BeanUtilsBean.getInstance()
 					.getPropertyUtils();
 			PropertyDescriptor[] propertyDescriptors = propertyUtils
@@ -248,7 +248,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	/**
 	 * Get table name from the instance.
 	 */
-	public String getTableName() {
+	protected String getTableName() {
 		return TinyORM.getTableName(this.getClass());
 	}
 

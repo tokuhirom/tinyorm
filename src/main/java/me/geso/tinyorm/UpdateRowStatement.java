@@ -20,10 +20,12 @@ public class UpdateRowStatement {
 	private final Map<String, Object> set = new TreeMap<>();
 	private boolean executed = false;
 	private final Connection connection;
+	private final String tableName;
 
-	UpdateRowStatement(Row row, Connection connection) {
+	UpdateRowStatement(Row row, Connection connection, String tableName) {
 		this.row = row;
 		this.connection = connection;
+		this.tableName = tableName;
 	}
 
 	public UpdateRowStatement set(String column, Object value) {
@@ -34,7 +36,7 @@ public class UpdateRowStatement {
 	public void execute() {
 		Query where = row.where();
 		StringBuilder buf = new StringBuilder();
-		buf.append("UPDATE ").append(this.row.getTableName()).append(" SET ");
+		buf.append("UPDATE ").append(this.tableName).append(" SET ");
 		set.keySet().stream()
 				.map(col -> col + "=?")
 				.collect(
