@@ -15,7 +15,7 @@ public class PaginatedSelectStatement<T extends Row> extends
 		super(connection, tableName, klass);
 	}
 
-	public Paginated<T> execute(long currentPage, long entriesPerPage) {
+	public PaginatedWithCurrentPage<T> execute(long currentPage, long entriesPerPage) {
 		Query query = this.limit(entriesPerPage + 1)
 				.offset(entriesPerPage * (currentPage - 1)).buildQuery();
 		try {
@@ -27,7 +27,7 @@ public class PaginatedSelectStatement<T extends Row> extends
 				hasNextPage = true;
 			}
 
-			final Paginated<T> paginated = new Paginated<T>(rows, currentPage, entriesPerPage, hasNextPage);
+			final PaginatedWithCurrentPage<T> paginated = new PaginatedWithCurrentPage<T>(rows, currentPage, entriesPerPage, hasNextPage);
 			return paginated;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
