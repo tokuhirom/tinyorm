@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotEquals;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 
@@ -92,6 +93,48 @@ public class TinyORMTest extends TestBase {
 
 	@SuppressWarnings("unused")
 	@Test
+	public void searchWithPager() throws SQLException {
+		IntStream.rangeClosed(1, 10).forEach(i -> {
+			orm.insert(Member.class).value("name", "m" + i)
+					.executeSelect();
+		});
+
+		{
+			Paginated<Member> paginated = orm.searchWithPager(Member.class)
+					.execute(1, 4);
+			assertEquals(paginated.getRows().size(), 4);
+			assertEquals(paginated.getEntriesPerPage(), 4);
+			assertEquals(paginated.getCurrentPage(), 1);
+			assertEquals(paginated.hasNextPage(), true);
+		}
+		{
+			Paginated<Member> paginated = orm.searchWithPager(Member.class)
+					.execute(2, 4);
+			assertEquals(paginated.getRows().size(), 4);
+			assertEquals(paginated.getEntriesPerPage(), 4);
+			assertEquals(paginated.getCurrentPage(), 2);
+			assertEquals(paginated.hasNextPage(), true);
+		}
+		{
+			Paginated<Member> paginated = orm.searchWithPager(Member.class)
+					.execute(3, 4);
+			assertEquals(paginated.getRows().size(), 2);
+			assertEquals(paginated.getEntriesPerPage(), 4);
+			assertEquals(paginated.getCurrentPage(), 3);
+			assertEquals(paginated.hasNextPage(), false);
+		}
+		{
+			Paginated<Member> paginated = orm.searchWithPager(Member.class)
+					.execute(4, 4);
+			assertEquals(paginated.getRows().size(), 0);
+			assertEquals(paginated.getEntriesPerPage(), 4);
+			assertEquals(paginated.getCurrentPage(), 4);
+			assertEquals(paginated.hasNextPage(), false);
+		}
+	}
+
+	@SuppressWarnings("unused")
+	@Test
 	public void searchWithStmt() throws SQLException {
 		Member member1 = orm.insert(Member.class).value("name", "m1")
 				.executeSelect();
@@ -108,7 +151,7 @@ public class TinyORMTest extends TestBase {
 		assertEquals(got.get(0).getName(), "m2");
 		assertEquals(got.get(1).getName(), "m1");
 	}
-	
+
 	@Test
 	public void testQuoteIdentifier() throws SQLException {
 		String got = TinyORM.quoteIdentifier("hoge", connection);

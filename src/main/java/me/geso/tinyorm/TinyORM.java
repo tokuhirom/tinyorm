@@ -29,27 +29,23 @@ public abstract class TinyORM {
 	public <T extends Row> InsertStatement<T> insert(Class<T> klass) {
 		return new InsertStatement<>(this, klass);
 	}
-	
+
 	/**
-	 * User can override this method for hooking.
-	 * For example, you can set the "created_on" value at here.
+	 * User can override this method for hooking. For example, you can set the
+	 * "created_on" value at here.
 	 * 
 	 * @param insert
 	 */
 	public <T extends Row> void BEFORE_INSERT(InsertStatement<T> insert) {
-		// Do nothing.
-
-		/*
-		// Here is a example implementation.
-
-		try {
-			if (insert.getRowClass().getField("created_on") != null) {
-				insert.value("created_on", System.currentMillis()/1000);
+		Field[] fields = insert.getRowClass().getFields();
+		for (Field field : fields) {
+			if ("updatedOn".equals(field.getName())) {
+				insert.value(field.getName(), System.currentTimeMillis() / 1000);
 			}
-		} catch (NoSuchFieldException | SecurityException e) {
-			throw new RuntimeException(e);
+			if ("createdOn".equals(field.getName())) {
+				insert.value(field.getName(), System.currentTimeMillis() / 1000);
+			}
 		}
-		*/
 	}
 
 	/**
@@ -137,6 +133,17 @@ public abstract class TinyORM {
 	 */
 	public <T extends Row> ListSelectStatement<T> search(Class<T> klass) {
 		return new ListSelectStatement<>(this.getConnection(),
+				TinyORM.getTableName(klass), klass);
+	}
+
+	/**
+	 * Create new <code>PaginatedSelectStatement</code> for selecting rows.
+	 * 
+	 * @param klass
+	 * @return
+	 */
+	public <T extends Row> PaginatedSelectStatement<T> searchWithPager(Class<T> klass) {
+		return new PaginatedSelectStatement<>(this.getConnection(),
 				TinyORM.getTableName(klass), klass);
 	}
 

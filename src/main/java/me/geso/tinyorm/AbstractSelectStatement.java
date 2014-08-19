@@ -12,6 +12,8 @@ public abstract class AbstractSelectStatement<T extends Row, Impl> {
 	protected Class<T> klass;
 	private List<String> whereQuery = new ArrayList<>();
 	private List<Object> whereParams = new ArrayList<>();
+	private Long limit;
+	private Long offset;
 
 	AbstractSelectStatement(Connection connection, String tableName,
 			Class<T> klass) {
@@ -28,6 +30,18 @@ public abstract class AbstractSelectStatement<T extends Row, Impl> {
 		}
 		return (Impl) this;
 	}
+	
+	@SuppressWarnings("unchecked")
+	public Impl limit(long limit) {
+		this.limit = limit;
+		return (Impl)this;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Impl offset(long offset) {
+		this.offset = offset;
+		return (Impl)this;
+	}
 
 	@SuppressWarnings("unchecked")
 	public Impl orderBy(String orderBy) {
@@ -40,7 +54,7 @@ public abstract class AbstractSelectStatement<T extends Row, Impl> {
 		StringBuilder buf = new StringBuilder();
 		buf.append("SELECT * FROM ").append(
 				TinyORM.quoteIdentifier(tableName, connection));
-		if (whereQuery != null) {
+		if (whereQuery != null && !whereQuery.isEmpty()) {
 			buf.append(" WHERE ");
 			buf.append(whereQuery.stream()
 					.map(it -> "(" + it + ")")
@@ -50,6 +64,14 @@ public abstract class AbstractSelectStatement<T extends Row, Impl> {
 		if (!orderBy.isEmpty()) {
 			buf.append(" ORDER BY ");
 			buf.append(orderBy.stream().collect(Collectors.joining(",")));
+		}
+		if (this.limit != null) {
+			buf.append(" LIMIT ");
+			buf.append(this.limit);
+		}
+		if (this.offset != null) {
+			buf.append(" OFFSET ");
+			buf.append(this.offset);
 		}
 		return new Query(buf.toString(), params);
 	}

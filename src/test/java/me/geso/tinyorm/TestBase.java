@@ -1,14 +1,8 @@
 package me.geso.tinyorm;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
-import org.apache.commons.beanutils.BeanUtilsBean;
 
 /**
  *
@@ -31,7 +25,7 @@ public class TestBase {
 			if (dburl == null) {
 				dburl = "jdbc:log4jdbc:mysql://localhost/test";
 				dbuser = "root";
-				dbpassword = "root";
+				dbpassword = "";
 			}
 
 			connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
@@ -59,25 +53,6 @@ public class TestBase {
 		@Override
 		public Connection getConnection() {
 			return connection;
-		}
-
-		@Override
-		public <T extends Row> void BEFORE_INSERT(InsertStatement<T> insert) {
-			try {
-				BeanInfo beanInfo = Introspector.getBeanInfo(insert
-						.getRowClass());
-				PropertyDescriptor[] propertyDescriptors = beanInfo
-						.getPropertyDescriptors();
-				for (PropertyDescriptor prop : propertyDescriptors) {
-					String name = prop.getName();
-					if ("createdOn".equals(name)) {
-						insert.value("createdOn",
-								System.currentTimeMillis() / 1000);
-					}
-				}
-			} catch (IntrospectionException e) {
-				throw new RuntimeException(e);
-			}
 		}
 	}
 

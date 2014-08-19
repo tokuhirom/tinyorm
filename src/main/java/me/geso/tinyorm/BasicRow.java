@@ -6,6 +6,7 @@
 package me.geso.tinyorm;
 
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -185,6 +186,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 						throw new RuntimeException(e);
 					}
 				}	);
+			this.FILL_UPDATED_TIMESTAMP(stmt);
 			this.BEFORE_UPDATE(stmt);
 			stmt.execute();
 		} catch (Exception e) {
@@ -198,17 +200,20 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 * @param stmt
 	 */
 	public void BEFORE_UPDATE(UpdateRowStatement stmt) {
-		// Do nothing.
-		
-		/*
-		try {
-			if (this.getClass().getField("updated_on") != null) {
-				stmt.set("updated_on", System.currentTimeMillis()/1000);
+	}
+	
+	/**
+	 * Set epoch time if there is the field named "updatedOn".
+	 * 
+	 * @param stmt
+	 */
+	public void FILL_UPDATED_TIMESTAMP(UpdateRowStatement stmt) {
+		Field[] fields = this.getClass().getFields();
+		for (Field field : fields) {
+			if ("updatedOn".equals(field.getName())) {
+				stmt.set("updatedOn", System.currentTimeMillis() / 1000);
 			}
-		} catch (NoSuchFieldException | SecurityException e) {
-			throw new RuntimeException(e);
 		}
-		*/
 	}
 
 	private String quoteIdentifier(String identifier) {

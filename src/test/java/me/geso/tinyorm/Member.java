@@ -11,6 +11,7 @@ public class Member extends BasicRow<Member> {
 	@PrimaryKey
 	private long id;
 	private String name;
+
 	private long createdOn;
 	private long updatedOn;
 
