@@ -25,7 +25,7 @@ public class PaginatedWithCurrentPage<T> {
 	public long getEntriesPerPage() {
 		return entriesPerPage;
 	}
-	public boolean hasNextPage() {
+	public boolean getHasNextPage() {
 		return hasNextPage;
 	}
 	

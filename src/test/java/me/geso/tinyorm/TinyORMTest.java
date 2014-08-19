@@ -103,7 +103,7 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getCurrentPage(), 1);
-			assertEquals(paginated.hasNextPage(), true);
+			assertEquals(paginated.getHasNextPage(), true);
 		}
 		{
 			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(Member.class)
@@ -111,7 +111,7 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getCurrentPage(), 2);
-			assertEquals(paginated.hasNextPage(), true);
+			assertEquals(paginated.getHasNextPage(), true);
 		}
 		{
 			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(Member.class)
@@ -119,7 +119,7 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getRows().size(), 2);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getCurrentPage(), 3);
-			assertEquals(paginated.hasNextPage(), false);
+			assertEquals(paginated.getHasNextPage(), false);
 		}
 		{
 			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(Member.class)
@@ -127,7 +127,7 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getRows().size(), 0);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getCurrentPage(), 4);
-			assertEquals(paginated.hasNextPage(), false);
+			assertEquals(paginated.getHasNextPage(), false);
 		}
 	}
 
