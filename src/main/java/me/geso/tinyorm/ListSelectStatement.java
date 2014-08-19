@@ -24,4 +24,20 @@ public class ListSelectStatement<T extends Row> extends
 		}
 	}
 
+	public Paginated<T> executeWithPagination(long entriesPerPage) {
+		Query query = this.limit(entriesPerPage+1).buildQuery();
+		try {
+			List<T> rows = new QueryRunner().query(connection, query.getSQL(),
+					new BeanListHandler<T>(klass), query.getValues());
+			boolean hasNextPage = false;
+			if (rows.size() == entriesPerPage+1) {
+				hasNextPage = true;
+				rows.remove(rows.size()-1);
+			}
+			return new Paginated<T>(rows, entriesPerPage, hasNextPage);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 }
