@@ -1,6 +1,8 @@
 package me.geso.tinyorm;
 
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Paginated<T> {
 	private final List<T> rows;
@@ -22,6 +24,11 @@ public class Paginated<T> {
 	}
 	public boolean getHasNextPage() {
 		return hasNextPage;
+	}
+	
+	public <O> Paginated<O> mapRows(Function<T,O> f) {
+		List<O> mapped = this.rows.stream().map(f).collect(Collectors.toList());
+		return new Paginated<>(mapped, entriesPerPage, hasNextPage);
 	}
 	
 }
