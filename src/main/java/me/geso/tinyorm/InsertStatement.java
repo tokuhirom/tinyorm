@@ -8,8 +8,6 @@ package me.geso.tinyorm;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +75,7 @@ public class InsertStatement<T extends Row> {
 			Map<String, String> describe = BeanUtils.describe(valueBean);
 			describe.keySet().stream().filter(it -> !"class".equals(it))
 					.forEach(it -> {
-						values.put(it, describe.get(it));
+						this.value(it, describe.get(it));
 					});
 			return this;
 		} catch (IllegalAccessException | InvocationTargetException
