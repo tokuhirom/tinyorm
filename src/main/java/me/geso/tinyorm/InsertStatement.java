@@ -16,6 +16,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.dbutils.QueryRunner;
 
 /**
@@ -72,7 +73,7 @@ public class InsertStatement<T extends Row> {
 	 */
 	public InsertStatement<T> valueByBean(Object valueBean) {
 		try {
-			Map<String, String> describe = BeanUtils.describe(valueBean);
+			Map<String, Object> describe = BeanUtilsBean.getInstance().getPropertyUtils().describe(valueBean);
 			describe.keySet().stream().filter(it -> !"class".equals(it))
 					.forEach(it -> {
 						this.value(it, describe.get(it));
