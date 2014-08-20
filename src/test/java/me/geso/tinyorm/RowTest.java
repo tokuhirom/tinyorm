@@ -3,7 +3,6 @@ package me.geso.tinyorm;
 import java.sql.SQLException;
 import java.util.Optional;
 
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 
 import static org.junit.Assert.*;
@@ -58,7 +57,7 @@ public class RowTest extends TestBase {
 
 		Member john = orm.insert(Member.class).value("name", "John").executeSelect();
 		john.delete();
-		long count = orm.query("SELECT COUNT(*) FROM member", new ScalarHandler<Long>(1));
+		long count = orm.selectLong("SELECT COUNT(*) FROM member").getAsLong();
 		assertEquals(count, 1);
 		assertTrue(taro.refetch().isPresent());
 		assertFalse(john.refetch().isPresent());

@@ -15,9 +15,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
-import org.apache.commons.dbutils.QueryRunner;
 
 /**
  *
@@ -101,9 +99,7 @@ public class InsertStatement<T extends Row> {
 		try {
 			this.orm.BEFORE_INSERT(this);
 			String sql = buildSQL();
-			int inserted = new QueryRunner().update(orm.getConnection(), sql,
-					values.values()
-							.toArray());
+			int inserted = TinyORM.prepare(orm.getConnection(), sql, values.values().toArray()).executeUpdate();
 			if (inserted != 1) {
 				throw new RuntimeException("Cannot insert to database:" + sql);
 			}

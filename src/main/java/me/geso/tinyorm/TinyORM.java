@@ -14,10 +14,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.ResultSetHandler;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -83,31 +82,14 @@ public abstract class TinyORM {
 	}
 
 	/**
-	 * Execute an SELECT statement via dbutils.
-	 * 
-	 * @param sql
-	 * @param rh
-	 *            dbutil's ResultSetHandler
-	 * @param params
-	 * @return
-	 */
-	public <T> T query(String sql, ResultSetHandler<T> rh, Object... params) {
-		try {
-			return new QueryRunner().<T> query(this.getConnection(), sql, rh,
-					params);
-		} catch (SQLException ex) {
-			throw new RuntimeException(ex);
-		}
-	}
-
-	/**
 	 * Select one row from the database.
 	 */
 	public <T extends Row> Optional<T> single(Class<T> klass, String sql,
 			Object... params) {
 		try {
 			Connection connection = this.getConnection();
-			ResultSet rs = TinyORM.prepare(connection, sql, params).executeQuery();
+			ResultSet rs = TinyORM.prepare(connection, sql, params)
+					.executeQuery();
 			if (rs.next()) {
 				T row = TinyORM.mapResultSet(klass, rs, connection);
 				return Optional.of(row);
@@ -175,7 +157,8 @@ public abstract class TinyORM {
 			Object... params) {
 		try {
 			Connection connection = this.getConnection();
-			ResultSet rs = TinyORM.prepare(connection, sql, params).executeQuery();
+			ResultSet rs = TinyORM.prepare(connection, sql, params)
+					.executeQuery();
 			List<T> list = new ArrayList<>();
 			while (rs.next()) {
 				T row = TinyORM.mapResultSet(klass, rs, connection);
@@ -192,7 +175,9 @@ public abstract class TinyORM {
 	 */
 	public int update(String sql, Object... params) {
 		try {
-			return new QueryRunner().update(this.getConnection(), sql, params);
+			PreparedStatement stmt = TinyORM.prepare(this.getConnection(), sql,
+					params);
+			return stmt.executeUpdate();
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
@@ -253,6 +238,28 @@ public abstract class TinyORM {
 			row.setConnection(connection);
 			return row;
 		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Select single long value
+	 * 
+	 * @param string
+	 * @return
+	 */
+	public OptionalLong selectLong(String sql, Object... params) {
+		try {
+			PreparedStatement stmt = TinyORM.prepare(this.getConnection(), sql,
+					params);
+			ResultSet rs = stmt.executeQuery();
+			if (rs.next()) {
+				long l = rs.getLong(1);
+				return OptionalLong.of(l);
+			} else {
+				return OptionalLong.empty();
+			}
+		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
 	}

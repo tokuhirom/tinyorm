@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.PropertyUtilsBean;
-import org.apache.commons.dbutils.QueryRunner;
 
 /**
  * <pre>
@@ -130,8 +129,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 			buf.append(where.getSQL());
 			String sql = buf.toString();
 
-			int updated = new QueryRunner().update(getConnection(), sql, where
-					.getValues());
+			int updated = TinyORM.prepare(connection, sql, where.getValues()).executeUpdate();
 			if (updated != 1) {
 				throw new RuntimeException("Cannot delete row: " + sql + " "
 						+ where.getValues());

@@ -1,13 +1,13 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.apache.commons.dbutils.QueryRunner;
 
 /**
  * UPDATE statement for one row.
@@ -53,8 +53,8 @@ public class UpdateRowStatement {
 		this.executed = true;
 
 		try {
-			new QueryRunner()
-					.update(this.connection, sql, values.toArray());
+			PreparedStatement stmt = TinyORM.prepare(connection, sql, values.toArray());
+			stmt.executeUpdate();
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
