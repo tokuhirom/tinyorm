@@ -6,15 +6,19 @@
 package me.geso.tinyorm;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanHandler;
 
 /**
  *
@@ -51,8 +55,15 @@ public class InsertStatement<T extends Row> {
 	 * @return
 	 */
 	public InsertStatement<T> value(String column, Object value) {
-		values.put(column, value);
-		return this;
+		try {
+			Method method = this.klass.getMethod("DEFLATE", String.class,
+					Object.class);
+			Object deflated = method.invoke(this.klass, column, value);
+			values.put(column, deflated);
+			return this;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -115,18 +126,21 @@ public class InsertStatement<T extends Row> {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
 			}
-			T row = new QueryRunner().query(this.orm.getConnection(),
-					"SELECT * FROM " + table
-							+ " WHERE " + primaryKeys.get(0)
-							+ "=last_insert_id()",
-					new BeanHandler<>(klass));
-			if (row == null) {
+
+			Connection connection = this.orm.getConnection();
+			String sql = "SELECT * FROM "
+					+ TinyORM.quoteIdentifier(table, connection)
+					+ " WHERE "
+					+ TinyORM.quoteIdentifier(primaryKeys.get(0), connection)
+					+ "=last_insert_id()";
+			Optional<T> maybeRow = this.orm.single(klass, sql);
+			if (maybeRow.isPresent()) {
+				return maybeRow.get();
+			} else {
 				throw new RuntimeException(
 						"Cannot get the row after insertion: " + table);
 			}
-			row.setConnection(this.orm.getConnection());
-			return row;
-		} catch (SQLException ex) {
+		} catch (SecurityException ex) {
 			throw new RuntimeException(ex);
 		}
 	}

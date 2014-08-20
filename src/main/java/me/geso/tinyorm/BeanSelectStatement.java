@@ -1,12 +1,9 @@
 package me.geso.tinyorm;
 
-import java.util.Optional;
-
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanHandler;
+import java.util.Optional;
 
 public class BeanSelectStatement<T extends Row> extends AbstractSelectStatement<T, BeanSelectStatement<T>> {
 
@@ -18,9 +15,13 @@ public class BeanSelectStatement<T extends Row> extends AbstractSelectStatement<
 	public Optional<T> execute() {
 		Query query = this.buildQuery();
 		try {
-			T row = new QueryRunner().query(connection, query.getSQL(),
-					new BeanHandler<T>(klass), query.getValues());
-            return Optional.ofNullable(row);
+			ResultSet rs = TinyORM.prepare(connection, query.getSQL(), query.getValues()).executeQuery();
+			if (rs.next()) {
+				T row = TinyORM.mapResultSet(klass, rs, connection);
+				return Optional.of(row);
+			} else {
+				return Optional.empty();
+			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}

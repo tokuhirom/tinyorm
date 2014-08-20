@@ -1,14 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package me.geso.tinyorm;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -18,7 +14,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanHandler;
 
 /**
  * <pre>
@@ -235,11 +230,16 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 		String sql = buf.toString();
 
 		try {
-			@SuppressWarnings("unchecked")
-			Impl row = new QueryRunner().query(this.getConnection(), sql,
-					new BeanHandler<>((Class<Impl>) this.getClass()), where
-							.getValues());
-			return Optional.ofNullable(row);
+			Connection connection = this.getConnection();
+			Object[] params = where.getValues();
+			ResultSet rs = TinyORM.prepare(connection, sql, params).executeQuery();
+			if (rs.next()) {
+				@SuppressWarnings("unchecked")
+				Impl row =TinyORM.mapResultSet((Class<Impl>)this.getClass(), rs, connection);
+				return Optional.of(row);
+			} else {
+				return Optional.empty();
+			}
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
@@ -250,6 +250,14 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 */
 	protected String getTableName() {
 		return TinyORM.getTableName(this.getClass());
+	}
+	
+	public static Object INFLATE(String column, Object value) {
+		return value;
+	}
+
+	public static Object DEFLATE(String column, Object value) {
+		return value;
 	}
 
 }

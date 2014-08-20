@@ -6,16 +6,18 @@
 package me.geso.tinyorm;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
-import org.apache.commons.dbutils.handlers.BeanHandler;
-import org.apache.commons.dbutils.handlers.BeanListHandler;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -101,12 +103,30 @@ public abstract class TinyORM {
 	/**
 	 * Select one row from the database.
 	 */
-	public <T> Optional<T> single(Class<T> klass, String sql, Object... params) {
+	public <T extends Row> Optional<T> single(Class<T> klass, String sql,
+			Object... params) {
 		try {
-			T row = new QueryRunner().query(this.getConnection(), sql,
-					new BeanHandler<>(klass),
-					params);
-			return Optional.ofNullable(row);
+			Connection connection = this.getConnection();
+			ResultSet rs = TinyORM.prepare(connection, sql, params).executeQuery();
+			if (rs.next()) {
+				T row = TinyORM.mapResultSet(klass, rs, connection);
+				return Optional.of(row);
+			} else {
+				return Optional.empty();
+			}
+		} catch (SQLException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	static PreparedStatement prepare(Connection connection, String sql,
+			Object... params) {
+		try {
+			PreparedStatement stmt = connection.prepareStatement(sql);
+			for (int i = 0; i < params.length; ++i) {
+				stmt.setObject(i + 1, params[i]);
+			}
+			return stmt;
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
@@ -142,7 +162,8 @@ public abstract class TinyORM {
 	 * @param klass
 	 * @return
 	 */
-	public <T extends Row> PaginatedSelectStatement<T> searchWithPager(Class<T> klass) {
+	public <T extends Row> PaginatedSelectStatement<T> searchWithPager(
+			Class<T> klass) {
 		return new PaginatedSelectStatement<>(this.getConnection(),
 				TinyORM.getTableName(klass), klass);
 	}
@@ -150,11 +171,16 @@ public abstract class TinyORM {
 	/**
 	 * Select multiple rows from the database.
 	 */
-	public <T> List<T> search(Class<T> klass, String sql, Object... params) {
+	public <T extends Row> List<T> search(Class<T> klass, String sql,
+			Object... params) {
 		try {
-			List<T> list = new QueryRunner().query(this.getConnection(), sql,
-					new BeanListHandler<>(klass),
-					params);
+			Connection connection = this.getConnection();
+			ResultSet rs = TinyORM.prepare(connection, sql, params).executeQuery();
+			List<T> list = new ArrayList<>();
+			while (rs.next()) {
+				T row = TinyORM.mapResultSet(klass, rs, connection);
+				list.add(row);
+			}
 			return list;
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
@@ -205,6 +231,28 @@ public abstract class TinyORM {
 					.getIdentifierQuoteString();
 			return quoteIdentifier(identifier, identifierQuoteString);
 		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	// I should make public. But I don't like this method name.
+	// I need your suggestion.
+	static <T extends Row> T mapResultSet(Class<T> klass, ResultSet rs,
+			Connection connection) {
+		try {
+			int columnCount = rs.getMetaData().getColumnCount();
+			Method INFLATE = klass.getMethod("INFLATE",
+					String.class, Object.class);
+			T row = klass.newInstance();
+			for (int i = 0; i < columnCount; ++i) {
+				String column = rs.getMetaData().getColumnName(i + 1);
+				Object value = rs.getObject(i + 1);
+				value = INFLATE.invoke(klass, column, value);
+				BeanUtils.setProperty(row, column, value);
+			}
+			row.setConnection(connection);
+			return row;
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}

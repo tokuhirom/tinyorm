@@ -1,11 +1,10 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanListHandler;
 
 public class PaginatedSelectStatement<T extends Row> extends
 		AbstractSelectStatement<T, PaginatedSelectStatement<T>> {
@@ -15,19 +14,27 @@ public class PaginatedSelectStatement<T extends Row> extends
 		super(connection, tableName, klass);
 	}
 
-	public PaginatedWithCurrentPage<T> execute(long currentPage, long entriesPerPage) {
+	public PaginatedWithCurrentPage<T> execute(long currentPage,
+			long entriesPerPage) {
 		Query query = this.limit(entriesPerPage + 1)
 				.offset(entriesPerPage * (currentPage - 1)).buildQuery();
 		try {
-			List<T> rows = new QueryRunner().query(connection, query.getSQL(),
-					new BeanListHandler<T>(klass), query.getValues());
+			ResultSet rs = TinyORM.prepare(connection, query.getSQL(),
+					query.getValues()).executeQuery();
+			List<T> rows = new ArrayList<>();
+			while (rs.next()) {
+				T row = TinyORM.mapResultSet(klass, rs, connection);
+				rows.add(row);
+			}
+
 			boolean hasNextPage = false;
 			if (rows.size() == entriesPerPage + 1) {
 				rows.remove(rows.size() - 1); // pop tail
 				hasNextPage = true;
 			}
 
-			final PaginatedWithCurrentPage<T> paginated = new PaginatedWithCurrentPage<T>(rows, currentPage, entriesPerPage, hasNextPage);
+			final PaginatedWithCurrentPage<T> paginated = new PaginatedWithCurrentPage<T>(
+					rows, currentPage, entriesPerPage, hasNextPage);
 			return paginated;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
