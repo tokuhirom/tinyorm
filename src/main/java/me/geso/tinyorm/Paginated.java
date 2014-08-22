@@ -7,10 +7,19 @@ import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 
 public class Paginated<T> {
-	private final List<T> rows;
+	private List<T> rows;
 
-	private final long entriesPerPage;
-	private final boolean hasNextPage;
+	private long entriesPerPage;
+	private boolean hasNextPage;
+
+	/**
+	 * Do not use this directly. This method is only for deserializing by jackson.
+	 */
+	public Paginated() {
+		this.rows = null;
+		this.entriesPerPage = 0;
+		this.hasNextPage = false;
+	}
 
 	public Paginated(List<T> rows, long entriesPerPage, boolean hasNextPage) {
 		this.rows = rows;
@@ -46,6 +55,22 @@ public class Paginated<T> {
 			}
 		}).collect(Collectors.toList());
 		return new Paginated<>(mapped, entriesPerPage, hasNextPage);
+	}
+
+	public void setEntriesPerPage(long entriesPerPage) {
+		this.entriesPerPage = entriesPerPage;
+	}
+
+	public boolean isHasNextPage() {
+		return hasNextPage;
+	}
+
+	public void setHasNextPage(boolean hasNextPage) {
+		this.hasNextPage = hasNextPage;
+	}
+
+	public void setRows(List<T> rows) {
+		this.rows = rows;
 	}
 
 }
