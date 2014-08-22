@@ -8,26 +8,11 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class PaginatedTest {
+public class PaginatedWithCurrentPageTest {
 
-	@Test
-	public void testMapToBean() {
-		int entriesPerPage = 10;
-		boolean hasNextPage = true;
-		List<Source> sourceList = new ArrayList<>();
-		sourceList.add(new Source("hoge"));
-		Paginated<Source> p1 = new Paginated<>(sourceList, entriesPerPage, hasNextPage);
-		Paginated<Dest> mapToBean = p1.mapToBean(Dest.class);
-		assertEquals(mapToBean.getRows().size(), 1);
-		assertEquals(mapToBean.getRows().get(0).getN(), "hoge");
-		assertEquals(mapToBean.getEntriesPerPage(), 10);
-		assertEquals(mapToBean.getHasNextPage(), true);
-	}
-	
 	@Test
 	public void testJackson() throws IOException {
 		int entriesPerPage = 10;
@@ -38,11 +23,11 @@ public class PaginatedTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		byte[] json = mapper.writeValueAsBytes(p1);
-		Paginated<Source> got = mapper.readValue(json, new TypeReference<Paginated<Source>>() {
+		PaginatedWithCurrentPage<Source> got = mapper.readValue(json, new TypeReference<PaginatedWithCurrentPage<Source>>() {
 		});
 		assertEquals(got.getRows().get(0).getN(), "hoge");
 	}
-	
+
 	public static class Source {
 		private String n;
 
@@ -61,16 +46,4 @@ public class PaginatedTest {
 			return this.n;
 		}
 	}
-
-	public static class Dest {
-		private String n;
-
-		public void setN(String n) {
-			this.n = n;
-		}
-		public String getN() {
-			return this.n;
-		}
-	}
-
 }

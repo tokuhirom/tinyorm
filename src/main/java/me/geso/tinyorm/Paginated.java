@@ -12,13 +12,8 @@ public class Paginated<T> {
 	private long entriesPerPage;
 	private boolean hasNextPage;
 
-	/**
-	 * Do not use this directly. This method is only for deserializing by jackson.
-	 */
+	// dummy constructor
 	public Paginated() {
-		this.rows = null;
-		this.entriesPerPage = 0;
-		this.hasNextPage = false;
 	}
 
 	public Paginated(List<T> rows, long entriesPerPage, boolean hasNextPage) {
