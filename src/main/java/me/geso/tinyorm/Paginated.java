@@ -61,10 +61,6 @@ public class Paginated<T> {
 		this.entriesPerPage = entriesPerPage;
 	}
 
-	public boolean isHasNextPage() {
-		return hasNextPage;
-	}
-
 	public void setHasNextPage(boolean hasNextPage) {
 		this.hasNextPage = hasNextPage;
 	}
