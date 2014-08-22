@@ -6,17 +6,17 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtils;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Paginated<T> {
 	private List<T> rows;
 
 	private long entriesPerPage;
 	private boolean hasNextPage;
 
-	// dummy constructor
-	public Paginated() {
-	}
-
-	public Paginated(List<T> rows, long entriesPerPage, boolean hasNextPage) {
+	@JsonCreator
+	public Paginated(@JsonProperty("rows") List<T> rows, @JsonProperty("entriesPerPage") long entriesPerPage, @JsonProperty("hasNextPage") boolean hasNextPage) {
 		this.rows = rows;
 		this.entriesPerPage = entriesPerPage;
 		this.hasNextPage = hasNextPage;
@@ -50,18 +50,6 @@ public class Paginated<T> {
 			}
 		}).collect(Collectors.toList());
 		return new Paginated<>(mapped, entriesPerPage, hasNextPage);
-	}
-
-	public void setEntriesPerPage(long entriesPerPage) {
-		this.entriesPerPage = entriesPerPage;
-	}
-
-	public void setHasNextPage(boolean hasNextPage) {
-		this.hasNextPage = hasNextPage;
-	}
-
-	public void setRows(List<T> rows) {
-		this.rows = rows;
 	}
 
 }

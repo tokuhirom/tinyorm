@@ -2,6 +2,9 @@ package me.geso.tinyorm;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class PaginatedWithCurrentPage<T> {
 	private List<T> rows;
 
@@ -9,15 +12,9 @@ public class PaginatedWithCurrentPage<T> {
 	private long entriesPerPage;
 	private boolean hasNextPage;
 
-	public PaginatedWithCurrentPage() {
-		this.rows = null;
-		this.currentPage = 0;
-		this.entriesPerPage = 0;
-		this.hasNextPage = false;
-	}
-
-	public PaginatedWithCurrentPage(List<T> rows, long currentPage,
-			long entriesPerPage, boolean hasNextPage) {
+	@JsonCreator
+	public PaginatedWithCurrentPage(@JsonProperty("rows") List<T> rows, @JsonProperty("currentPage") long currentPage,
+			@JsonProperty("entriesPerPage") long entriesPerPage, @JsonProperty("hasNextPage") boolean hasNextPage) {
 		this.rows = rows;
 		this.currentPage = currentPage;
 		this.entriesPerPage = entriesPerPage;

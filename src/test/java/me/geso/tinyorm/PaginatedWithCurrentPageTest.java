@@ -8,6 +8,8 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,11 +33,8 @@ public class PaginatedWithCurrentPageTest {
 	public static class Source {
 		private String n;
 
-		// dummy constructor
-		public Source() {
-		}
-		
-		public Source(String n) {
+		@JsonCreator
+		public Source(@JsonProperty("n") String n) {
 			this.n = n;
 		}
 
