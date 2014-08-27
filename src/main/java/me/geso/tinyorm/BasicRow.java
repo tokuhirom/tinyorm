@@ -3,6 +3,7 @@ package me.geso.tinyorm;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,10 +16,13 @@ import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 
 /**
- * <pre>{@code
- * class Foo extends BasicRow<Foo> {
+ * <pre>
+ * {
+ * 	&#064;code
+ * 	class Foo extends BasicRow&lt;Foo&gt; {
+ * 	}
  * }
- * }</pre>
+ * </pre>
  *
  * @author Tokuhiro Matsuno
  * @param <Impl>
@@ -127,7 +131,8 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 			buf.append(where.getSQL());
 			String sql = buf.toString();
 
-			int updated = TinyORM.prepare(connection, sql, where.getValues()).executeUpdate();
+			int updated = TinyORM.prepare(connection, sql, where.getValues())
+					.executeUpdate();
 			if (updated != 1) {
 				throw new RuntimeException("Cannot delete row: " + sql + " "
 						+ where.getValues());
@@ -144,11 +149,14 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 */
 	public void updateByBean(Object bean) {
 		try {
-			UpdateRowStatement stmt = new UpdateRowStatement(this, this.getConnection(), this.getTableName());
+			UpdateRowStatement stmt = new UpdateRowStatement(this,
+					this.getConnection(), this.getTableName());
 			PropertyUtilsBean propertyUtils = BeanUtilsBean.getInstance()
 					.getPropertyUtils();
 			PropertyDescriptor[] propertyDescriptors = propertyUtils
 					.getPropertyDescriptors(bean);
+			final Method DEFLATE = this.getClass().getMethod("DEFLATE",
+					String.class, Object.class);
 			Arrays.stream(propertyDescriptors)
 					.map(prop -> prop.getName())
 					.filter(key -> !"class".equals(key))
@@ -161,22 +169,25 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 											bean, name);
 									if (newval != null) {
 										if (!newval.equals(current)) {
-											stmt.set(name, newval);
+											Object deflated = DEFLATE.invoke(
+													this.getClass(), name,
+													newval);
+											stmt.set(name, deflated);
 											propertyUtils.setProperty(this,
 													name, newval);
 										}
 									} else {
 										// newval IS NULL.
-							if (current != null) {
-								stmt.set(name, newval);
-								propertyUtils.setProperty(this,
-										name, newval);
-							}
-						}
-					} catch (Exception e) {
-						throw new RuntimeException(e);
-					}
-				}	);
+										if (current != null) {
+											stmt.set(name, newval);
+											propertyUtils.setProperty(this,
+													name, newval);
+										}
+									}
+								} catch (Exception e) {
+									throw new RuntimeException(e);
+								}
+							});
 			this.FILL_UPDATED_TIMESTAMP(stmt);
 			this.BEFORE_UPDATE(stmt);
 			stmt.execute();
@@ -192,7 +203,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 */
 	public void BEFORE_UPDATE(UpdateRowStatement stmt) {
 	}
-	
+
 	/**
 	 * Set epoch time if there is the field named "updatedOn".
 	 * 
@@ -228,10 +239,12 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 		try {
 			Connection connection = this.getConnection();
 			Object[] params = where.getValues();
-			ResultSet rs = TinyORM.prepare(connection, sql, params).executeQuery();
+			ResultSet rs = TinyORM.prepare(connection, sql, params)
+					.executeQuery();
 			if (rs.next()) {
 				@SuppressWarnings("unchecked")
-				Impl row =TinyORM.mapResultSet((Class<Impl>)this.getClass(), rs, connection);
+				Impl row = TinyORM.mapResultSet((Class<Impl>) this.getClass(),
+						rs, connection);
 				return Optional.of(row);
 			} else {
 				return Optional.empty();
@@ -247,7 +260,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	protected String getTableName() {
 		return TinyORM.getTableName(this.getClass());
 	}
-	
+
 	public static Object INFLATE(String column, Object value) {
 		return value;
 	}
