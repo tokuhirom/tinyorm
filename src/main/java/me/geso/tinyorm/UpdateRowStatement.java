@@ -39,6 +39,15 @@ public class UpdateRowStatement {
 		this.set.put(column, value);
 		return this;
 	}
+	
+	/**
+	 * Should I call execute() method?
+	 * 
+	 * @return
+	 */
+	public boolean hasSetClause() {
+		return !this.set.isEmpty();
+	}
 
 	public void execute() {
 		Query where = row.where();

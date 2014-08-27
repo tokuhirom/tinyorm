@@ -188,6 +188,9 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 									throw new RuntimeException(e);
 								}
 							});
+			if (!stmt.hasSetClause()) {
+				return; // There is no updates.
+			}
 			this.FILL_UPDATED_TIMESTAMP(stmt);
 			this.BEFORE_UPDATE(stmt);
 			stmt.execute();
