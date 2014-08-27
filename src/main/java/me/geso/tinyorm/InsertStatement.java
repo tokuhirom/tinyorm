@@ -19,7 +19,7 @@ import org.apache.commons.beanutils.BeanUtilsBean;
 
 /**
  *
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
+ * @author Tokuhiro Matsuno
  * @param <T>
  */
 public class InsertStatement<T extends Row> {

@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation for the row class.
  * 
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
+ * @author Tokuhiro Matsuno
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

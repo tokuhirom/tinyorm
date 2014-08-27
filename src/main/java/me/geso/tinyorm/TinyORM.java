@@ -21,7 +21,7 @@ import org.apache.commons.beanutils.BeanUtils;
 /**
  * Tiny O/R Mapper implementation.
  * 
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
+ * @author Tokuhiro Matsuno
  */
 public abstract class TinyORM {
 
@@ -245,7 +245,6 @@ public abstract class TinyORM {
 	/**
 	 * Select single long value
 	 * 
-	 * @param string
 	 * @return
 	 */
 	public OptionalLong selectLong(String sql, Object... params) {

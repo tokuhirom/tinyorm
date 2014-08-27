@@ -12,9 +12,16 @@ import java.util.stream.Collectors;
 /**
  * UPDATE statement for one row.
  * 
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
+ * @author Tokuhiro Matsuno
  */
 public class UpdateRowStatement {
+
+	@Override
+	public String toString() {
+		return "UpdateRowStatement [row=" + row + ", set=" + set
+				+ ", executed=" + executed + ", connection=" + connection
+				+ ", tableName=" + tableName + "]";
+	}
 
 	private final Row row;
 	private final Map<String, Object> set = new TreeMap<>();

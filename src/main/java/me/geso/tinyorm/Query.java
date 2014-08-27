@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  *
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
+ * @author Tokuhiro Matsuno
  */
 public class Query {
 	@Override

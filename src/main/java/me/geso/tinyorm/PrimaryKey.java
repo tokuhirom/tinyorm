@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation for the primary key.
  * 
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
+ * @author Tokuhiro Matsuno
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

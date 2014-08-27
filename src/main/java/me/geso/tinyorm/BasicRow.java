@@ -15,14 +15,12 @@ import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.PropertyUtilsBean;
 
 /**
- * <pre>
- * <code>
+ * <pre>{@code
  * class Foo extends BasicRow<Foo> {
  * }
- * </code>
- * </pre>
+ * }</pre>
  *
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
+ * @author Tokuhiro Matsuno
  * @param <Impl>
  *            The implementation class.
  */
