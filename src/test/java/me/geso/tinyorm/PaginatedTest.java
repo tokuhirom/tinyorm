@@ -14,20 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class PaginatedTest {
 
 	@Test
-	public void testMapToBean() {
-		int entriesPerPage = 10;
-		boolean hasNextPage = true;
-		List<Source> sourceList = new ArrayList<>();
-		sourceList.add(new Source("hoge"));
-		Paginated<Source> p1 = new Paginated<>(sourceList, entriesPerPage, hasNextPage);
-		Paginated<Dest> mapToBean = p1.mapToBean(Dest.class);
-		assertEquals(mapToBean.getRows().size(), 1);
-		assertEquals(mapToBean.getRows().get(0).getN(), "hoge");
-		assertEquals(mapToBean.getEntriesPerPage(), 10);
-		assertEquals(mapToBean.getHasNextPage(), true);
-	}
-	
-	@Test
 	public void testJackson() throws IOException {
 		int entriesPerPage = 10;
 		boolean hasNextPage = true;
