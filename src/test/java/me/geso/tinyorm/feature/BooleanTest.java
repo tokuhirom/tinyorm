@@ -7,9 +7,9 @@ import java.sql.SQLException;
 import org.junit.Test;
 
 import me.geso.tinyorm.BasicRow;
-import me.geso.tinyorm.PrimaryKey;
-import me.geso.tinyorm.Table;
 import me.geso.tinyorm.TestBase;
+import me.geso.tinyorm.annotations.PrimaryKey;
+import me.geso.tinyorm.annotations.Table;
 
 /**
  * mysql doesn't support boolean value. But tinyorm can support it.

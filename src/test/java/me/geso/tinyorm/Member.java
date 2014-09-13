@@ -1,5 +1,8 @@
 package me.geso.tinyorm;
 
+import me.geso.tinyorm.annotations.PrimaryKey;
+import me.geso.tinyorm.annotations.Table;
+
 /**
  * In your production code, I suggest to use lombok.
  *

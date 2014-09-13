@@ -1,4 +1,4 @@
-package me.geso.tinyorm;
+package me.geso.tinyorm.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

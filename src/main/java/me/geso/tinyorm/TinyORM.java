@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+import me.geso.tinyorm.annotations.PrimaryKey;
+import me.geso.tinyorm.annotations.Table;
+
 import org.apache.commons.beanutils.BeanUtils;
 
 /**

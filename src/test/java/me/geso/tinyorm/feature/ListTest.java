@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import me.geso.tinyorm.BasicRow;
-import me.geso.tinyorm.PrimaryKey;
-import me.geso.tinyorm.Table;
 import me.geso.tinyorm.TestBase;
+import me.geso.tinyorm.annotations.PrimaryKey;
+import me.geso.tinyorm.annotations.Table;
 
 import org.junit.Before;
 import org.junit.Test;
