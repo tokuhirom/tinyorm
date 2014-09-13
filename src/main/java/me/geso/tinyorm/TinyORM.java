@@ -5,7 +5,6 @@
  */
 package me.geso.tinyorm;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,13 +12,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 
-import me.geso.tinyorm.annotations.PrimaryKey;
-import me.geso.tinyorm.annotations.Table;
-
-import org.apache.commons.beanutils.BeanUtils;
+import me.geso.tinyorm.meta.TableMeta;
+import me.geso.tinyorm.meta.TableMetaRepository;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -41,47 +39,11 @@ public abstract class TinyORM {
 	 * @param insert
 	 */
 	public <T extends Row> void BEFORE_INSERT(InsertStatement<T> insert) {
-		Field[] fields = insert.getRowClass().getFields();
-		for (Field field : fields) {
-			if ("updatedOn".equals(field.getName())) {
-				insert.value(field.getName(), System.currentTimeMillis() / 1000);
-			}
-			if ("createdOn".equals(field.getName())) {
-				insert.value(field.getName(), System.currentTimeMillis() / 1000);
-			}
+		TableMeta tableMeta = TableMetaRepository.get(insert.getRowClass());
+		Map<String, Object> map = tableMeta.getInsertValues();
+		for (String key: map.keySet()) {
+			insert.value(key, map.get(key));
 		}
-	}
-
-	/**
-	 * Get table name from the row class.
-	 * 
-	 * @param klass
-	 * @return
-	 */
-	public static String getTableName(Class<? extends Row> klass) {
-		Table table = klass.getAnnotation(Table.class);
-		if (table != null) {
-			return table.value();
-		} else {
-			throw new RuntimeException("Missing @Table annotation: " + klass);
-		}
-	}
-
-	/**
-	 * Get primary keys from the row class.
-	 * 
-	 * @param class1
-	 * @return
-	 */
-	public static List<String> getPrimaryKeys(Class<? extends Row> class1) {
-		List<String> primaryKeys = new ArrayList<>();
-		Field[] fields = class1.getDeclaredFields();
-		for (Field field : fields) {
-			if (field.getAnnotation(PrimaryKey.class) != null) {
-				primaryKeys.add(field.getName());
-			}
-		}
-		return primaryKeys;
 	}
 
 	/**
@@ -125,8 +87,9 @@ public abstract class TinyORM {
 	 * @return
 	 */
 	public <T extends Row> BeanSelectStatement<T> single(Class<T> klass) {
+		String tableName = TableMetaRepository.get(klass).getName();
 		return new BeanSelectStatement<>(this.getConnection(),
-				TinyORM.getTableName(klass), klass);
+				tableName, klass);
 	}
 
 	/**
@@ -137,8 +100,9 @@ public abstract class TinyORM {
 	 * @return
 	 */
 	public <T extends Row> ListSelectStatement<T> search(Class<T> klass) {
+		String tableName = TableMetaRepository.get(klass).getName();
 		return new ListSelectStatement<>(this.getConnection(),
-				TinyORM.getTableName(klass), klass);
+				tableName, klass);
 	}
 
 	/**
@@ -149,8 +113,9 @@ public abstract class TinyORM {
 	 */
 	public <T extends Row> PaginatedSelectStatement<T> searchWithPager(
 			Class<T> klass) {
+		String tableName = TableMetaRepository.get(klass).getName();
 		return new PaginatedSelectStatement<>(this.getConnection(),
-				TinyORM.getTableName(klass), klass);
+				tableName, klass);
 	}
 
 	/**
@@ -227,16 +192,17 @@ public abstract class TinyORM {
 	// I need your suggestion.
 	static <T extends Row> T mapResultSet(Class<T> klass, ResultSet rs,
 			Connection connection) {
+		TableMeta tableMeta = TableMetaRepository.get(klass);
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
 			Method INFLATE = klass.getMethod("INFLATE",
 					String.class, Object.class);
 			T row = klass.newInstance();
 			for (int i = 0; i < columnCount; ++i) {
-				String column = rs.getMetaData().getColumnName(i + 1);
+				String columnName = rs.getMetaData().getColumnName(i + 1);
 				Object value = rs.getObject(i + 1);
-				value = INFLATE.invoke(klass, column, value);
-				BeanUtils.setProperty(row, column, value);
+				value = INFLATE.invoke(klass, columnName, value);
+				tableMeta.setValue(row, columnName, value);
 			}
 			row.setConnection(connection);
 			return row;

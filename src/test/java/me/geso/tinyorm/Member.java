@@ -1,7 +1,11 @@
 package me.geso.tinyorm;
 
+import lombok.ToString;
+import me.geso.tinyorm.annotations.Column;
+import me.geso.tinyorm.annotations.CreatedEpochTimestamp;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
+import me.geso.tinyorm.annotations.UpdatedEpochTimestamp;
 
 /**
  * In your production code, I suggest to use lombok.
@@ -9,13 +13,17 @@ import me.geso.tinyorm.annotations.Table;
  * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
  */
 @Table("member")
+@ToString
 public class Member extends BasicRow<Member> {
 
 	@PrimaryKey
 	private long id;
+	@Column
 	private String name;
 
+	@Column @CreatedEpochTimestamp
 	private long createdOn;
+	@Column @UpdatedEpochTimestamp
 	private long updatedOn;
 
 	public void setId(long id) {

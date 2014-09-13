@@ -5,17 +5,21 @@
  */
 package me.geso.tinyorm;
 
-import java.lang.reflect.InvocationTargetException;
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import org.apache.commons.beanutils.BeanUtilsBean;
+import lombok.SneakyThrows;
+import me.geso.tinyorm.meta.PrimaryKeyMeta;
+import me.geso.tinyorm.meta.TableMetaRepository;
 
 /**
  *
@@ -24,10 +28,10 @@ import org.apache.commons.beanutils.BeanUtilsBean;
  */
 public class InsertStatement<T extends Row> {
 
-	private final String table;
+	private final String tableName;
 
 	// it should be ordered.
-	private final Map<String, Object> values = new TreeMap<>();
+	private final Map<String, Object> values = new LinkedHashMap<>();
 	private final Class<T> klass;
 	private final TinyORM orm;
 
@@ -37,7 +41,7 @@ public class InsertStatement<T extends Row> {
 		}
 		this.orm = orm;
 		this.klass = klass;
-		this.table = TinyORM.getTableName(klass);
+		this.tableName = TableMetaRepository.get(klass).getName();
 	}
 
 	public Class<T> getRowClass() {
@@ -63,29 +67,37 @@ public class InsertStatement<T extends Row> {
 		}
 	}
 
+	public InsertStatement<T> value(Map<String, Object> values) {
+		values.keySet().stream()
+				.forEach(it -> {
+					this.value(it, values.get(it));
+				});
+		return this;
+	}
+
 	/**
 	 * Set values by Bean.
 	 * 
 	 * @param valueBean
 	 * @return
 	 */
+	@SneakyThrows
 	public InsertStatement<T> valueByBean(Object valueBean) {
-		try {
-			Map<String, Object> describe = BeanUtilsBean.getInstance().getPropertyUtils().describe(valueBean);
-			describe.keySet().stream().filter(it -> !"class".equals(it))
-					.forEach(it -> {
-						this.value(it, describe.get(it));
-					});
-			return this;
-		} catch (IllegalAccessException | InvocationTargetException
-				| NoSuchMethodException e) {
-			throw new RuntimeException(e);
+		BeanInfo beanInfo = Introspector.getBeanInfo(valueBean.getClass(), Object.class);
+		for (PropertyDescriptor propertyDescriptor : beanInfo
+				.getPropertyDescriptors()) {
+			Method readMethod = propertyDescriptor.getReadMethod();
+			if (readMethod != null) {
+				Object value = readMethod.invoke(valueBean);
+				this.value(propertyDescriptor.getName(), value);
+			}
 		}
+		return this;
 	}
 
 	public String buildSQL() {
 		StringBuilder buf = new StringBuilder();
-		buf.append("INSERT INTO ").append(table).append(" (");
+		buf.append("INSERT INTO ").append(tableName).append(" (");
 		buf.append(values.keySet().stream().collect(Collectors.joining(",")));
 		buf.append(") VALUES (");
 		buf.append(values.values().stream().map(e -> "?")
@@ -99,7 +111,8 @@ public class InsertStatement<T extends Row> {
 		try {
 			this.orm.BEFORE_INSERT(this);
 			String sql = buildSQL();
-			int inserted = TinyORM.prepare(orm.getConnection(), sql, values.values().toArray()).executeUpdate();
+			int inserted = TinyORM.prepare(orm.getConnection(), sql,
+					values.values().toArray()).executeUpdate();
 			if (inserted != 1) {
 				throw new RuntimeException("Cannot insert to database:" + sql);
 			}
@@ -112,28 +125,29 @@ public class InsertStatement<T extends Row> {
 		try {
 			this.execute();
 
-			List<String> primaryKeys = TinyORM.getPrimaryKeys(klass);
-			if (primaryKeys.isEmpty()) {
+			List<PrimaryKeyMeta> primaryKeyMetas = TableMetaRepository.get(klass)
+					.getPrimaryKeyMetas();
+			if (primaryKeyMetas.isEmpty()) {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table doesn't have a primary keys.");
 			}
-			if (primaryKeys.size() > 1) {
+			if (primaryKeyMetas.size() > 1) {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
 			}
 
 			Connection connection = this.orm.getConnection();
 			String sql = "SELECT * FROM "
-					+ TinyORM.quoteIdentifier(table, connection)
+					+ TinyORM.quoteIdentifier(tableName, connection)
 					+ " WHERE "
-					+ TinyORM.quoteIdentifier(primaryKeys.get(0), connection)
+					+ TinyORM.quoteIdentifier(primaryKeyMetas.get(0).getName(), connection)
 					+ "=last_insert_id()";
 			Optional<T> maybeRow = this.orm.single(klass, sql);
 			if (maybeRow.isPresent()) {
 				return maybeRow.get();
 			} else {
 				throw new RuntimeException(
-						"Cannot get the row after insertion: " + table);
+						"Cannot get the row after insertion: " + tableName);
 			}
 		} catch (SecurityException ex) {
 			throw new RuntimeException(ex);

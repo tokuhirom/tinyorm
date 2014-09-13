@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
+import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 
@@ -75,8 +76,10 @@ public class ListTest extends TestBase {
 	@Table("foo")
 	public static class Foo extends BasicRow<Foo> {
 		@PrimaryKey
-		private int id;
+		private long id;
+		@Column
 		private List<Integer> csvInt;
+		@Column
 		private List<String> csvString;
 
 		public static Object INFLATE(String column, Object value) {
@@ -110,11 +113,11 @@ public class ListTest extends TestBase {
 			return value;
 		}
 
-		public int getId() {
+		public long getId() {
 			return id;
 		}
 
-		public void setId(int id) {
+		public void setId(long id) {
 			this.id = id;
 		}
 

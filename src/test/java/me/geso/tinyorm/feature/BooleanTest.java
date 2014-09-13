@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
+import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 
@@ -57,6 +58,7 @@ public class BooleanTest extends TestBase {
 		@PrimaryKey
 		private long id;
 
+		@Column
 		private boolean c;
 
 		public long getId() {

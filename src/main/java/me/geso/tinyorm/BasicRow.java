@@ -1,19 +1,20 @@
 package me.geso.tinyorm;
 
+import java.beans.BeanInfo;
+import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.beanutils.BeanUtilsBean;
-import org.apache.commons.beanutils.PropertyUtilsBean;
+import me.geso.tinyorm.meta.TableMeta;
+import me.geso.tinyorm.meta.TableMetaRepository;
 
 /**
  * <pre>
@@ -56,28 +57,18 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 * exception if the row doesn't have a primary key.
 	 */
 	public Query where() {
-		List<String> primaryKeys = TinyORM.getPrimaryKeys(this.getClass());
-		if (primaryKeys.isEmpty()) {
+		Map<String, Object> pkmap = TableMetaRepository.get(this.getClass())
+				.getPrimaryKeyValueMap(this);
+		if (pkmap.isEmpty()) {
 			throw new RuntimeException(
 					"You can't delete row, doesn't have a primary keys.");
 		}
 
-		String sql = primaryKeys.stream().map(it
+		String sql = pkmap.keySet().stream().map(it
 				-> "(" + quoteIdentifier(it) + "=?)"
 				).collect(Collectors.joining(" AND "));
-		List<Object> vars = primaryKeys
-				.stream()
-				.map(pk -> {
-					try {
-						Object value = BeanUtilsBean.getInstance()
-								.getPropertyUtils().getProperty(this, pk);
-						return value;
-					} catch (IllegalArgumentException | IllegalAccessException
-							| SecurityException | InvocationTargetException
-							| NoSuchMethodException ex) {
-						throw new RuntimeException(ex);
-					}
-				}).collect(Collectors.toList());
+		List<Object> vars = pkmap.values().stream()
+				.collect(Collectors.toList());
 		this.validatePrimaryKeysForSelect(vars);
 		return new Query(sql, vars);
 	}
@@ -104,13 +95,6 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 		 */
 		if (values.size() == 1) {
 			Object value = values.get(0);
-			if (value instanceof Long) {
-				System.out.println(value.toString());
-				long lvalue = (Long) value;
-				if (lvalue == 0) {
-					System.out.println("YAY");
-				}
-			}
 			if ((value instanceof Integer && (((Integer) value) == 0))
 					|| (value instanceof Long && (((Long) value) == 0))
 					|| (value instanceof Short && (((Short) value) == 0))) {
@@ -122,11 +106,12 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 
 	public void delete() {
 		try {
-			String table = TinyORM.getTableName(this.getClass());
+			TableMeta tableMeta = TableMetaRepository.get(this.getClass());
+			String tableName = tableMeta.getName();
 			Query where = where();
 
 			StringBuilder buf = new StringBuilder();
-			buf.append("DELETE FROM ").append(quoteIdentifier(table))
+			buf.append("DELETE FROM ").append(quoteIdentifier(tableName))
 					.append(" WHERE ");
 			buf.append(where.getSQL());
 			String sql = buf.toString();
@@ -148,46 +133,43 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 * @param bean
 	 */
 	public void updateByBean(Object bean) {
+		TableMeta tableMeta = TableMetaRepository.get(this.getClass());
+		Map<String, Object> currentValueMap = tableMeta.getColumnValueMap(this);
+
 		try {
 			UpdateRowStatement stmt = new UpdateRowStatement(this,
 					this.getConnection(), this.getTableName());
-			PropertyUtilsBean propertyUtils = BeanUtilsBean.getInstance()
-					.getPropertyUtils();
-			PropertyDescriptor[] propertyDescriptors = propertyUtils
-					.getPropertyDescriptors(bean);
+			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(), Object.class);
+			PropertyDescriptor[] propertyDescriptors = beanInfo
+					.getPropertyDescriptors();
 			final Method DEFLATE = this.getClass().getMethod("DEFLATE",
 					String.class, Object.class);
-			Arrays.stream(propertyDescriptors)
-					.map(prop -> prop.getName())
-					.filter(key -> !"class".equals(key))
-					.forEach(
-							name -> {
-								try {
-									Object current = propertyUtils.getProperty(
-											this, name);
-									Object newval = propertyUtils.getProperty(
-											bean, name);
-									if (newval != null) {
-										if (!newval.equals(current)) {
-											Object deflated = DEFLATE.invoke(
-													this.getClass(), name,
-													newval);
-											stmt.set(name, deflated);
-											propertyUtils.setProperty(this,
-													name, newval);
-										}
-									} else {
-										// newval IS NULL.
-										if (current != null) {
-											stmt.set(name, newval);
-											propertyUtils.setProperty(this,
-													name, newval);
-										}
-									}
-								} catch (Exception e) {
-									throw new RuntimeException(e);
-								}
-							});
+			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
+				String name = propertyDescriptor.getName();
+				if ("class".equals(name)) {
+					continue;
+				}
+				if (!currentValueMap.containsKey(name)) {
+					continue;
+				}
+
+				Object current = currentValueMap.get(name);
+				Object newval = propertyDescriptor.getReadMethod().invoke(bean);
+				if (newval != null) {
+					if (!newval.equals(current)) {
+						Object deflated = DEFLATE.invoke(
+								this.getClass(), name,
+								newval);
+						stmt.set(name, deflated);
+						tableMeta.setValue(this, name, newval);
+					}
+				} else { // newval IS NULL.
+					if (current != null) {
+						stmt.set(name, newval);
+						tableMeta.setValue(this, name, newval);
+					}
+				}
+			}
 			if (!stmt.hasSetClause()) {
 				return; // There is no updates.
 			}
@@ -261,7 +243,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 * Get table name from the instance.
 	 */
 	protected String getTableName() {
-		return TinyORM.getTableName(this.getClass());
+		return TableMetaRepository.get(this.getClass()).getName();
 	}
 
 	public static Object INFLATE(String column, Object value) {

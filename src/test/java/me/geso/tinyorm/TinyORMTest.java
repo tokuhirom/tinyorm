@@ -19,8 +19,22 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
+	public void singleSimple() throws SQLException {
+		orm.getConnection()
+				.prepareStatement(
+						"INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)")
+				.executeUpdate();
+
+		Member got = orm.single(Member.class,
+				"SELECT * FROM member WHERE name=?", "m1").get();
+		assertEquals(1, got.getId());
+		assertEquals("m1", got.getName());
+	}
+
+	@Test
 	public void insert() throws SQLException {
-		Member member = orm.insert(Member.class).value("name", "John")
+		Member member = orm.insert(Member.class)
+				.value("name", "John")
 				.executeSelect();
 		assertEquals(member.getName(), "John");
 		assertEquals(member.getId(), 1);
@@ -98,7 +112,8 @@ public class TinyORMTest extends TestBase {
 		});
 
 		{
-			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(Member.class)
+			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(
+					Member.class)
 					.execute(1, 4);
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
@@ -106,7 +121,8 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getHasNextPage(), true);
 		}
 		{
-			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(Member.class)
+			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(
+					Member.class)
 					.execute(2, 4);
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
@@ -114,7 +130,8 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getHasNextPage(), true);
 		}
 		{
-			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(Member.class)
+			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(
+					Member.class)
 					.execute(3, 4);
 			assertEquals(paginated.getRows().size(), 2);
 			assertEquals(paginated.getEntriesPerPage(), 4);
@@ -122,7 +139,8 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getHasNextPage(), false);
 		}
 		{
-			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(Member.class)
+			PaginatedWithCurrentPage<Member> paginated = orm.searchWithPager(
+					Member.class)
 					.execute(4, 4);
 			assertEquals(paginated.getRows().size(), 0);
 			assertEquals(paginated.getEntriesPerPage(), 4);
