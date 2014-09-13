@@ -12,7 +12,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 
@@ -30,20 +29,6 @@ public abstract class TinyORM {
 
 	public <T extends Row> InsertStatement<T> insert(Class<T> klass) {
 		return new InsertStatement<>(this, klass);
-	}
-
-	/**
-	 * User can override this method for hooking. For example, you can set the
-	 * "created_on" value at here.
-	 * 
-	 * @param insert
-	 */
-	public <T extends Row> void BEFORE_INSERT(InsertStatement<T> insert) {
-		TableMeta tableMeta = TableMetaRepository.get(insert.getRowClass());
-		Map<String, Object> map = tableMeta.getInsertValues();
-		for (String key: map.keySet()) {
-			insert.value(key, map.get(key));
-		}
 	}
 
 	/**

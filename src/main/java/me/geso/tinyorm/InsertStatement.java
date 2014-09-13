@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import lombok.SneakyThrows;
 import me.geso.tinyorm.meta.PrimaryKeyMeta;
+import me.geso.tinyorm.meta.TableMeta;
 import me.geso.tinyorm.meta.TableMetaRepository;
 
 /**
@@ -34,6 +35,7 @@ public class InsertStatement<T extends Row> {
 	private final Map<String, Object> values = new LinkedHashMap<>();
 	private final Class<T> klass;
 	private final TinyORM orm;
+	private final TableMeta tableMeta;
 
 	InsertStatement(TinyORM orm, Class<T> klass) {
 		if (orm == null) {
@@ -41,7 +43,8 @@ public class InsertStatement<T extends Row> {
 		}
 		this.orm = orm;
 		this.klass = klass;
-		this.tableName = TableMetaRepository.get(klass).getName();
+		this.tableMeta = TableMetaRepository.get(klass);
+		this.tableName = this.tableMeta.getName();
 	}
 
 	public Class<T> getRowClass() {
@@ -109,7 +112,7 @@ public class InsertStatement<T extends Row> {
 
 	public void execute() {
 		try {
-			this.orm.BEFORE_INSERT(this);
+			this.tableMeta.invokeBeforeInsertTriggers(this);
 			String sql = buildSQL();
 			int inserted = TinyORM.prepare(orm.getConnection(), sql,
 					values.values().toArray()).executeUpdate();

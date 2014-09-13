@@ -5,6 +5,9 @@ import static org.junit.Assert.*;
 import java.util.List;
 
 import me.geso.tinyorm.Member;
+import me.geso.tinyorm.meta.PrimaryKeyMeta;
+import me.geso.tinyorm.meta.TableMeta;
+import me.geso.tinyorm.meta.TableMetaRepository;
 
 import org.junit.Test;
 
