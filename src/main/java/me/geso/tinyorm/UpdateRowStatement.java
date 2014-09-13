@@ -36,6 +36,9 @@ public class UpdateRowStatement {
 	}
 
 	public UpdateRowStatement set(String column, Object value) {
+		if (column == null) {
+			throw new IllegalArgumentException("Column name must not be null");
+		}
 		this.set.put(column, value);
 		return this;
 	}
