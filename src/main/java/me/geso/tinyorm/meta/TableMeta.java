@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.geso.tinyorm.Row;
+import me.geso.tinyorm.UpdateRowStatement;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedEpochTimestamp;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -142,12 +143,24 @@ public class TableMeta {
 							));
 		}
 		Method writeMethod = propertyDescriptor.getWriteMethod();
+		if (writeMethod == null) {
+			throw new RuntimeException(String.format(
+					"There is no writer method: %s.%s", this.getName(),
+					propertyDescriptor.getName()));
+		}
 		try {
 			writeMethod.invoke(row, value);
-		} catch (NullPointerException | IllegalAccessException
+		} catch (NullPointerException e) {
+			log.error("{}: {}, {}, {}, {}, {}, valueClass:{}", e.getClass(),
+					this.getName(),
+					row, name, writeMethod.getName(), value, value.getClass());
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException
 				| IllegalArgumentException | InvocationTargetException e) {
-			log.error("{}: {}, {}, {}, {}, {}", e.getClass(), this.getName(),
-					row, name, writeMethod.getName(), value);
+			log.error("{}: {}, {}, {}, {}, {}, valueClass:{}", e.getClass(),
+					this.getName(),
+					row, name, writeMethod.getName(), value,
+					value == null ? null : value.getClass());
 			throw new RuntimeException(e);
 		}
 	}
@@ -163,5 +176,12 @@ public class TableMeta {
 					System.currentTimeMillis() / 1000);
 		}
 		return map;
+	}
+
+	public void invokeBeforeUpdateTriggers(UpdateRowStatement stmt) {
+		if (this.updatedEpochTimestampColumn != null) {
+			stmt.set(updatedEpochTimestampColumn,
+					System.currentTimeMillis() / 1000);
+		}
 	}
 }

@@ -29,6 +29,7 @@ import me.geso.tinyorm.meta.TableMetaRepository;
  * @param <Impl>
  *            The implementation class.
  */
+// Note. I don't want to use Generics here. But I have no idea to create child instance.
 public abstract class BasicRow<Impl extends Row> implements Row {
 
 	private Connection connection;
@@ -173,7 +174,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 			if (!stmt.hasSetClause()) {
 				return; // There is no updates.
 			}
-			this.FILL_UPDATED_TIMESTAMP(stmt);
+			tableMeta.invokeBeforeUpdateTriggers(stmt);
 			this.BEFORE_UPDATE(stmt);
 			stmt.execute();
 		} catch (Exception e) {
@@ -189,19 +190,6 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	public void BEFORE_UPDATE(UpdateRowStatement stmt) {
 	}
 
-	/**
-	 * Set epoch time if there is the field named "updatedOn".
-	 * 
-	 * @param stmt
-	 */
-	public void FILL_UPDATED_TIMESTAMP(UpdateRowStatement stmt) {
-		Field[] fields = this.getClass().getFields();
-		for (Field field : fields) {
-			if ("updatedOn".equals(field.getName())) {
-				stmt.set("updatedOn", System.currentTimeMillis() / 1000);
-			}
-		}
-	}
 
 	private String quoteIdentifier(String identifier) {
 		return TinyORM.quoteIdentifier(identifier, this.getConnection());

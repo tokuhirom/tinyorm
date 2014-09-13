@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>tinyorm</artifactId>
-	<version>0.16.2-SNAPSHOT</version>
+	<version>0.17.0</version>
 	<name>tinyorm</name>
 	<description>tinyorm</description>
 
@@ -82,7 +82,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.14.4</version>
+			<version>1.14.6</version>
 		</dependency>
 	</dependencies>
 
