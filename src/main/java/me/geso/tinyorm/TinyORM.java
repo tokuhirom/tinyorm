@@ -5,7 +5,6 @@
  */
 package me.geso.tinyorm;
 
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -180,13 +179,11 @@ public abstract class TinyORM {
 		TableMeta tableMeta = TableMetaRepository.get(klass);
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
-			Method INFLATE = klass.getMethod("INFLATE",
-					String.class, Object.class);
 			T row = klass.newInstance();
 			for (int i = 0; i < columnCount; ++i) {
 				String columnName = rs.getMetaData().getColumnName(i + 1);
 				Object value = rs.getObject(i + 1);
-				value = INFLATE.invoke(klass, columnName, value);
+				value = tableMeta.invokeInflaters(columnName, value);
 				tableMeta.setValue(row, columnName, value);
 			}
 			row.setConnection(connection);

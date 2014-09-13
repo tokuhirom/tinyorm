@@ -58,12 +58,10 @@ public class InsertStatement<T extends Row> {
 	 * @param value
 	 * @return
 	 */
-	public InsertStatement<T> value(String column, Object value) {
+	public InsertStatement<T> value(String columnName, Object value) {
 		try {
-			Method method = this.klass.getMethod("DEFLATE", String.class,
-					Object.class);
-			Object deflated = method.invoke(this.klass, column, value);
-			values.put(column, deflated);
+			Object deflated = this.tableMeta.invokeDeflaters(columnName, value);
+			values.put(columnName, deflated);
 			return this;
 		} catch (Exception e) {
 			throw new RuntimeException(e);

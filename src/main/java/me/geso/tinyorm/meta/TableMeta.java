@@ -26,6 +26,8 @@ import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedEpochTimestamp;
 import me.geso.tinyorm.trigger.BeforeInsertHandler;
 import me.geso.tinyorm.trigger.BeforeUpdateHandler;
+import me.geso.tinyorm.trigger.Deflater;
+import me.geso.tinyorm.trigger.Inflater;
 
 @Slf4j
 public class TableMeta {
@@ -37,6 +39,8 @@ public class TableMeta {
 	private final Map<String, PropertyDescriptor> propertyDescriptorMap;
 	private final List<BeforeInsertHandler> beforeInsertHandlers;
 	private final List<BeforeUpdateHandler> beforeUpdateHandlers;
+	private final List<Inflater> inflaters;
+	private final List<Deflater> deflaters;
 
 	TableMeta(String name, List<PrimaryKeyMeta> primaryKeyMetas,
 			List<ColumnMeta> columnMetas,
@@ -49,6 +53,8 @@ public class TableMeta {
 		this.propertyDescriptorMap = propertyDescriptorMap;
 		this.beforeInsertHandlers = beforeInsertTriggers;
 		this.beforeUpdateHandlers = beforeUpdateTriggers;
+		this.inflaters = new ArrayList<>();
+		this.deflaters = new ArrayList<>();
 	}
 
 	// Internal use.
@@ -113,6 +119,7 @@ public class TableMeta {
 	}
 
 	/**
+	 * Add before insert handler<br>
 	 * This method may not thread safe.
 	 */
 	public void addBeforeInsertHandler(BeforeInsertHandler handler) {
@@ -120,12 +127,33 @@ public class TableMeta {
 	}
 
 	/**
+	 * Add before update handler<br>
 	 * This method may not thread safe.
 	 * 
 	 * @param handler
 	 */
 	public void addBeforeUpdateHandler(BeforeUpdateHandler handler) {
 		this.beforeUpdateHandlers.add(handler);
+	}
+
+	/**
+	 * Add inflater.<br>
+	 * This method may not thread safe.
+	 * 
+	 * @param inflater
+	 */
+	public void addInflater(Inflater inflater) {
+		this.inflaters.add(inflater);
+	}
+
+	/**
+	 * Add deflater.<br>
+	 * This method may not thread safe.
+	 * 
+	 * @param inflater
+	 */
+	public void addDeflater(Deflater deflater) {
+		this.deflaters.add(deflater);
 	}
 
 	// Internal use.
@@ -179,7 +207,7 @@ public class TableMeta {
 		}
 		try {
 			writeMethod.invoke(row, value);
-		} catch (NullPointerException| IllegalAccessException
+		} catch (NullPointerException | IllegalAccessException
 				| IllegalArgumentException | InvocationTargetException e) {
 			log.error("{}: {}, {}, {}, {}, {}, valueClass:{}", e.getClass(),
 					this.getName(),
@@ -201,6 +229,22 @@ public class TableMeta {
 		for (BeforeUpdateHandler trigger : this.beforeUpdateHandlers) {
 			trigger.callBeforeUpdateHandler(stmt);
 		}
+	}
+
+	// Ineternal use
+	public Object invokeInflaters(String columnName, Object value) {
+		for (Inflater inflater : this.inflaters) {
+			value = inflater.inflate(columnName, value);
+		}
+		return value;
+	}
+
+	// Ineternal use
+	public Object invokeDeflaters(String columnName, Object value) {
+		for (Deflater deflater : this.deflaters) {
+			value = deflater.deflate(columnName, value);
+		}
+		return value;
 	}
 
 	@ToString

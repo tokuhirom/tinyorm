@@ -28,7 +28,8 @@ import me.geso.tinyorm.meta.TableMetaRepository;
  * @param <Impl>
  *            The implementation class.
  */
-// Note. I don't want to use Generics here. But I have no idea to create child instance.
+// Note. I don't want to use Generics here. But I have no idea to create child
+// instance.
 public abstract class BasicRow<Impl extends Row> implements Row {
 
 	private Connection connection;
@@ -139,11 +140,10 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 		try {
 			UpdateRowStatement stmt = new UpdateRowStatement(this,
 					this.getConnection(), this.getTableName());
-			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(), Object.class);
+			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(),
+					Object.class);
 			PropertyDescriptor[] propertyDescriptors = beanInfo
 					.getPropertyDescriptors();
-			final Method DEFLATE = this.getClass().getMethod("DEFLATE",
-					String.class, Object.class);
 			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 				String name = propertyDescriptor.getName();
 				if ("class".equals(name)) {
@@ -157,9 +157,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 				Object newval = propertyDescriptor.getReadMethod().invoke(bean);
 				if (newval != null) {
 					if (!newval.equals(current)) {
-						Object deflated = DEFLATE.invoke(
-								this.getClass(), name,
-								newval);
+						Object deflated = tableMeta.invokeDeflaters(name, newval);
 						stmt.set(name, deflated);
 						tableMeta.setValue(this, name, newval);
 					}
@@ -188,7 +186,6 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 */
 	public void BEFORE_UPDATE(UpdateRowStatement stmt) {
 	}
-
 
 	private String quoteIdentifier(String identifier) {
 		return TinyORM.quoteIdentifier(identifier, this.getConnection());
@@ -230,15 +227,8 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 * Get table name from the instance.
 	 */
 	protected String getTableName() {
-		return TableMetaRepository.get(this.getClass()).getName();
-	}
-
-	public static Object INFLATE(String column, Object value) {
-		return value;
-	}
-
-	public static Object DEFLATE(String column, Object value) {
-		return value;
+		return TableMetaRepository.get(this.getClass())
+				.getName();
 	}
 
 }
