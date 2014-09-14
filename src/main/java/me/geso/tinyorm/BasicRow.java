@@ -32,7 +32,6 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 
 	private Connection connection;
 	private TableMeta tableMeta;
-	private BeanMapper beanMapper;
 
 	/**
 	 * Set connection to row object. Normally, you don't need to use this
@@ -68,18 +67,6 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 					"This row object doesn't have a tableMeta information.");
 		}
 		return this.tableMeta;
-	}
-	
-	public void setBeanMapper(BeanMapper beanMapper) {
-		this.beanMapper = beanMapper;
-	}
-	
-	protected BeanMapper getBeanMapper() {
-		if (this.tableMeta == null) {
-			throw new RuntimeException(
-					"This row object doesn't have a bean mapper information.");
-		}
-		return this.beanMapper;
 	}
 
 	/**
@@ -242,8 +229,8 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 					.executeQuery();
 			if (rs.next()) {
 				@SuppressWarnings("unchecked")
-				Impl row = this.beanMapper.mapResultSet((Class<Impl>) this.getClass(),
-						rs, connection);
+				Impl row = TinyORM.mapResultSet((Class<Impl>) this.getClass(),
+						rs, connection, this.getTableMeta());
 				return Optional.of(row);
 			} else {
 				return Optional.empty();

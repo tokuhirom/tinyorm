@@ -39,6 +39,7 @@ public class RowTest extends TestBase {
 		thrownLike(() -> {
 			Member member = new Member();
 			member.setConnection(connection);
+			member.setTableMeta(orm.getSchema().getTableMeta(Member.class));
 			Query where = member.where();
 			System.out.println(where);
 		}, "Primary key should not be zero");

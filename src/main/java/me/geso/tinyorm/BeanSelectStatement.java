@@ -5,11 +5,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
+import me.geso.tinyorm.meta.TableMeta;
+
 public class BeanSelectStatement<T extends Row> extends AbstractSelectStatement<T, BeanSelectStatement<T>> {
 
-	BeanSelectStatement(Connection connection, String tableName,
-			Class<T> klass, BeanMapper orm) {
-		super(connection, tableName, klass, orm);
+
+	private final TableMeta tableMeta;
+
+	BeanSelectStatement(Connection connection, 
+			Class<T> klass, TableMeta tableMeta) {
+		super(connection, tableMeta.getName(), klass);
+		this.tableMeta = tableMeta;
 	}
 
 	public Optional<T> execute() {
@@ -17,7 +23,7 @@ public class BeanSelectStatement<T extends Row> extends AbstractSelectStatement<
 		try {
 			ResultSet rs = TinyORM.prepare(connection, query.getSQL(), query.getValues()).executeQuery();
 			if (rs.next()) {
-				T row = this.getBeanMapper().mapResultSet(klass, rs, connection);
+				T row = TinyORM.mapResultSet(klass, rs, connection, tableMeta);
 				return Optional.of(row);
 			} else {
 				return Optional.empty();

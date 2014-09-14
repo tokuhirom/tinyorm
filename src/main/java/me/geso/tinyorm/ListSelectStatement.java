@@ -6,12 +6,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.geso.tinyorm.meta.TableMeta;
+
 public class ListSelectStatement<T extends Row> extends
 		AbstractSelectStatement<T, ListSelectStatement<T>> {
 
-	ListSelectStatement(Connection connection, String tableName,
-			Class<T> klass, BeanMapper orm) {
-		super(connection, tableName, klass, orm);
+	private final TableMeta tableMeta;
+
+	ListSelectStatement(Connection connection,
+			Class<T> klass, TableMeta tableMeta) {
+		super(connection, tableMeta.getName(), klass);
+		this.tableMeta = tableMeta;
 	}
 
 	public List<T> execute() {
@@ -21,8 +26,7 @@ public class ListSelectStatement<T extends Row> extends
 					query.getValues()).executeQuery();
 			List<T> rows = new ArrayList<>();
 			while (rs.next()) {
-				T row = this.getBeanMapper()
-						.mapResultSet(klass, rs, connection);
+				T row = TinyORM.mapResultSet(klass, rs, connection, tableMeta);
 				rows.add(row);
 			}
 			return rows;

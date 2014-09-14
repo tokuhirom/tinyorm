@@ -6,12 +6,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.geso.tinyorm.meta.TableMeta;
+
 public class PaginatedSelectStatement<T extends Row> extends
 		AbstractSelectStatement<T, PaginatedSelectStatement<T>> {
 
-	PaginatedSelectStatement(Connection connection, String tableName,
-			Class<T> klass, BeanMapper beanMapper) {
-		super(connection, tableName, klass, beanMapper);
+	private final TableMeta tableMeta;
+
+	PaginatedSelectStatement(Connection connection,
+			Class<T> klass, TableMeta tableMeta) {
+		super(connection, tableMeta.getName(), klass);
+		this.tableMeta = tableMeta;
 	}
 
 	public PaginatedWithCurrentPage<T> execute(long currentPage,
@@ -23,7 +28,7 @@ public class PaginatedSelectStatement<T extends Row> extends
 					query.getValues()).executeQuery();
 			List<T> rows = new ArrayList<>();
 			while (rs.next()) {
-				T row = this.getBeanMapper().mapResultSet(klass, rs, connection);
+				T row = TinyORM.mapResultSet(klass, rs, connection, tableMeta);
 				rows.add(row);
 			}
 

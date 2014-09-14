@@ -22,9 +22,10 @@ import me.geso.tinyorm.meta.DBSchema;
  * 
  * @author Tokuhiro Matsuno
  */
-public abstract class TinyORM implements BeanMapper {
+public abstract class TinyORM {
 
 	public abstract Connection getConnection();
+
 	public abstract DBSchema getSchema();
 
 	public <T extends Row> InsertStatement<T> insert(Class<T> klass) {
@@ -40,8 +41,9 @@ public abstract class TinyORM implements BeanMapper {
 			Connection connection = this.getConnection();
 			ResultSet rs = TinyORM.prepare(connection, sql, params)
 					.executeQuery();
+			TableMeta tableMeta = this.getTableMeta(klass);
 			if (rs.next()) {
-				T row = this.mapResultSet(klass, rs, connection);
+				T row = TinyORM.mapResultSet(klass, rs, connection, tableMeta);
 				return Optional.of(row);
 			} else {
 				return Optional.empty();
@@ -72,9 +74,9 @@ public abstract class TinyORM implements BeanMapper {
 	 * @return
 	 */
 	public <T extends Row> BeanSelectStatement<T> single(Class<T> klass) {
-		String tableName = this.getTableMeta(klass).getName();
+		TableMeta tableMeta = this.getTableMeta(klass);
 		return new BeanSelectStatement<>(this.getConnection(),
-				tableName, klass, this);
+				klass, tableMeta);
 	}
 
 	/**
@@ -85,9 +87,9 @@ public abstract class TinyORM implements BeanMapper {
 	 * @return
 	 */
 	public <T extends Row> ListSelectStatement<T> search(Class<T> klass) {
-		String tableName = this.getTableMeta(klass).getName();
+		TableMeta tableMeta = this.getTableMeta(klass);
 		return new ListSelectStatement<>(this.getConnection(),
-				tableName, klass, this);
+				klass, tableMeta);
 	}
 
 	/**
@@ -98,9 +100,9 @@ public abstract class TinyORM implements BeanMapper {
 	 */
 	public <T extends Row> PaginatedSelectStatement<T> searchWithPager(
 			Class<T> klass) {
-		String tableName = this.getTableMeta(klass).getName();
+		TableMeta tableMeta = this.getTableMeta(klass);
 		return new PaginatedSelectStatement<>(this.getConnection(),
-				tableName, klass, this);
+				klass, tableMeta);
 	}
 
 	/**
@@ -113,8 +115,9 @@ public abstract class TinyORM implements BeanMapper {
 			ResultSet rs = TinyORM.prepare(connection, sql, params)
 					.executeQuery();
 			List<T> list = new ArrayList<>();
+			TableMeta tableMeta = this.getTableMeta(klass);
 			while (rs.next()) {
-				T row = this.mapResultSet(klass, rs, connection);
+				T row = TinyORM.mapResultSet(klass, rs, connection, tableMeta);
 				list.add(row);
 			}
 			return list;
@@ -173,9 +176,8 @@ public abstract class TinyORM implements BeanMapper {
 		}
 	}
 
-	public <T extends Row> T mapResultSet(Class<T> klass, ResultSet rs,
-			Connection connection) {
-		TableMeta tableMeta = this.getTableMeta(klass);
+	static <T extends Row> T mapResultSet(Class<T> klass, ResultSet rs,
+			Connection connection, TableMeta tableMeta) {
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
 			T row = klass.newInstance();
@@ -187,7 +189,6 @@ public abstract class TinyORM implements BeanMapper {
 			}
 			row.setConnection(connection);
 			row.setTableMeta(tableMeta);
-			row.setBeanMapper(this);
 			return row;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -214,7 +215,7 @@ public abstract class TinyORM implements BeanMapper {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private TableMeta getTableMeta(Class<? extends Row> klass) {
 		return this.getSchema().getTableMeta(klass);
 	}

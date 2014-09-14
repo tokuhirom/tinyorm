@@ -26,6 +26,7 @@ public class BooleanTest extends TestBase {
 				.prepareStatement(
 						"CREATE TABLE b (id int unsigned not null auto_increment primary key, c boolean)")
 				.executeUpdate();
+		orm.getSchema().registerClass(B.class);
 
 		{
 			BForm bform = new BForm();
