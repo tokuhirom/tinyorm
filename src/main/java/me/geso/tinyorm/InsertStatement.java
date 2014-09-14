@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import me.geso.tinyorm.meta.PrimaryKeyMeta;
 import me.geso.tinyorm.meta.TableMeta;
-import me.geso.tinyorm.meta.TableMetaRepository;
 
 /**
  *
@@ -29,22 +28,19 @@ import me.geso.tinyorm.meta.TableMetaRepository;
  */
 public class InsertStatement<T extends Row> {
 
-	private final String tableName;
-
 	// it should be ordered.
 	private final Map<String, Object> values = new LinkedHashMap<>();
 	private final Class<T> klass;
 	private final TinyORM orm;
 	private final TableMeta tableMeta;
 
-	InsertStatement(TinyORM orm, Class<T> klass) {
+	InsertStatement(TinyORM orm, Class<T> klass, TableMeta tableMeta) {
 		if (orm == null) {
 			throw new RuntimeException("orm should not be null");
 		}
 		this.orm = orm;
 		this.klass = klass;
-		this.tableMeta = TableMetaRepository.get(klass);
-		this.tableName = this.tableMeta.getName();
+		this.tableMeta = tableMeta;
 	}
 
 	public Class<T> getRowClass() {
@@ -84,7 +80,8 @@ public class InsertStatement<T extends Row> {
 	 */
 	@SneakyThrows
 	public InsertStatement<T> valueByBean(Object valueBean) {
-		BeanInfo beanInfo = Introspector.getBeanInfo(valueBean.getClass(), Object.class);
+		BeanInfo beanInfo = Introspector.getBeanInfo(valueBean.getClass(),
+				Object.class);
 		for (PropertyDescriptor propertyDescriptor : beanInfo
 				.getPropertyDescriptors()) {
 			Method readMethod = propertyDescriptor.getReadMethod();
@@ -98,7 +95,7 @@ public class InsertStatement<T extends Row> {
 
 	public String buildSQL() {
 		StringBuilder buf = new StringBuilder();
-		buf.append("INSERT INTO ").append(tableName).append(" (");
+		buf.append("INSERT INTO ").append(tableMeta.getName()).append(" (");
 		buf.append(values.keySet().stream().collect(Collectors.joining(",")));
 		buf.append(") VALUES (");
 		buf.append(values.values().stream().map(e -> "?")
@@ -126,8 +123,9 @@ public class InsertStatement<T extends Row> {
 		try {
 			this.execute();
 
-			List<PrimaryKeyMeta> primaryKeyMetas = TableMetaRepository.get(klass)
+			List<PrimaryKeyMeta> primaryKeyMetas = this.tableMeta
 					.getPrimaryKeyMetas();
+			String tableName = this.tableMeta.getName();
 			if (primaryKeyMetas.isEmpty()) {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table doesn't have a primary keys.");
@@ -141,7 +139,8 @@ public class InsertStatement<T extends Row> {
 			String sql = "SELECT * FROM "
 					+ TinyORM.quoteIdentifier(tableName, connection)
 					+ " WHERE "
-					+ TinyORM.quoteIdentifier(primaryKeyMetas.get(0).getName(), connection)
+					+ TinyORM.quoteIdentifier(primaryKeyMetas.get(0).getName(),
+							connection)
 					+ "=last_insert_id()";
 			Optional<T> maybeRow = this.orm.single(klass, sql);
 			if (maybeRow.isPresent()) {

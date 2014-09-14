@@ -20,10 +20,10 @@ import me.geso.tinyorm.InsertStatement;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.UpdateRowStatement;
 import me.geso.tinyorm.annotations.Column;
-import me.geso.tinyorm.annotations.CreatedEpochTimestamp;
+import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
-import me.geso.tinyorm.annotations.UpdatedEpochTimestamp;
+import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 import me.geso.tinyorm.trigger.BeforeInsertHandler;
 import me.geso.tinyorm.trigger.BeforeUpdateHandler;
 import me.geso.tinyorm.trigger.Deflater;
@@ -91,12 +91,12 @@ public class TableMeta {
 			if (field.getAnnotation(Column.class) != null) {
 				isColumn = true;
 			}
-			if (field.getAnnotation(CreatedEpochTimestamp.class) != null) {
+			if (field.getAnnotation(CreatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new CreatedEpochTimestampColumnHook(
 						field.getName()));
 				isColumn = true;
 			}
-			if (field.getAnnotation(UpdatedEpochTimestamp.class) != null) {
+			if (field.getAnnotation(UpdatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new UpdatedEpochTimestampColumnHook(
 						field.getName()));
 				beforeUpdateTriggers.add(new UpdatedEpochTimestampColumnHook(

@@ -3,7 +3,6 @@ package me.geso.tinyorm;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +12,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import me.geso.tinyorm.meta.TableMeta;
-import me.geso.tinyorm.meta.TableMetaRepository;
 
 /**
  * <pre>
@@ -33,6 +31,8 @@ import me.geso.tinyorm.meta.TableMetaRepository;
 public abstract class BasicRow<Impl extends Row> implements Row {
 
 	private Connection connection;
+	private TableMeta tableMeta;
+	private BeanMapper beanMapper;
 
 	/**
 	 * Set connection to row object. Normally, you don't need to use this
@@ -54,11 +54,40 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	}
 
 	/**
+	 * Internal use.
+	 * 
+	 * @param orm
+	 */
+	public void setTableMeta(TableMeta tableMeta) {
+		this.tableMeta = tableMeta;
+	}
+
+	protected TableMeta getTableMeta() {
+		if (this.tableMeta == null) {
+			throw new RuntimeException(
+					"This row object doesn't have a tableMeta information.");
+		}
+		return this.tableMeta;
+	}
+	
+	public void setBeanMapper(BeanMapper beanMapper) {
+		this.beanMapper = beanMapper;
+	}
+	
+	protected BeanMapper getBeanMapper() {
+		if (this.tableMeta == null) {
+			throw new RuntimeException(
+					"This row object doesn't have a bean mapper information.");
+		}
+		return this.beanMapper;
+	}
+
+	/**
 	 * Get a where clause that selects the row from table. This method throws
 	 * exception if the row doesn't have a primary key.
 	 */
 	public Query where() {
-		Map<String, Object> pkmap = TableMetaRepository.get(this.getClass())
+		Map<String, Object> pkmap = this.getTableMeta()
 				.getPrimaryKeyValueMap(this);
 		if (pkmap.isEmpty()) {
 			throw new RuntimeException(
@@ -107,7 +136,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 
 	public void delete() {
 		try {
-			TableMeta tableMeta = TableMetaRepository.get(this.getClass());
+			TableMeta tableMeta = this.getTableMeta();
 			String tableName = tableMeta.getName();
 			Query where = where();
 
@@ -134,7 +163,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 * @param bean
 	 */
 	public void updateByBean(Object bean) {
-		TableMeta tableMeta = TableMetaRepository.get(this.getClass());
+		TableMeta tableMeta = this.getTableMeta();
 		Map<String, Object> currentValueMap = tableMeta.getColumnValueMap(this);
 
 		try {
@@ -157,7 +186,8 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 				Object newval = propertyDescriptor.getReadMethod().invoke(bean);
 				if (newval != null) {
 					if (!newval.equals(current)) {
-						Object deflated = tableMeta.invokeDeflaters(name, newval);
+						Object deflated = tableMeta.invokeDeflaters(name,
+								newval);
 						stmt.set(name, deflated);
 						tableMeta.setValue(this, name, newval);
 					}
@@ -212,7 +242,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 					.executeQuery();
 			if (rs.next()) {
 				@SuppressWarnings("unchecked")
-				Impl row = TinyORM.mapResultSet((Class<Impl>) this.getClass(),
+				Impl row = this.beanMapper.mapResultSet((Class<Impl>) this.getClass(),
 						rs, connection);
 				return Optional.of(row);
 			} else {
@@ -227,8 +257,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 * Get table name from the instance.
 	 */
 	protected String getTableName() {
-		return TableMetaRepository.get(this.getClass())
-				.getName();
+		return this.getTableMeta().getName();
 	}
 
 }

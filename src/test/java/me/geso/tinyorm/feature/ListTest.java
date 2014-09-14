@@ -10,11 +10,12 @@ import java.util.stream.Collectors;
 
 import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
+import me.geso.tinyorm.TinyORM;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.meta.TableMeta;
-import me.geso.tinyorm.meta.TableMetaRepository;
+import me.geso.tinyorm.meta.DBSchema;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +35,9 @@ public class ListTest extends TestBase {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testFoo() throws SQLException {
-		TableMeta tableMeta = TableMetaRepository.get(Foo.class);
+		DBSchema schema = new DBSchema();
+		schema.registerClass(Foo.class);
+		TableMeta tableMeta = schema.getTableMeta(Foo.class);
 		tableMeta.addInflater((column, value) -> {
 			if ("csvInt".equals(column)) {
 				String[] split = ((String) value).split(",");

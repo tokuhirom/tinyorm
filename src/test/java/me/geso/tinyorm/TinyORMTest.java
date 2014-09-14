@@ -6,6 +6,9 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import me.geso.tinyorm.meta.DBSchema;
+
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -14,8 +17,10 @@ import org.junit.Test;
  */
 public class TinyORMTest extends TestBase {
 
-	public TinyORMTest() {
-		super();
+	@Before
+	public void bbbe() {
+		DBSchema schema = this.orm.getSchema();
+		schema.registerClass(Member.class);
 	}
 
 	@Test

@@ -10,8 +10,8 @@ public class PaginatedSelectStatement<T extends Row> extends
 		AbstractSelectStatement<T, PaginatedSelectStatement<T>> {
 
 	PaginatedSelectStatement(Connection connection, String tableName,
-			Class<T> klass) {
-		super(connection, tableName, klass);
+			Class<T> klass, BeanMapper beanMapper) {
+		super(connection, tableName, klass, beanMapper);
 	}
 
 	public PaginatedWithCurrentPage<T> execute(long currentPage,
@@ -23,7 +23,7 @@ public class PaginatedSelectStatement<T extends Row> extends
 					query.getValues()).executeQuery();
 			List<T> rows = new ArrayList<>();
 			while (rs.next()) {
-				T row = TinyORM.mapResultSet(klass, rs, connection);
+				T row = this.getBeanMapper().mapResultSet(klass, rs, connection);
 				rows.add(row);
 			}
 

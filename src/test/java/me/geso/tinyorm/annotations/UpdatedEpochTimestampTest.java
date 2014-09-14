@@ -56,7 +56,7 @@ public class UpdatedEpochTimestampTest extends TestBase {
 		@Column
 		private String name;
 
-		@UpdatedEpochTimestamp
+		@UpdatedTimestampColumn
 		private Long updatedOn;
 	}
 	

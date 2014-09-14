@@ -14,12 +14,18 @@ public abstract class AbstractSelectStatement<T extends Row, Impl> {
 	private List<Object> whereParams = new ArrayList<>();
 	private Long limit;
 	private Long offset;
+	private final BeanMapper beanMapper;
+	
+	protected BeanMapper getBeanMapper() {
+		return this.beanMapper;
+	}
 
 	AbstractSelectStatement(Connection connection, String tableName,
-			Class<T> klass) {
+			Class<T> klass, BeanMapper beanMapper) {
 		this.connection = connection;
 		this.tableName = tableName;
 		this.klass = klass;
+		this.beanMapper = beanMapper;
 	}
 
 	@SuppressWarnings("unchecked")

@@ -2,10 +2,10 @@ package me.geso.tinyorm;
 
 import lombok.ToString;
 import me.geso.tinyorm.annotations.Column;
-import me.geso.tinyorm.annotations.CreatedEpochTimestamp;
+import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
-import me.geso.tinyorm.annotations.UpdatedEpochTimestamp;
+import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 
 /**
  * In your production code, I suggest to use lombok.
@@ -21,9 +21,9 @@ public class Member extends BasicRow<Member> {
 	@Column
 	private String name;
 
-	@Column @CreatedEpochTimestamp
+	@Column @CreatedTimestampColumn
 	private long createdOn;
-	@Column @UpdatedEpochTimestamp
+	@Column @UpdatedTimestampColumn
 	private long updatedOn;
 
 	public void setId(long id) {

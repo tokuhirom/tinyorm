@@ -15,19 +15,20 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 import me.geso.tinyorm.meta.TableMeta;
-import me.geso.tinyorm.meta.TableMetaRepository;
+import me.geso.tinyorm.meta.DBSchema;
 
 /**
  * Tiny O/R Mapper implementation.
  * 
  * @author Tokuhiro Matsuno
  */
-public abstract class TinyORM {
+public abstract class TinyORM implements BeanMapper {
 
 	public abstract Connection getConnection();
+	public abstract DBSchema getSchema();
 
 	public <T extends Row> InsertStatement<T> insert(Class<T> klass) {
-		return new InsertStatement<>(this, klass);
+		return new InsertStatement<>(this, klass, this.getTableMeta(klass));
 	}
 
 	/**
@@ -40,7 +41,7 @@ public abstract class TinyORM {
 			ResultSet rs = TinyORM.prepare(connection, sql, params)
 					.executeQuery();
 			if (rs.next()) {
-				T row = TinyORM.mapResultSet(klass, rs, connection);
+				T row = this.mapResultSet(klass, rs, connection);
 				return Optional.of(row);
 			} else {
 				return Optional.empty();
@@ -71,9 +72,9 @@ public abstract class TinyORM {
 	 * @return
 	 */
 	public <T extends Row> BeanSelectStatement<T> single(Class<T> klass) {
-		String tableName = TableMetaRepository.get(klass).getName();
+		String tableName = this.getTableMeta(klass).getName();
 		return new BeanSelectStatement<>(this.getConnection(),
-				tableName, klass);
+				tableName, klass, this);
 	}
 
 	/**
@@ -84,9 +85,9 @@ public abstract class TinyORM {
 	 * @return
 	 */
 	public <T extends Row> ListSelectStatement<T> search(Class<T> klass) {
-		String tableName = TableMetaRepository.get(klass).getName();
+		String tableName = this.getTableMeta(klass).getName();
 		return new ListSelectStatement<>(this.getConnection(),
-				tableName, klass);
+				tableName, klass, this);
 	}
 
 	/**
@@ -97,9 +98,9 @@ public abstract class TinyORM {
 	 */
 	public <T extends Row> PaginatedSelectStatement<T> searchWithPager(
 			Class<T> klass) {
-		String tableName = TableMetaRepository.get(klass).getName();
+		String tableName = this.getTableMeta(klass).getName();
 		return new PaginatedSelectStatement<>(this.getConnection(),
-				tableName, klass);
+				tableName, klass, this);
 	}
 
 	/**
@@ -113,7 +114,7 @@ public abstract class TinyORM {
 					.executeQuery();
 			List<T> list = new ArrayList<>();
 			while (rs.next()) {
-				T row = TinyORM.mapResultSet(klass, rs, connection);
+				T row = this.mapResultSet(klass, rs, connection);
 				list.add(row);
 			}
 			return list;
@@ -172,11 +173,9 @@ public abstract class TinyORM {
 		}
 	}
 
-	// I should make public. But I don't like this method name.
-	// I need your suggestion.
-	static <T extends Row> T mapResultSet(Class<T> klass, ResultSet rs,
+	public <T extends Row> T mapResultSet(Class<T> klass, ResultSet rs,
 			Connection connection) {
-		TableMeta tableMeta = TableMetaRepository.get(klass);
+		TableMeta tableMeta = this.getTableMeta(klass);
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
 			T row = klass.newInstance();
@@ -187,6 +186,8 @@ public abstract class TinyORM {
 				tableMeta.setValue(row, columnName, value);
 			}
 			row.setConnection(connection);
+			row.setTableMeta(tableMeta);
+			row.setBeanMapper(this);
 			return row;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -212,6 +213,10 @@ public abstract class TinyORM {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	private TableMeta getTableMeta(Class<? extends Row> klass) {
+		return this.getSchema().getTableMeta(klass);
 	}
 
 }

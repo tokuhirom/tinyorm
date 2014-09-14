@@ -9,8 +9,9 @@ import java.util.List;
 public class ListSelectStatement<T extends Row> extends
 		AbstractSelectStatement<T, ListSelectStatement<T>> {
 
-	ListSelectStatement(Connection connection, String tableName, Class<T> klass) {
-		super(connection, tableName, klass);
+	ListSelectStatement(Connection connection, String tableName,
+			Class<T> klass, BeanMapper orm) {
+		super(connection, tableName, klass, orm);
 	}
 
 	public List<T> execute() {
@@ -20,7 +21,8 @@ public class ListSelectStatement<T extends Row> extends
 					query.getValues()).executeQuery();
 			List<T> rows = new ArrayList<>();
 			while (rs.next()) {
-				T row = TinyORM.mapResultSet(klass, rs, connection);
+				T row = this.getBeanMapper()
+						.mapResultSet(klass, rs, connection);
 				rows.add(row);
 			}
 			return rows;

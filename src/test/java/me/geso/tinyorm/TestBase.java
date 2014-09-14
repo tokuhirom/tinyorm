@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import me.geso.tinyorm.meta.DBSchema;
+
 /**
  *
  * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
@@ -50,9 +52,16 @@ public class TestBase {
 	}
 
 	public class ORM extends TinyORM {
+		private DBSchema schema = new DBSchema();
+
 		@Override
 		public Connection getConnection() {
 			return connection;
+		}
+
+		@Override
+		public DBSchema getSchema() {
+			return this.schema;
 		}
 	}
 
