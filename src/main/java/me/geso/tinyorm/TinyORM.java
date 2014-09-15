@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 
-import me.geso.tinyorm.meta.TableMeta;
 import me.geso.tinyorm.meta.DBSchema;
+import me.geso.tinyorm.meta.TableMeta;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -39,28 +39,21 @@ public abstract class TinyORM {
 			Object... params) {
 		try {
 			Connection connection = this.getConnection();
-			ResultSet rs = TinyORM.prepare(connection, sql, params)
-					.executeQuery();
-			TableMeta tableMeta = this.getTableMeta(klass);
-			if (rs.next()) {
-				T row = TinyORM.mapResultSet(klass, rs, connection, tableMeta);
-				return Optional.of(row);
-			} else {
-				return Optional.empty();
+			try (PreparedStatement preparedStatement = connection
+					.prepareStatement(sql)) {
+				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+						params);
+				try (ResultSet rs = preparedStatement.executeQuery()) {
+					TableMeta tableMeta = this.getTableMeta(klass);
+					if (rs.next()) {
+						T row = TinyORM.mapResultSet(klass, rs, connection,
+								tableMeta);
+						return Optional.of(row);
+					} else {
+						return Optional.empty();
+					}
+				}
 			}
-		} catch (SQLException ex) {
-			throw new RuntimeException(ex);
-		}
-	}
-
-	static PreparedStatement prepare(Connection connection, String sql,
-			Object... params) {
-		try {
-			PreparedStatement stmt = connection.prepareStatement(sql);
-			for (int i = 0; i < params.length; ++i) {
-				stmt.setObject(i + 1, params[i]);
-			}
-			return stmt;
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
@@ -112,15 +105,21 @@ public abstract class TinyORM {
 			Object... params) {
 		try {
 			Connection connection = this.getConnection();
-			ResultSet rs = TinyORM.prepare(connection, sql, params)
-					.executeQuery();
-			List<T> list = new ArrayList<>();
-			TableMeta tableMeta = this.getTableMeta(klass);
-			while (rs.next()) {
-				T row = TinyORM.mapResultSet(klass, rs, connection, tableMeta);
-				list.add(row);
+			try (PreparedStatement preparedStatement = connection
+					.prepareStatement(sql)) {
+				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+						params);
+				try (ResultSet rs = preparedStatement.executeQuery()) {
+					List<T> list = new ArrayList<>();
+					TableMeta tableMeta = this.getTableMeta(klass);
+					while (rs.next()) {
+						T row = TinyORM.mapResultSet(klass, rs, connection,
+								tableMeta);
+						list.add(row);
+					}
+					return list;
+				}
 			}
-			return list;
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
@@ -130,10 +129,10 @@ public abstract class TinyORM {
 	 * Execute an UPDATE, INSERT, and DELETE query.
 	 */
 	public int update(String sql, Object... params) {
-		try {
-			PreparedStatement stmt = TinyORM.prepare(this.getConnection(), sql,
-					params);
-			return stmt.executeUpdate();
+		try (PreparedStatement preparedStatement = this.getConnection()
+				.prepareStatement(sql)) {
+			TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
+			return preparedStatement.executeUpdate();
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
@@ -201,15 +200,16 @@ public abstract class TinyORM {
 	 * @return
 	 */
 	public OptionalLong selectLong(String sql, Object... params) {
-		try {
-			PreparedStatement stmt = TinyORM.prepare(this.getConnection(), sql,
-					params);
-			ResultSet rs = stmt.executeQuery();
-			if (rs.next()) {
-				long l = rs.getLong(1);
-				return OptionalLong.of(l);
-			} else {
-				return OptionalLong.empty();
+		try (PreparedStatement preparedStatement = this.getConnection()
+				.prepareStatement(sql)) {
+			TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
+			try (ResultSet rs = preparedStatement.executeQuery()) {
+				if (rs.next()) {
+					long l = rs.getLong(1);
+					return OptionalLong.of(l);
+				} else {
+					return OptionalLong.empty();
+				}
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);

@@ -1,6 +1,7 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -21,15 +22,19 @@ public class ListSelectStatement<T extends Row> extends
 
 	public List<T> execute() {
 		Query query = this.buildQuery();
-		try {
-			ResultSet rs = TinyORM.prepare(connection, query.getSQL(),
-					query.getValues()).executeQuery();
-			List<T> rows = new ArrayList<>();
-			while (rs.next()) {
-				T row = TinyORM.mapResultSet(klass, rs, connection, tableMeta);
-				rows.add(row);
+		try (PreparedStatement preparedStatement = connection
+				.prepareStatement(query.getSQL())) {
+			TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+					query.getValues());
+			try (ResultSet rs = preparedStatement.executeQuery()) {
+				List<T> rows = new ArrayList<>();
+				while (rs.next()) {
+					T row = TinyORM.mapResultSet(klass, rs, connection,
+							tableMeta);
+					rows.add(row);
+				}
+				return rows;
 			}
-			return rows;
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}

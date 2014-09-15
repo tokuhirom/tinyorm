@@ -4,6 +4,7 @@ import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
@@ -135,11 +136,17 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 			buf.append(where.getSQL());
 			String sql = buf.toString();
 
-			int updated = TinyORM.prepare(connection, sql, where.getValues())
-					.executeUpdate();
-			if (updated != 1) {
-				throw new RuntimeException("Cannot delete row: " + sql + " "
-						+ where.getValues());
+			try (PreparedStatement preparedStatement = connection
+					.prepareStatement(sql)) {
+				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+						where.getValues());
+				int updated = preparedStatement
+						.executeUpdate();
+				if (updated != 1) {
+					throw new RuntimeException("Cannot delete row: " + sql
+							+ " "
+							+ where.getValues());
+				}
 			}
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
@@ -185,8 +192,8 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 					}
 				} else { // newval IS NULL.
 					if (current != null) {
-						stmt.set(name, newval);
-						tableMeta.setValue(this, name, newval);
+						stmt.set(name, null);
+						tableMeta.setValue(this, name, null);
 					}
 				}
 			}
@@ -224,15 +231,22 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 		try {
 			Connection connection = this.getConnection();
 			Object[] params = where.getValues();
-			ResultSet rs = TinyORM.prepare(connection, sql, params)
-					.executeQuery();
-			if (rs.next()) {
-				@SuppressWarnings("unchecked")
-				Impl row = TinyORM.mapResultSet((Class<Impl>) this.getClass(),
-						rs, connection, this.getTableMeta());
-				return Optional.of(row);
-			} else {
-				return Optional.empty();
+			try (PreparedStatement preparedStatement = connection
+					.prepareStatement(sql)) {
+				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+						params);
+				try (ResultSet rs = preparedStatement
+						.executeQuery()) {
+					if (rs.next()) {
+						@SuppressWarnings("unchecked")
+						Impl row = TinyORM.mapResultSet(
+								(Class<Impl>) this.getClass(),
+								rs, connection, this.getTableMeta());
+						return Optional.of(row);
+					} else {
+						return Optional.empty();
+					}
+				}
 			}
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);

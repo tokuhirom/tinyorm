@@ -10,6 +10,7 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -109,10 +110,16 @@ public class InsertStatement<T extends Row> {
 		try {
 			this.tableMeta.invokeBeforeInsertTriggers(this);
 			String sql = buildSQL();
-			int inserted = TinyORM.prepare(orm.getConnection(), sql,
-					values.values().toArray()).executeUpdate();
-			if (inserted != 1) {
-				throw new RuntimeException("Cannot insert to database:" + sql);
+			Object[] params = values.values().toArray();
+			try (PreparedStatement preparedStatement = orm.getConnection()
+					.prepareStatement(sql)) {
+				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+						params);
+				int inserted = preparedStatement.executeUpdate();
+				if (inserted != 1) {
+					throw new RuntimeException("Cannot insert to database:"
+							+ sql);
+				}
 			}
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);

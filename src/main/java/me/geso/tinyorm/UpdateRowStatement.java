@@ -53,6 +53,10 @@ public class UpdateRowStatement {
 		String tableName = tableMeta.getName();
 
 		Query where = row.where();
+		String whereSQL = where.getSQL();
+		if (whereSQL.isEmpty()) {
+			throw new RuntimeException("Empty where clause");
+		}
 		StringBuilder buf = new StringBuilder();
 		buf.append("UPDATE ").append(tableName).append(" SET ");
 		set.keySet().stream()
@@ -70,10 +74,11 @@ public class UpdateRowStatement {
 
 		this.executed = true;
 
-		try {
-			PreparedStatement stmt = TinyORM.prepare(connection, sql,
+		try (PreparedStatement preparedStatement = connection
+				.prepareStatement(sql)) {
+			TinyORMUtil.fillPreparedStatementParams(preparedStatement,
 					values.toArray());
-			stmt.executeUpdate();
+			preparedStatement.executeUpdate();
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
 		}
