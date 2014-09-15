@@ -3,15 +3,21 @@ package me.geso.tinyorm.meta;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -27,6 +33,7 @@ import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.Deflate;
 import me.geso.tinyorm.annotations.Inflate;
+import me.geso.tinyorm.annotations.JsonColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
@@ -75,6 +82,9 @@ public class TableMeta {
 		List<BeforeInsertHandler> beforeInsertTriggers = new ArrayList<>();
 		List<BeforeUpdateHandler> beforeUpdateTriggers = new ArrayList<>();
 		Map<String, PropertyDescriptor> propertyDescriptorMap = new LinkedHashMap<>();
+		// It should be stable... I want to use LinkedHashMap here.
+		final Map<String, Inflater> inflaters = new LinkedHashMap<>();
+		final Map<String, Deflater> deflaters = new LinkedHashMap<>();
 		Field[] fields = rowClass.getDeclaredFields();
 		Map<String, Field> fieldMap = new HashMap<>();
 		for (Field field : fields) {
@@ -110,6 +120,20 @@ public class TableMeta {
 						field.getName()));
 				isColumn = true;
 			}
+			if (field.getAnnotation(JsonColumn.class) != null) {
+				// deserialize json
+				Type type = field.getGenericType();
+				JavaType javaType = TypeFactory.defaultInstance()
+						.constructType(type);
+				JsonInflater inflater = new JsonInflater(
+						rowClass, propertyDescriptor, javaType);
+				inflaters.put(propertyDescriptor.getName(), inflater);
+				// serialize json
+				JsonDeflater deflater = new JsonDeflater(
+						rowClass, propertyDescriptor, javaType);
+				deflaters.put(propertyDescriptor.getName(), deflater);
+				isColumn = true;
+			}
 
 			if (isColumn) {
 				columns.add(ColumnMeta.build(propertyDescriptor));
@@ -118,9 +142,6 @@ public class TableMeta {
 			}
 		}
 
-		// It should be stable... I want to use LinkedHashMap here.
-		final Map<String, Inflater> inflaters = new LinkedHashMap<>();
-		final Map<String, Deflater> deflaters = new LinkedHashMap<>();
 		for (Method method : rowClass.getMethods()) {
 			if (method.getAnnotation(BeforeInsert.class) != null) {
 				beforeInsertTriggers.add(new BeforeInsertMethodTrigger(
@@ -136,7 +157,8 @@ public class TableMeta {
 					String columnName = inflate.value();
 					if (inflaters.containsKey(columnName)) {
 						throw new RuntimeException(String.format(
-								"Duplicated @Inflate in %s(%s).", rowClass.getName(), columnName));
+								"Duplicated @Inflate in %s(%s).",
+								rowClass.getName(), columnName));
 					}
 					if (Modifier.isStatic(method.getModifiers())) {
 						inflaters.put(columnName, new MethodInflater(rowClass,
@@ -155,7 +177,8 @@ public class TableMeta {
 					String columnName = deflate.value();
 					if (deflaters.containsKey(columnName)) {
 						throw new RuntimeException(String.format(
-								"Duplicated @Deflate in %s(%s).", rowClass.getName(),  columnName));
+								"Duplicated @Deflate in %s(%s).",
+								rowClass.getName(), columnName));
 					}
 					if (Modifier.isStatic(method.getModifiers())) {
 						deflaters.put(columnName, new MethodDeflater(rowClass,
@@ -418,6 +441,59 @@ public class TableMeta {
 				throw new RuntimeException(e);
 			}
 		}
+	}
 
+	@ToString
+	static class JsonInflater implements Inflater {
+		private final Class<? extends Row> rowClass;
+		private final PropertyDescriptor propertyDescriptor;
+		private final JavaType javaType;
+		private final ObjectMapper mapper = new ObjectMapper();
+
+		JsonInflater(Class<? extends Row> rowClass,
+				PropertyDescriptor propertyDescriptor, JavaType javaType) {
+			this.rowClass = rowClass;
+			this.propertyDescriptor = propertyDescriptor;
+			this.javaType = javaType;
+		}
+
+		@Override
+		public Object inflate(Object value) {
+			if (value instanceof byte[]) {
+				try {
+					return mapper.readValue((byte[]) value, javaType);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			} else {
+				throw new RuntimeException(
+						"You shouldn't apply @JsonColumn for non byte[].");
+			}
+		}
+	}
+
+	@ToString
+	static class JsonDeflater implements Deflater {
+		private final Class<? extends Row> rowClass;
+		private final PropertyDescriptor propertyDescriptor;
+		private final JavaType javaType;
+		private final ObjectMapper mapper = new ObjectMapper();
+
+		JsonDeflater(Class<? extends Row> rowClass,
+				PropertyDescriptor propertyDescriptor, JavaType javaType) {
+			this.rowClass = rowClass;
+			this.propertyDescriptor = propertyDescriptor;
+			this.javaType = javaType;
+		}
+
+		@Override
+		public Object deflate(Object value) {
+			try {
+				byte [] bytes = mapper.writeValueAsBytes(value);
+				return bytes;
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 }

@@ -189,7 +189,7 @@ public abstract class TinyORM {
 			row.setConnection(connection);
 			row.setTableMeta(tableMeta);
 			return row;
-		} catch (Exception e) {
+		} catch (SQLException | InstantiationException | IllegalAccessException e) {
 			throw new RuntimeException(e);
 		}
 	}
