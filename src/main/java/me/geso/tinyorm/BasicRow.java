@@ -164,9 +164,6 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 					.getPropertyDescriptors();
 			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 				String name = propertyDescriptor.getName();
-				if ("class".equals(name)) {
-					continue;
-				}
 				if (!currentValueMap.containsKey(name)) {
 					continue;
 				}
