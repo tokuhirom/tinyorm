@@ -47,23 +47,20 @@ public class TableMeta {
 	@Getter
 	private final String name;
 	@Getter
-	private final List<PrimaryKeyMeta> primaryKeyMetas;
-	private final List<ColumnMeta> columnMetas;
+	private final List<PropertyDescriptor> primaryKeys;
 	private final Map<String, PropertyDescriptor> propertyDescriptorMap;
 	private final List<BeforeInsertHandler> beforeInsertHandlers;
 	private final List<BeforeUpdateHandler> beforeUpdateHandlers;
 	private final Map<String, Inflater> inflaters;
 	private final Map<String, Deflater> deflaters;
 
-	TableMeta(String name, List<PrimaryKeyMeta> primaryKeyMetas,
-			List<ColumnMeta> columnMetas,
+	TableMeta(String name, List<PropertyDescriptor> primaryKeyMetas,
 			Map<String, PropertyDescriptor> propertyDescriptorMap,
 			List<BeforeInsertHandler> beforeInsertTriggers,
 			List<BeforeUpdateHandler> beforeUpdateTriggers,
 			Map<String, Inflater> inflaters, Map<String, Deflater> deflaters) {
 		this.name = name;
-		this.primaryKeyMetas = primaryKeyMetas;
-		this.columnMetas = columnMetas;
+		this.primaryKeys = primaryKeyMetas;
 		this.propertyDescriptorMap = propertyDescriptorMap;
 		this.beforeInsertHandlers = beforeInsertTriggers;
 		this.beforeUpdateHandlers = beforeUpdateTriggers;
@@ -77,8 +74,7 @@ public class TableMeta {
 		BeanInfo beanInfo = Introspector.getBeanInfo(rowClass, Object.class);
 		PropertyDescriptor[] propertyDescriptors = beanInfo
 				.getPropertyDescriptors();
-		List<PrimaryKeyMeta> primaryKeys = new ArrayList<>();
-		List<ColumnMeta> columns = new ArrayList<>();
+		List<PropertyDescriptor> primaryKeys = new ArrayList<>();
 		List<BeforeInsertHandler> beforeInsertTriggers = new ArrayList<>();
 		List<BeforeUpdateHandler> beforeUpdateTriggers = new ArrayList<>();
 		Map<String, PropertyDescriptor> propertyDescriptorMap = new LinkedHashMap<>();
@@ -102,7 +98,7 @@ public class TableMeta {
 			Field field = fieldMap.get(name);
 			boolean isColumn = false;
 			if (field.getAnnotation(PrimaryKey.class) != null) {
-				primaryKeys.add(PrimaryKeyMeta.build(propertyDescriptor));
+				primaryKeys.add(propertyDescriptor);
 				isColumn = true;
 			}
 			if (field.getAnnotation(Column.class) != null) {
@@ -136,7 +132,6 @@ public class TableMeta {
 			}
 
 			if (isColumn) {
-				columns.add(ColumnMeta.build(propertyDescriptor));
 				propertyDescriptorMap.put(propertyDescriptor.getName(),
 						propertyDescriptor);
 			}
@@ -195,7 +190,7 @@ public class TableMeta {
 
 		String tableName = TableMeta.getTableName(rowClass);
 
-		return new TableMeta(tableName, primaryKeys, columns,
+		return new TableMeta(tableName, primaryKeys,
 				propertyDescriptorMap, beforeInsertTriggers,
 				beforeUpdateTriggers, inflaters, deflaters);
 	}
@@ -232,9 +227,17 @@ public class TableMeta {
 	public Map<String, Object> getColumnValueMap(Row row) {
 		Map<String, Object> map = new LinkedHashMap<>(); // I guess it should be
 															// ordered.
-		for (ColumnMeta columnMeta : this.columnMetas) {
-			Object value = columnMeta.get(row);
-			map.put(columnMeta.getName(), value);
+		try {
+			for (PropertyDescriptor propertyDescriptor : this.propertyDescriptorMap
+					.values()) {
+				Method readMethod = propertyDescriptor.getReadMethod();
+				Object value;
+				value = readMethod.invoke(row);
+				map.put(propertyDescriptor.getName(), value);
+			}
+		} catch (IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException e) {
+			throw new RuntimeException(e);
 		}
 		return map;
 	}
@@ -243,22 +246,28 @@ public class TableMeta {
 	public Map<String, Object> getPrimaryKeyValueMap(Row row) {
 		Map<String, Object> map = new LinkedHashMap<>(); // I guess it should be
 															// ordered.
-		for (PrimaryKeyMeta pkMeta : this.primaryKeyMetas) {
-			Object value = pkMeta.get(row);
-			map.put(pkMeta.getName(), value);
+		try {
+			for (PropertyDescriptor pk : this.primaryKeys) {
+				Method readMethod = pk.getReadMethod();
+				Object value = readMethod.invoke(row);
+				map.put(pk.getName(), value);
+			}
+		} catch (IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException e) {
+			throw new RuntimeException(e);
 		}
 		return map;
 	}
 
 	// Internal use.
-	public void setValue(Row row, String name, Object value) {
+	public void setValue(Row row, String columnName, Object value) {
 		PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
-				.get(name);
+				.get(columnName);
 		if (propertyDescriptor == null) {
 			throw new RuntimeException(
 					String.format(
 							"setValue: %s doesn't have a %s column. You may forget to set @Column annotation.",
-							row.getClass(), name
+							row.getClass(), columnName
 							));
 		}
 		Method writeMethod = propertyDescriptor.getWriteMethod();
@@ -273,7 +282,7 @@ public class TableMeta {
 				| IllegalArgumentException | InvocationTargetException e) {
 			log.error("{}: {}, {}, {}, {}, {}, valueClass:{}", e.getClass(),
 					this.getName(),
-					row, name, writeMethod.getName(), value,
+					row, columnName, writeMethod.getName(), value,
 					value == null ? null : value.getClass());
 			throw new RuntimeException(e);
 		}
@@ -489,7 +498,7 @@ public class TableMeta {
 		@Override
 		public Object deflate(Object value) {
 			try {
-				byte [] bytes = mapper.writeValueAsBytes(value);
+				byte[] bytes = mapper.writeValueAsBytes(value);
 				return bytes;
 			} catch (IOException e) {
 				throw new RuntimeException(e);

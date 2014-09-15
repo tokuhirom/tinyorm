@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import lombok.SneakyThrows;
-import me.geso.tinyorm.meta.PrimaryKeyMeta;
 import me.geso.tinyorm.meta.TableMeta;
 
 /**
@@ -130,8 +129,8 @@ public class InsertStatement<T extends Row> {
 		try {
 			this.execute();
 
-			List<PrimaryKeyMeta> primaryKeyMetas = this.tableMeta
-					.getPrimaryKeyMetas();
+			List<PropertyDescriptor> primaryKeyMetas = this.tableMeta
+					.getPrimaryKeys();
 			String tableName = this.tableMeta.getName();
 			if (primaryKeyMetas.isEmpty()) {
 				throw new RuntimeException(
@@ -141,13 +140,13 @@ public class InsertStatement<T extends Row> {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
 			}
+			String pkName = primaryKeyMetas.get(0).getName();
 
 			Connection connection = this.orm.getConnection();
 			String sql = "SELECT * FROM "
 					+ TinyORM.quoteIdentifier(tableName, connection)
 					+ " WHERE "
-					+ TinyORM.quoteIdentifier(primaryKeyMetas.get(0).getName(),
-							connection)
+					+ TinyORM.quoteIdentifier(pkName, connection)
 					+ "=last_insert_id()";
 			Optional<T> maybeRow = this.orm.single(klass, sql);
 			if (maybeRow.isPresent()) {

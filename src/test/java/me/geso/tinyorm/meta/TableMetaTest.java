@@ -2,6 +2,7 @@ package me.geso.tinyorm.meta;
 
 import static org.junit.Assert.*;
 
+import java.beans.PropertyDescriptor;
 import java.util.List;
 
 import lombok.Data;
@@ -12,7 +13,6 @@ import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
-import me.geso.tinyorm.meta.PrimaryKeyMeta;
 import me.geso.tinyorm.meta.TableMeta;
 import me.geso.tinyorm.meta.DBSchema;
 
@@ -24,7 +24,7 @@ public class TableMetaTest {
 	public void testPrimaryKeyMetas() {
 		DBSchema schema = new DBSchema();
 		TableMeta tableMeta = schema.getTableMeta(Member.class);
-		List<PrimaryKeyMeta> primaryKeyMetas = tableMeta.getPrimaryKeyMetas();
+		List<PropertyDescriptor> primaryKeyMetas = tableMeta.getPrimaryKeys();
 		assertEquals(1, primaryKeyMetas.size());
 		assertEquals("id", primaryKeyMetas.get(0).getName());
 	}
