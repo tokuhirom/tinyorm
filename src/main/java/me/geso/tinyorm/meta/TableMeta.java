@@ -6,6 +6,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,8 @@ import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
+import me.geso.tinyorm.annotations.Deflate;
+import me.geso.tinyorm.annotations.Inflate;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
@@ -41,22 +45,23 @@ public class TableMeta {
 	private final Map<String, PropertyDescriptor> propertyDescriptorMap;
 	private final List<BeforeInsertHandler> beforeInsertHandlers;
 	private final List<BeforeUpdateHandler> beforeUpdateHandlers;
-	private final List<Inflater> inflaters;
-	private final List<Deflater> deflaters;
+	private final Map<String, Inflater> inflaters;
+	private final Map<String, Deflater> deflaters;
 
 	TableMeta(String name, List<PrimaryKeyMeta> primaryKeyMetas,
 			List<ColumnMeta> columnMetas,
 			Map<String, PropertyDescriptor> propertyDescriptorMap,
 			List<BeforeInsertHandler> beforeInsertTriggers,
-			List<BeforeUpdateHandler> beforeUpdateTriggers) {
+			List<BeforeUpdateHandler> beforeUpdateTriggers,
+			Map<String, Inflater> inflaters, Map<String, Deflater> deflaters) {
 		this.name = name;
 		this.primaryKeyMetas = primaryKeyMetas;
 		this.columnMetas = columnMetas;
 		this.propertyDescriptorMap = propertyDescriptorMap;
 		this.beforeInsertHandlers = beforeInsertTriggers;
 		this.beforeUpdateHandlers = beforeUpdateTriggers;
-		this.inflaters = new ArrayList<>();
-		this.deflaters = new ArrayList<>();
+		this.inflaters = inflaters;
+		this.deflaters = deflaters;
 	}
 
 	// Internal use.
@@ -113,12 +118,55 @@ public class TableMeta {
 			}
 		}
 
+		// It should be stable... I want to use LinkedHashMap here.
+		final Map<String, Inflater> inflaters = new LinkedHashMap<>();
+		final Map<String, Deflater> deflaters = new LinkedHashMap<>();
 		for (Method method : rowClass.getMethods()) {
 			if (method.getAnnotation(BeforeInsert.class) != null) {
-				beforeInsertTriggers.add(new BeforeInsertMethodTrigger(rowClass, method));
+				beforeInsertTriggers.add(new BeforeInsertMethodTrigger(
+						rowClass, method));
 			}
 			if (method.getAnnotation(BeforeUpdate.class) != null) {
-				beforeUpdateTriggers.add(new BeforeUpdateMethodTrigger(rowClass, method));
+				beforeUpdateTriggers.add(new BeforeUpdateMethodTrigger(
+						rowClass, method));
+			}
+			{
+				Inflate inflate = method.getAnnotation(Inflate.class);
+				if (inflate != null) {
+					String columnName = inflate.value();
+					if (inflaters.containsKey(columnName)) {
+						throw new RuntimeException(String.format(
+								"Duplicated @Inflate in %s(%s).", rowClass.getName(), columnName));
+					}
+					if (Modifier.isStatic(method.getModifiers())) {
+						inflaters.put(columnName, new MethodInflater(rowClass,
+								method));
+					} else {
+						throw new RuntimeException(
+								String.format(
+										"%s.%s has a @Inflate annotation. But it's not a 'static' method. You should add 'static' modifier.",
+										rowClass.getName(), method.getName()));
+					}
+				}
+			}
+			{
+				Deflate deflate = method.getAnnotation(Deflate.class);
+				if (deflate != null) {
+					String columnName = deflate.value();
+					if (deflaters.containsKey(columnName)) {
+						throw new RuntimeException(String.format(
+								"Duplicated @Deflate in %s(%s).", rowClass.getName(),  columnName));
+					}
+					if (Modifier.isStatic(method.getModifiers())) {
+						deflaters.put(columnName, new MethodDeflater(rowClass,
+								method));
+					} else {
+						throw new RuntimeException(
+								String.format(
+										"%s.%s has a @Deflate annotation. But it's not a 'static' method. You should add 'static' modifier.",
+										rowClass.getName(), method.getName()));
+					}
+				}
 			}
 		}
 
@@ -126,7 +174,7 @@ public class TableMeta {
 
 		return new TableMeta(tableName, primaryKeys, columns,
 				propertyDescriptorMap, beforeInsertTriggers,
-				beforeUpdateTriggers);
+				beforeUpdateTriggers, inflaters, deflaters);
 	}
 
 	/**
@@ -145,26 +193,6 @@ public class TableMeta {
 	 */
 	public void addBeforeUpdateHandler(BeforeUpdateHandler handler) {
 		this.beforeUpdateHandlers.add(handler);
-	}
-
-	/**
-	 * Add inflater.<br>
-	 * This method may not thread safe.
-	 * 
-	 * @param inflater
-	 */
-	public void addInflater(Inflater inflater) {
-		this.inflaters.add(inflater);
-	}
-
-	/**
-	 * Add deflater.<br>
-	 * This method may not thread safe.
-	 * 
-	 * @param inflater
-	 */
-	public void addDeflater(Deflater deflater) {
-		this.deflaters.add(deflater);
 	}
 
 	// Internal use.
@@ -244,18 +272,22 @@ public class TableMeta {
 
 	// Ineternal use
 	public Object invokeInflaters(String columnName, Object value) {
-		for (Inflater inflater : this.inflaters) {
-			value = inflater.inflate(columnName, value);
+		Inflater inflater = this.inflaters.get(columnName);
+		if (inflater != null) {
+			return inflater.inflate(value);
+		} else {
+			return value;
 		}
-		return value;
 	}
 
 	// Ineternal use
 	public Object invokeDeflaters(String columnName, Object value) {
-		for (Deflater deflater : this.deflaters) {
-			value = deflater.deflate(columnName, value);
+		Deflater deflater = this.deflaters.get(columnName);
+		if (deflater != null) {
+			return deflater.deflate(value);
+		} else {
+			return value;
 		}
-		return value;
 	}
 
 	@ToString
@@ -300,7 +332,8 @@ public class TableMeta {
 		private final Method method;
 		private final Class<? extends Row> rowClass;
 
-		BeforeInsertMethodTrigger(final Class<? extends Row> rowClass, final Method method) {
+		BeforeInsertMethodTrigger(final Class<? extends Row> rowClass,
+				final Method method) {
 			this.method = method;
 			this.rowClass = rowClass;
 		}
@@ -321,7 +354,8 @@ public class TableMeta {
 		private final Method method;
 		private final Class<? extends Row> rowClass;
 
-		BeforeUpdateMethodTrigger(final Class<? extends Row> rowClass, final Method method) {
+		BeforeUpdateMethodTrigger(final Class<? extends Row> rowClass,
+				final Method method) {
 			this.method = method;
 			this.rowClass = rowClass;
 		}
@@ -335,5 +369,55 @@ public class TableMeta {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	@Slf4j
+	@ToString
+	static class MethodInflater implements Inflater {
+		private final Method method;
+		private final Class<? extends Row> rowClass;
+
+		public MethodInflater(Class<? extends Row> rowClass, Method method) {
+			this.rowClass = rowClass;
+			this.method = method;
+		}
+
+		@Override
+		public Object inflate(Object value) {
+			try {
+				return this.method.invoke(rowClass, value);
+			} catch (IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException e) {
+				log.info("Can't invoke inflation method: {}",
+						method.toGenericString());
+				throw new RuntimeException(e);
+			}
+		}
+
+	}
+
+	@ToString
+	static class MethodDeflater implements Deflater {
+		private final Method method;
+		private final Class<? extends Row> rowClass;
+
+		public MethodDeflater(Class<? extends Row> rowClass,
+				@NonNull Method method) {
+			this.rowClass = rowClass;
+			this.method = method;
+		}
+
+		@Override
+		public Object deflate(Object value) {
+			try {
+				return this.method.invoke(this.rowClass, value);
+			} catch (IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException e) {
+				log.info("Can't invoke deflation method: {}",
+						method.toGenericString());
+				throw new RuntimeException(e);
+			}
+		}
+
 	}
 }

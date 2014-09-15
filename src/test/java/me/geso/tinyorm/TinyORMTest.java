@@ -13,7 +13,6 @@ import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
-import me.geso.tinyorm.meta.DBSchema;
 
 import org.junit.Before;
 import org.junit.Test;

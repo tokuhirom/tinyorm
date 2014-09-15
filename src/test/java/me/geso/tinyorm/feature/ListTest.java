@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 
 import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
-import me.geso.tinyorm.TinyORM;
 import me.geso.tinyorm.annotations.Column;
+import me.geso.tinyorm.annotations.Deflate;
+import me.geso.tinyorm.annotations.Inflate;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
-import me.geso.tinyorm.meta.TableMeta;
 import me.geso.tinyorm.meta.DBSchema;
 
 import org.junit.Before;
@@ -32,39 +32,10 @@ public class ListTest extends TestBase {
 				.executeUpdate();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void testFoo() throws SQLException {
 		DBSchema schema = new DBSchema();
 		schema.loadClass(Foo.class);
-		TableMeta tableMeta = schema.getTableMeta(Foo.class);
-		tableMeta.addInflater((column, value) -> {
-			if ("csvInt".equals(column)) {
-				String[] split = ((String) value).split(",");
-				return Arrays.stream(split).map(it -> Integer.parseInt(it))
-						.collect(Collectors.toList());
-			}
-			if ("csvString".equals(column)) {
-				return Arrays.asList(((String) value).split(","));
-			}
-			return value;
-		});
-		tableMeta.addDeflater((column, value) -> {
-			if ("csvInt".equals(column)) {
-				if (value instanceof List) {
-					List<Integer> list = (List<Integer>) value;
-					String string = list.stream().map(it -> it.toString())
-							.collect(Collectors.joining(","));
-					return string;
-				}
-			} else if ("csvString".equals(column)) {
-				if (value instanceof List) {
-					List<String> list = (List<String>) value;
-					return list.stream().collect(Collectors.joining(","));
-				}
-			}
-			return value;
-		});
 
 		List<Integer> ints = Arrays.asList(5963, 4649);
 		List<String> strings = Arrays.asList("John", "Manjiro");
@@ -139,6 +110,32 @@ public class ListTest extends TestBase {
 
 		public void setCsvString(List<String> csvString) {
 			this.csvString = csvString;
+		}
+
+		@Inflate("csvString")
+		public static Object inflateCsvString(String value) {
+			return Arrays.asList((value).split(","));
+		}
+
+		@Inflate("csvInt")
+		public static Object inflateCsvInt(String value) {
+			String[] split = value.split(",");
+			return Arrays.stream(split).map(it -> Integer.parseInt(it))
+					.collect(Collectors.toList());
+		}
+
+		@Deflate("csvInt")
+		public static Object deflateCsvInt(List<Integer> value) {
+			List<Integer> list = (List<Integer>) value;
+			String string = list.stream().map(it -> it.toString())
+					.collect(Collectors.joining(","));
+			return string;
+		}
+
+		@Deflate("csvString")
+		public static Object deflateCsvString(List<String> value) {
+			List<String> list = (List<String>) value;
+			return list.stream().collect(Collectors.joining(","));
 		}
 	}
 }
