@@ -102,7 +102,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	protected void validatePrimaryKeysForSelect(List<Object> values) {
 		for (Object value : values) {
 			if (value == null) {
-				throw new TinyORMException("Primary key should not be null: "
+				throw new RuntimeException("Primary key should not be null: "
 						+ this);
 			}
 		}
@@ -117,7 +117,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 			if ((value instanceof Integer && (((Integer) value) == 0))
 					|| (value instanceof Long && (((Long) value) == 0))
 					|| (value instanceof Short && (((Short) value) == 0))) {
-				throw new TinyORMException("Primary key should not be zero: "
+				throw new RuntimeException("Primary key should not be zero: "
 						+ value);
 			}
 		}

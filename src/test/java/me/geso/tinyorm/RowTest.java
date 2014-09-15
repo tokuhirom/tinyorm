@@ -25,7 +25,7 @@ public class RowTest extends TestBase {
 		RuntimeException gotEx = null;
 		try {
 			code.run();
-		} catch (TinyORMException ex) {
+		} catch (RuntimeException ex) {
 			gotEx = ex;
 			System.out.println(gotEx.toString());
 		}
