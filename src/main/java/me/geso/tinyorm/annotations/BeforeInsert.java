@@ -5,6 +5,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * <pre>
+ * <code>
+ * 		@BeforeInsert
+ * 		public static void beforeInsert(InsertStatement<Row> statement) {
+ * 			stmt.value("y", "fill");
+ * 		}
+ * 		</code>
+ * </pre>
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface BeforeInsert {

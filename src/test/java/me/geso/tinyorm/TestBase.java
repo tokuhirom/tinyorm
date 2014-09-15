@@ -1,15 +1,20 @@
 package me.geso.tinyorm;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import lombok.extern.slf4j.Slf4j;
 import me.geso.tinyorm.meta.DBSchema;
 
 /**
  *
  * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
  */
+@Slf4j
 public class TestBase {
 
 	protected final Connection connection;
@@ -35,20 +40,10 @@ public class TestBase {
 			// DriverManager.getConnection("jdbc:mysql://localhost/test?profileSQL=true&logger=com.mysql.jdbc.log.Slf4JLogger",
 			// "root", null);
 			this.orm = new ORM();
-			this.setupSchema();
 		} catch (ClassNotFoundException | SQLException | InstantiationException
 				| IllegalAccessException ex) {
 			throw new RuntimeException(ex);
 		}
-	}
-
-	public final void setupSchema() throws SQLException {
-		connection.prepareStatement("DROP TABLE IF EXISTS member")
-				.executeUpdate();
-		connection
-				.prepareStatement(
-						"CREATE TABLE member (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), createdOn INT UNSIGNED DEFAULT NULL, updatedOn INT UNSIGNED DEFAULT NULL)")
-				.executeUpdate();
 	}
 
 	public class ORM extends TinyORM {
@@ -64,5 +59,27 @@ public class TestBase {
 			return this.schema;
 		}
 	}
+
+	public static interface Callback {
+		void run();
+	}
+
+	public void thrownLike(Callback code, String pattern) {
+		RuntimeException gotEx = null;
+		try {
+			code.run();
+		} catch (RuntimeException ex) {
+			gotEx = ex;
+			System.out.println(gotEx.toString());
+			gotEx.printStackTrace();
+		}
+		assertNotNull(gotEx);
+		String msg = gotEx.getMessage();
+		if (msg.startsWith(pattern)) {
+			log.error(msg);
+		}
+		assertTrue(msg.startsWith(pattern));
+	}
+
 
 }

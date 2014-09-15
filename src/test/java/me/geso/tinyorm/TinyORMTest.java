@@ -6,6 +6,13 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import me.geso.tinyorm.annotations.Column;
+import me.geso.tinyorm.annotations.CreatedTimestampColumn;
+import me.geso.tinyorm.annotations.PrimaryKey;
+import me.geso.tinyorm.annotations.Table;
+import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 import me.geso.tinyorm.meta.DBSchema;
 
 import org.junit.Before;
@@ -18,9 +25,13 @@ import org.junit.Test;
 public class TinyORMTest extends TestBase {
 
 	@Before
-	public void bbbe() {
-		DBSchema schema = this.orm.getSchema();
-		schema.registerClass(Member.class);
+	public final void setupSchema() throws SQLException {
+		connection.prepareStatement("DROP TABLE IF EXISTS member")
+				.executeUpdate();
+		connection
+				.prepareStatement(
+						"CREATE TABLE member (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), createdOn INT UNSIGNED DEFAULT NULL, updatedOn INT UNSIGNED DEFAULT NULL)")
+				.executeUpdate();
 	}
 
 	@Test
@@ -37,7 +48,7 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
-	public void insert() throws SQLException {
+	public void testInsert() throws SQLException, InstantiationException, IllegalAccessException {
 		Member member = orm.insert(Member.class)
 				.value("name", "John")
 				.executeSelect();
@@ -177,6 +188,38 @@ public class TinyORMTest extends TestBase {
 	public void testQuoteIdentifier() throws SQLException {
 		String got = TinyORM.quoteIdentifier("hoge", connection);
 		assertEquals("`hoge`", got);
+	}
+
+	@Table("member")
+	@Data
+	@EqualsAndHashCode(callSuper=false)
+	public static class Member extends BasicRow<Member> {
+		@PrimaryKey
+		private long id;
+		@Column
+		private String name;
+
+		@CreatedTimestampColumn
+		private long createdOn;
+		@UpdatedTimestampColumn
+		private long updatedOn;
+	}
+
+	@Data
+	public static class MemberForm {
+
+		private long id;
+		private String name;
+	}
+
+	@Data
+	public static class MemberUpdateForm {
+		private String name;
+
+		public MemberUpdateForm(String name) {
+			this.name = name;
+		}
+
 	}
 
 }
