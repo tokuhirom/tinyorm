@@ -36,7 +36,7 @@ public class ListTest extends TestBase {
 	@Test
 	public void testFoo() throws SQLException {
 		DBSchema schema = new DBSchema();
-		schema.registerClass(Foo.class);
+		schema.loadClass(Foo.class);
 		TableMeta tableMeta = schema.getTableMeta(Foo.class);
 		tableMeta.addInflater((column, value) -> {
 			if ("csvInt".equals(column)) {

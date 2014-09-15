@@ -9,7 +9,7 @@ import me.geso.tinyorm.Row;
 public class DBSchema {
 	private static ConcurrentHashMap<Class<? extends Row>, TableMeta> registry = new ConcurrentHashMap<>();
 
-	public void registerClass(Class<? extends Row> klass) {
+	public void loadClass(Class<? extends Row> klass) {
 		TableMeta meta = TableMeta.build(klass);
 		log.info("Loaded " + klass);
 		registry.put(klass, meta);
@@ -18,9 +18,8 @@ public class DBSchema {
 	public TableMeta getTableMeta(Class<? extends Row> klass) {
 		TableMeta meta = registry.get(klass);
 		if (meta == null) {
-			log.info("Loading " + klass);
-			meta = TableMeta.build(klass);
-			registry.put(klass, meta);
+			loadClass(klass);
+			meta = registry.get(klass);
 		}
 		return meta;
 	}

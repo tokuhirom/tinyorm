@@ -24,7 +24,7 @@ public class UpdatedEpochTimestampTest extends TestBase {
 				.prepareStatement(
 						"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, updatedOn INT UNSIGNED)")
 				.executeUpdate();
-		orm.getSchema().registerClass(X.class);
+		orm.getSchema().loadClass(X.class);
 		X created = orm.insert(X.class)
 				.value("name", "John")
 				.executeSelect();
