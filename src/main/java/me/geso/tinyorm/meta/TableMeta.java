@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import me.geso.tinyorm.InsertStatement;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.UpdateRowStatement;
+import me.geso.tinyorm.annotations.BeforeInsert;
+import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -103,12 +105,21 @@ public class TableMeta {
 						field.getName()));
 				isColumn = true;
 			}
+
 			if (isColumn) {
 				columns.add(ColumnMeta.build(propertyDescriptor));
 				propertyDescriptorMap.put(propertyDescriptor.getName(),
 						propertyDescriptor);
 			}
+		}
 
+		for (Method method : rowClass.getMethods()) {
+			if (method.getAnnotation(BeforeInsert.class) != null) {
+				beforeInsertTriggers.add(new BeforeInsertMethodTrigger(rowClass, method));
+			}
+			if (method.getAnnotation(BeforeUpdate.class) != null) {
+				beforeUpdateTriggers.add(new BeforeUpdateMethodTrigger(rowClass, method));
+			}
 		}
 
 		String tableName = TableMeta.getTableName(rowClass);
@@ -280,6 +291,49 @@ public class TableMeta {
 		@Override
 		public void callBeforeUpdateHandler(UpdateRowStatement stmt) {
 			stmt.set(this.columnName, System.currentTimeMillis() / 1000);
+		}
+
+	}
+
+	@ToString
+	static class BeforeInsertMethodTrigger implements BeforeInsertHandler {
+		private final Method method;
+		private final Class<? extends Row> rowClass;
+
+		BeforeInsertMethodTrigger(final Class<? extends Row> rowClass, final Method method) {
+			this.method = method;
+			this.rowClass = rowClass;
+		}
+
+		@Override
+		public void callBeforeInsertHandler(InsertStatement<?> stmt) {
+			try {
+				method.invoke(rowClass, stmt);
+			} catch (IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	@ToString
+	static class BeforeUpdateMethodTrigger implements BeforeUpdateHandler {
+		private final Method method;
+		private final Class<? extends Row> rowClass;
+
+		BeforeUpdateMethodTrigger(final Class<? extends Row> rowClass, final Method method) {
+			this.method = method;
+			this.rowClass = rowClass;
+		}
+
+		@Override
+		public void callBeforeUpdateHandler(UpdateRowStatement stmt) {
+			try {
+				method.invoke(rowClass, stmt);
+			} catch (IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 }

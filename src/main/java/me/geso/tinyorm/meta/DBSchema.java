@@ -19,12 +19,6 @@ public class DBSchema {
 		registry.put(klass, meta);
 	}
 
-	public void addBefore(Class<? extends Row> klass,
-			BeforeInsertHandler handler) {
-		TableMeta tableMeta = this.getTableMeta(klass);
-		tableMeta.addBeforeInsertHandler(handler);
-	}
-
 	public void addBeforeUpdateHandler(Class<? extends Row> klass,
 			BeforeUpdateHandler handler) {
 		TableMeta tableMeta = this.getTableMeta(klass);

@@ -201,6 +201,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 	 * 
 	 * @param stmt
 	 */
+	// TODO remove me
 	public void BEFORE_UPDATE(UpdateRowStatement stmt) {
 	}
 
