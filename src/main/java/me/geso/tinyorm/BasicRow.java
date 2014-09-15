@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import me.geso.tinyorm.meta.TableMeta;
 
 /**
@@ -28,6 +29,7 @@ import me.geso.tinyorm.meta.TableMeta;
  */
 // Note. I don't want to use Generics here. But I have no idea to create child
 // instance.
+@Slf4j
 public abstract class BasicRow<Impl extends Row> implements Row {
 
 	private Connection connection;
@@ -186,6 +188,10 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 				}
 			}
 			if (!stmt.hasSetClause()) {
+				if (log.isDebugEnabled()) {
+					log.debug("There is no modification: {} == {}",
+							currentValueMap.toString(), bean.toString());
+				}
 				return; // There is no updates.
 			}
 			tableMeta.invokeBeforeUpdateTriggers(stmt);
