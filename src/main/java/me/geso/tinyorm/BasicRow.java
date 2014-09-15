@@ -146,6 +146,12 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 		}
 	}
 
+	public UpdateRowStatement createUpdateStatement() {
+		UpdateRowStatement stmt = new UpdateRowStatement(this,
+				this.getConnection(), this.getTableMeta());
+		return stmt;
+	}
+
 	/**
 	 * Update row's properties by bean. And send UPDATE statement to the server.
 	 * 
@@ -157,7 +163,7 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 
 		try {
 			UpdateRowStatement stmt = new UpdateRowStatement(this,
-					this.getConnection(), this.getTableName());
+					this.getConnection(), this.getTableMeta());
 			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(),
 					Object.class);
 			PropertyDescriptor[] propertyDescriptors = beanInfo
@@ -191,7 +197,6 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 				}
 				return; // There is no updates.
 			}
-			tableMeta.invokeBeforeUpdateTriggers(stmt);
 			stmt.execute();
 		} catch (Exception e) {
 			throw new RuntimeException(e);

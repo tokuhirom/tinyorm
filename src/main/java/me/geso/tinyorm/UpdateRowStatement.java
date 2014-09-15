@@ -8,31 +8,27 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import lombok.ToString;
+import me.geso.tinyorm.meta.TableMeta;
 
 /**
  * UPDATE statement for one row.
  * 
  * @author Tokuhiro Matsuno
  */
+@ToString
 public class UpdateRowStatement {
-
-	@Override
-	public String toString() {
-		return "UpdateRowStatement [row=" + row + ", set=" + set
-				+ ", executed=" + executed + ", connection=" + connection
-				+ ", tableName=" + tableName + "]";
-	}
 
 	private final Row row;
 	private final Map<String, Object> set = new TreeMap<>();
 	private boolean executed = false;
 	private final Connection connection;
-	private final String tableName;
+	private final TableMeta tableMeta;
 
-	UpdateRowStatement(Row row, Connection connection, String tableName) {
+	UpdateRowStatement(Row row, Connection connection, TableMeta tableMeta) {
 		this.row = row;
 		this.connection = connection;
-		this.tableName = tableName;
+		this.tableMeta = tableMeta;
 	}
 
 	public UpdateRowStatement set(String column, Object value) {
@@ -42,7 +38,7 @@ public class UpdateRowStatement {
 		this.set.put(column, value);
 		return this;
 	}
-	
+
 	/**
 	 * Should I call execute() method?
 	 * 
@@ -53,9 +49,12 @@ public class UpdateRowStatement {
 	}
 
 	public void execute() {
+		this.tableMeta.invokeBeforeUpdateTriggers(this);
+		String tableName = tableMeta.getName();
+
 		Query where = row.where();
 		StringBuilder buf = new StringBuilder();
-		buf.append("UPDATE ").append(this.tableName).append(" SET ");
+		buf.append("UPDATE ").append(tableName).append(" SET ");
 		set.keySet().stream()
 				.map(col -> col + "=?")
 				.collect(
@@ -72,7 +71,8 @@ public class UpdateRowStatement {
 		this.executed = true;
 
 		try {
-			PreparedStatement stmt = TinyORM.prepare(connection, sql, values.toArray());
+			PreparedStatement stmt = TinyORM.prepare(connection, sql,
+					values.toArray());
 			stmt.executeUpdate();
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
