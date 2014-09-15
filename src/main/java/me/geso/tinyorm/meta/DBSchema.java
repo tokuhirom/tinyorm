@@ -4,7 +4,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import lombok.extern.slf4j.Slf4j;
 import me.geso.tinyorm.Row;
-import me.geso.tinyorm.trigger.BeforeInsertHandler;
 import me.geso.tinyorm.trigger.BeforeUpdateHandler;
 import me.geso.tinyorm.trigger.Deflater;
 import me.geso.tinyorm.trigger.Inflater;

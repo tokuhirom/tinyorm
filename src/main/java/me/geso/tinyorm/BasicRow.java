@@ -189,20 +189,10 @@ public abstract class BasicRow<Impl extends Row> implements Row {
 				return; // There is no updates.
 			}
 			tableMeta.invokeBeforeUpdateTriggers(stmt);
-			this.BEFORE_UPDATE(stmt);
 			stmt.execute();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	/**
-	 * Here is a hook point when updating row.
-	 * 
-	 * @param stmt
-	 */
-	// TODO remove me
-	public void BEFORE_UPDATE(UpdateRowStatement stmt) {
 	}
 
 	private String quoteIdentifier(String identifier) {

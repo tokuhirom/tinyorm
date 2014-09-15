@@ -21,9 +21,9 @@ public class Member extends BasicRow<Member> {
 	@Column
 	private String name;
 
-	@Column @CreatedTimestampColumn
+	@CreatedTimestampColumn
 	private long createdOn;
-	@Column @UpdatedTimestampColumn
+	@UpdatedTimestampColumn
 	private long updatedOn;
 
 	public void setId(long id) {
@@ -40,13 +40,6 @@ public class Member extends BasicRow<Member> {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	// hook.
-	@Override
-	public void BEFORE_UPDATE(UpdateRowStatement stmt) {
-		this.updatedOn = System.currentTimeMillis() / 1000;
-		stmt.set("updatedOn", this.updatedOn);
 	}
 
 	public long getCreatedOn() {
