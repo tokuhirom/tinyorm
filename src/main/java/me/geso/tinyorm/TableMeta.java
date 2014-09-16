@@ -65,7 +65,8 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	public static TableMeta build(Class<?> rowClass) throws IntrospectionException {
+	public static TableMeta build(Class<?> rowClass)
+			throws IntrospectionException {
 		BeanInfo beanInfo = Introspector.getBeanInfo(rowClass, Object.class);
 		PropertyDescriptor[] propertyDescriptors = beanInfo
 				.getPropertyDescriptors();
@@ -275,10 +276,15 @@ public class TableMeta {
 			writeMethod.invoke(row, value);
 		} catch (NullPointerException | IllegalAccessException
 				| IllegalArgumentException | InvocationTargetException e) {
-			log.error("{}: {}, {}, {}, {}, {}, valueClass:{}", e.getClass(),
+			log.error("Error:{}: table: {}, column: {}, writeMethod:{}, valueClass:{}, value:{}, row:{}",
+					e.getClass(),
 					this.getName(),
-					row, columnName, writeMethod.getName(), value,
-					value == null ? null : value.getClass());
+					columnName,
+					writeMethod.getName(),
+					value == null ? null : value.getClass(),
+					value,
+					row.toString()
+					);
 			throw new RuntimeException(e);
 		}
 	}
