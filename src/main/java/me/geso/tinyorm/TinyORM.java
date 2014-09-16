@@ -103,7 +103,7 @@ public abstract class TinyORM {
 	}
 
 	/**
-	 * Search with SQL.
+	 * Search by SQL.
 	 * 
 	 */
 	public <T> List<T> searchBySQL(
@@ -137,32 +137,6 @@ public abstract class TinyORM {
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Select multiple rows from the database.
-	 */
-	public <T> List<T> search(Class<T> klass, String sql,
-			Object... params) {
-		try {
-			Connection connection = this.getConnection();
-			try (PreparedStatement preparedStatement = connection
-					.prepareStatement(sql)) {
-				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
-						params);
-				try (ResultSet rs = preparedStatement.executeQuery()) {
-					List<T> list = new ArrayList<>();
-					TableMeta tableMeta = this.getTableMeta(klass);
-					while (rs.next()) {
-						T row = this.mapRowFromResultSet(klass, rs, tableMeta);
-						list.add(row);
-					}
-					return list;
-				}
-			}
-		} catch (SQLException ex) {
-			throw new RuntimeException(ex);
 		}
 	}
 

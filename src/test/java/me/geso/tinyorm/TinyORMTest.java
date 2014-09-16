@@ -100,25 +100,6 @@ public class TinyORMTest extends TestBase {
 		assertEquals(got.getName(), "m2");
 	}
 
-	@SuppressWarnings("unused")
-	@Test
-	public void search() throws SQLException {
-		Member member1 = orm.insert(Member.class).value("name", "m1")
-				.executeSelect();
-		Member member2 = orm.insert(Member.class).value("name", "m2")
-				.executeSelect();
-		Member member3 = orm.insert(Member.class).value("name", "b1")
-				.executeSelect();
-
-		List<Member> got = orm
-				.search(Member.class,
-						"SELECT * FROM member WHERE name LIKE ? ORDER BY id DESC",
-						"m%");
-		assertEquals(got.size(), 2);
-		assertEquals(got.get(0).getName(), "m2");
-		assertEquals(got.get(1).getName(), "m1");
-	}
-
 	@Test
 	public void searchWithPager() throws SQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
