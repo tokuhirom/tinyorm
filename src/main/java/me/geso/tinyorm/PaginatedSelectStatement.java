@@ -7,8 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.geso.tinyorm.meta.TableMeta;
-
 public class PaginatedSelectStatement<T> extends
 		AbstractSelectStatement<T, PaginatedSelectStatement<T>> {
 

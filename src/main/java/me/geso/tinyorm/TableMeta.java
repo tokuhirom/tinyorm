@@ -1,4 +1,4 @@
-package me.geso.tinyorm.meta;
+package me.geso.tinyorm;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
@@ -21,15 +21,10 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import me.geso.tinyorm.InsertStatement;
-import me.geso.tinyorm.Query;
-import me.geso.tinyorm.TinyORM;
-import me.geso.tinyorm.UpdateRowStatement;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
@@ -47,9 +42,7 @@ import me.geso.tinyorm.trigger.Inflater;
 
 @Slf4j
 public class TableMeta {
-	@Getter
 	private final String name;
-	@Getter
 	private final List<PropertyDescriptor> primaryKeys;
 	private final Map<String, PropertyDescriptor> propertyDescriptorMap;
 	private final List<BeforeInsertHandler> beforeInsertHandlers;
@@ -202,7 +195,7 @@ public class TableMeta {
 	 * Add before insert handler<br>
 	 * This method may not thread safe.
 	 */
-	public void addBeforeInsertHandler(BeforeInsertHandler handler) {
+	void addBeforeInsertHandler(BeforeInsertHandler handler) {
 		this.beforeInsertHandlers.add(handler);
 	}
 
@@ -212,7 +205,7 @@ public class TableMeta {
 	 * 
 	 * @param handler
 	 */
-	public void addBeforeUpdateHandler(BeforeUpdateHandler handler) {
+	void addBeforeUpdateHandler(BeforeUpdateHandler handler) {
 		this.beforeUpdateHandlers.add(handler);
 	}
 
@@ -227,7 +220,7 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	public Map<String, Object> getColumnValueMap(Object row) {
+	Map<String, Object> getColumnValueMap(Object row) {
 		Map<String, Object> map = new LinkedHashMap<>(); // I guess it should be
 															// ordered.
 		try {
@@ -246,11 +239,11 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	public Map<String, Object> getPrimaryKeyValueMap(Object row) {
+	Map<String, Object> getPrimaryKeyValueMap(Object row) {
 		Map<String, Object> map = new LinkedHashMap<>(); // I guess it should be
 															// ordered.
 		try {
-			for (PropertyDescriptor pk : this.primaryKeys) {
+			for (PropertyDescriptor pk : this.getPrimaryKeys()) {
 				Method readMethod = pk.getReadMethod();
 				Object value = readMethod.invoke(row);
 				map.put(pk.getName(), value);
@@ -263,7 +256,7 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	public void setValue(Object row, String columnName, Object value) {
+	void setValue(Object row, String columnName, Object value) {
 		PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
 				.get(columnName);
 		if (propertyDescriptor == null) {
@@ -295,7 +288,7 @@ public class TableMeta {
 	 * Get a where clause that selects the row from table. This method throws
 	 * exception if the row doesn't have a primary key.
 	 */
-	public Query createWhereClauseFromRow(Object row, Connection connection) {
+	Query createWhereClauseFromRow(Object row, Connection connection) {
 		Map<String, Object> pkmap = this.getPrimaryKeyValueMap(row);
 		if (pkmap.isEmpty()) {
 			throw new RuntimeException(
@@ -374,6 +367,14 @@ public class TableMeta {
 		} else {
 			return value;
 		}
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public List<PropertyDescriptor> getPrimaryKeys() {
+		return primaryKeys;
 	}
 
 	@ToString

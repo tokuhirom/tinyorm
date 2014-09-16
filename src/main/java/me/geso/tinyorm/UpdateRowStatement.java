@@ -9,7 +9,6 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import lombok.ToString;
-import me.geso.tinyorm.meta.TableMeta;
 
 /**
  * UPDATE statement for one row.

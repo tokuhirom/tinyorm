@@ -8,7 +8,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import lombok.extern.slf4j.Slf4j;
-import me.geso.tinyorm.meta.DBSchema;
 
 /**
  *
@@ -47,16 +46,9 @@ public class TestBase {
 	}
 
 	public class ORM extends TinyORM {
-		private DBSchema schema = new DBSchema();
-
 		@Override
 		public Connection getConnection() {
 			return connection;
-		}
-
-		@Override
-		public DBSchema getSchema() {
-			return this.schema;
 		}
 	}
 

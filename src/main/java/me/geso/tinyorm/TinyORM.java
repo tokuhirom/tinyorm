@@ -17,10 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.concurrent.ConcurrentHashMap;
 
 import lombok.extern.slf4j.Slf4j;
-import me.geso.tinyorm.meta.DBSchema;
-import me.geso.tinyorm.meta.TableMeta;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -32,7 +31,7 @@ public abstract class TinyORM {
 
 	public abstract Connection getConnection();
 
-	public abstract DBSchema getSchema();
+	private static ConcurrentHashMap<Class<?>, TableMeta> tableMetaRegistry = new ConcurrentHashMap<>();
 
 	public <T> InsertStatement<T> insert(Class<T> klass) {
 		return new InsertStatement<>(this, klass, this.getTableMeta(klass));
@@ -282,10 +281,6 @@ public abstract class TinyORM {
 		}
 	}
 
-	private TableMeta getTableMeta(Class<?> klass) {
-		return this.getSchema().getTableMeta(klass);
-	}
-
 	public void delete(Object row) {
 		try {
 			Connection connection = this.getConnection();
@@ -357,4 +352,10 @@ public abstract class TinyORM {
 		}
 	}
 
+	public TableMeta getTableMeta(Class<?> klass) {
+		return tableMetaRegistry.computeIfAbsent(klass, key -> {
+			log.info("Loading {}", klass);
+			return TableMeta.build(klass);
+		});
+	}
 }

@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import lombok.SneakyThrows;
-import me.geso.tinyorm.meta.TableMeta;
 
 /**
  *

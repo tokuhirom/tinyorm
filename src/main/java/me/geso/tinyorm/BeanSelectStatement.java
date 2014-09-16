@@ -6,8 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
-import me.geso.tinyorm.meta.TableMeta;
-
 public class BeanSelectStatement<T> extends
 		AbstractSelectStatement<T, BeanSelectStatement<T>> {
 
