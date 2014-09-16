@@ -304,7 +304,7 @@ public abstract class TinyORM {
 				if (updated != 1) {
 					throw new RuntimeException("Cannot delete row: " + sql
 							+ " "
-							+ where.getValues());
+							+ where.getValues().toString());
 				}
 			}
 		} catch (SQLException ex) {
@@ -355,7 +355,11 @@ public abstract class TinyORM {
 	public TableMeta getTableMeta(Class<?> klass) {
 		return tableMetaRegistry.computeIfAbsent(klass, key -> {
 			log.info("Loading {}", klass);
-			return TableMeta.build(klass);
+			try {
+				return TableMeta.build(klass);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		});
 	}
 }

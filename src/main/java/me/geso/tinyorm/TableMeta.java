@@ -1,6 +1,7 @@
 package me.geso.tinyorm;
 
 import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
@@ -22,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import me.geso.tinyorm.annotations.BeforeInsert;
@@ -65,8 +65,7 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	@SneakyThrows
-	public static TableMeta build(Class<?> rowClass) {
+	public static TableMeta build(Class<?> rowClass) throws IntrospectionException {
 		BeanInfo beanInfo = Introspector.getBeanInfo(rowClass, Object.class);
 		PropertyDescriptor[] propertyDescriptors = beanInfo
 				.getPropertyDescriptors();

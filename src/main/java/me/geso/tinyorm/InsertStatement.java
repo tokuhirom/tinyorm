@@ -6,8 +6,10 @@
 package me.geso.tinyorm;
 
 import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import lombok.SneakyThrows;
 
 /**
  *
@@ -77,19 +77,23 @@ public class InsertStatement<T> {
 	 * @param valueBean
 	 * @return
 	 */
-	@SneakyThrows
 	public InsertStatement<T> valueByBean(Object valueBean) {
-		BeanInfo beanInfo = Introspector.getBeanInfo(valueBean.getClass(),
-				Object.class);
-		for (PropertyDescriptor propertyDescriptor : beanInfo
-				.getPropertyDescriptors()) {
-			Method readMethod = propertyDescriptor.getReadMethod();
-			if (readMethod != null) {
-				Object value = readMethod.invoke(valueBean);
-				this.value(propertyDescriptor.getName(), value);
+		try {
+			BeanInfo beanInfo = Introspector.getBeanInfo(valueBean.getClass(),
+					Object.class);
+			for (PropertyDescriptor propertyDescriptor : beanInfo
+					.getPropertyDescriptors()) {
+				Method readMethod = propertyDescriptor.getReadMethod();
+				if (readMethod != null) {
+					Object value = readMethod.invoke(valueBean);
+					this.value(propertyDescriptor.getName(), value);
+				}
 			}
+			return this;
+		} catch (IntrospectionException | IllegalAccessException
+				| IllegalArgumentException | InvocationTargetException e) {
+			throw new RuntimeException(e);
 		}
-		return this;
 	}
 
 	public String buildSQL() {
