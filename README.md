@@ -17,7 +17,8 @@ main/java/myapp/rows/Member.java
 
     @Table("member")
     @Data // lombok
-    public Member extends BasicRow<Member> {
+    @EqualsAndHashCode(callSuper = false)
+    public Member extends ActiveRecord<Member> {
       private long id;
       private String name;
     }
@@ -30,7 +31,9 @@ Create new database object.
 
 ### Selecting one row.
 
-  Optional<Member> member = db.single(Member.class).where("id=?", 1).execute();
+  Optional<Member> member = db.single(Member.class)
+      .where("id=?", 1)
+      .execute();
 
 ### Selecting rows.
 
@@ -40,7 +43,9 @@ Create new database object.
 
 ### Insert row
 
-  db.insert(Member.class).value("name", "John").execute();
+  db.insert(Member.class)
+    .value("name", "John")
+    .execute();
 
 ### Insert row with form class.
 
@@ -62,12 +67,18 @@ Create new database object.
 
   MemberUpdateForm form = new MemberUpdateForm();
   form.name = name;
-  Member member = db.single(Member.class).where("id=?", 1).execute().get();
+  Member member = db.single(Member.class)
+    .where("id=?", 1)
+    .execute()
+    .get();
   member.updateByBean(form);
 
 ### Delete row
 
-  Member member = db.single(Member.class).where("id=?", 1).execute().get();
+  Member member = db.single(Member.class)
+    .where("id=?", 1)
+    .execute()
+    .get();
   member.delete();
 
 ## HOOKS
