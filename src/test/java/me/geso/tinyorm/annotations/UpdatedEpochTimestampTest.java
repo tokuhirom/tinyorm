@@ -39,7 +39,9 @@ public class UpdatedEpochTimestampTest extends TestBase {
 		// updated updatedOn column
 		XForm form = new XForm();
 		form.setName("Taro");
-		created.updateByBean(form);
+		created.update()
+				.setBean(form)
+				.execute();
 		Optional<X> maybeUpdated = orm.refetch(created);
 		assertTrue(maybeUpdated.isPresent());
 		X updated = maybeUpdated.get();

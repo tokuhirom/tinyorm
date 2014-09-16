@@ -5,16 +5,12 @@
  */
 package me.geso.tinyorm;
 
-import java.beans.BeanInfo;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
@@ -153,56 +149,6 @@ public class TinyORM {
 		UpdateRowStatement stmt = new UpdateRowStatement(row,
 				this.getConnection(), tableMeta);
 		return stmt;
-	}
-
-	/**
-	 * Update row's properties by bean. And send UPDATE statement to the server.
-	 * 
-	 * @param bean
-	 */
-	void updateByBean(ActiveRecord<?> row, Object bean) {
-		TableMeta tableMeta = this.getTableMeta(row.getClass());
-		Map<String, Object> currentValueMap = tableMeta.getColumnValueMap(row);
-
-		try {
-			UpdateRowStatement stmt = new UpdateRowStatement(row,
-					this.getConnection(), tableMeta);
-			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(),
-					Object.class);
-			PropertyDescriptor[] propertyDescriptors = beanInfo
-					.getPropertyDescriptors();
-			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
-				String name = propertyDescriptor.getName();
-				if (!currentValueMap.containsKey(name)) {
-					// Ignore values doesn't exists in Row bean.
-					continue;
-				}
-
-				Object current = currentValueMap.get(name);
-				Object newval = propertyDescriptor.getReadMethod().invoke(bean);
-				if (newval != null) {
-					if (!newval.equals(current)) {
-						Object deflated = tableMeta.invokeDeflater(name,
-								newval);
-						stmt.set(name, deflated);
-					}
-				} else { // newval IS NULL.
-					if (current != null) {
-						stmt.set(name, null);
-					}
-				}
-			}
-			if (!stmt.hasSetClause()) {
-				if (log.isDebugEnabled()) {
-					log.debug("There is no modification: {} == {}",
-							currentValueMap.toString(), bean.toString());
-				}
-				return; // There is no updates.
-			}
-			stmt.execute();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	/**

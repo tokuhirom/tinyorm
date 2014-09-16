@@ -1,5 +1,10 @@
 package me.geso.tinyorm;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -9,6 +14,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * UPDATE statement for one row.
@@ -16,6 +22,7 @@ import lombok.ToString;
  * @author Tokuhiro Matsuno
  */
 @ToString
+@Slf4j
 public class UpdateRowStatement {
 
 	private final Object row;
@@ -34,8 +41,50 @@ public class UpdateRowStatement {
 		if (columnName == null) {
 			throw new IllegalArgumentException("Column name must not be null");
 		}
-		value = this.tableMeta.invokeDeflater(columnName, value);
+		if (value != null) {
+			value = this.tableMeta.invokeDeflater(columnName, value);
+		}
 		this.set.put(columnName, value);
+		return this;
+	}
+
+	public UpdateRowStatement setBean(Object bean) {
+		if (!this.set.isEmpty()) {
+			throw new RuntimeException(
+					"You can't call setBean() method the UpdateRowStatement has SET clause information.");
+		}
+		Map<String, Object> currentValueMap = tableMeta
+				.getColumnValueMap(this.row);
+
+		try {
+			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(),
+					Object.class);
+			PropertyDescriptor[] propertyDescriptors = beanInfo
+					.getPropertyDescriptors();
+			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
+				String name = propertyDescriptor.getName();
+				if (!currentValueMap.containsKey(name)) {
+					// Ignore values doesn't exists in Row bean.
+					continue;
+				}
+
+				Object current = currentValueMap.get(name);
+				Object newval = propertyDescriptor.getReadMethod().invoke(bean);
+				if (newval != null) {
+					if (!newval.equals(current)) {
+						this.set(name, newval);
+					}
+				} else { // newval IS NULL.
+					if (current != null) {
+						this.set(name, null);
+					}
+				}
+			}
+		} catch (IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException | IntrospectionException e) {
+			throw new RuntimeException(e);
+		}
+
 		return this;
 	}
 
@@ -49,6 +98,13 @@ public class UpdateRowStatement {
 	}
 
 	public void execute() {
+		if (!this.hasSetClause()) {
+			if (log.isDebugEnabled()) {
+				log.debug("There is no modification");
+			}
+			return; // There is no updates.
+		}
+
 		this.tableMeta.invokeBeforeUpdateTriggers(this);
 		String tableName = tableMeta.getName();
 

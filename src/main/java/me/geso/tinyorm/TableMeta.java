@@ -508,8 +508,8 @@ public class TableMeta {
 				return this.method.invoke(this.rowClass, value);
 			} catch (IllegalAccessException | IllegalArgumentException
 					| InvocationTargetException e) {
-				log.info("Can't invoke deflation method: {}",
-						method.toGenericString());
+				log.info("Can't invoke deflation method: {} with {}",
+						method.toGenericString(), value.getClass());
 				throw new RuntimeException(e);
 			}
 		}

@@ -26,12 +26,7 @@ public abstract class ActiveRecord<T extends ActiveRecord<?>> implements
 		return this.orm.refetch((T) this);
 	}
 
-	public void updateByBean(Object bean) {
-		checkORM();
-		this.orm.updateByBean(this, bean);
-	}
-
-	public UpdateRowStatement createUpdateStatement() {
+	public UpdateRowStatement update() {
 		checkORM();
 		return this.orm.createUpdateStatement(this);
 	}

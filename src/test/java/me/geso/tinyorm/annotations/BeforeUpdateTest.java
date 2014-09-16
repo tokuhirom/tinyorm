@@ -32,16 +32,18 @@ public class BeforeUpdateTest extends TestBase {
 				.executeSelect();
 		XForm xform = new XForm();
 		xform.setName("Ben");
-		created.updateByBean(xform);
+		created.update()
+				.setBean(xform)
+				.execute();
 		created = orm.refetch(created).get();
 		assertEquals("fuga", created.getY());
 	}
-	
+
 	@Data
 	public static final class XForm {
-		
+
 		private String name;
-		
+
 	}
 
 	@Slf4j
@@ -57,7 +59,7 @@ public class BeforeUpdateTest extends TestBase {
 
 		@Column
 		private String y;
-		
+
 		@BeforeUpdate
 		public static void beforeInsert(UpdateRowStatement stmt) {
 			log.info("BEFORE UPDATE");

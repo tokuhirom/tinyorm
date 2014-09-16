@@ -58,7 +58,9 @@ public class ActiveRecordTest extends TestBase {
 				.executeSelect();
 		MemberForm form = new MemberForm();
 		form.setName("hoge");
-		member2.updateByBean(form);
+		member2.update()
+				.setBean(form)
+				.execute();
 		Optional<Member> got = member2.refetch();
 		assertTrue(got.isPresent());
 		assertEquals("hoge", got.get().getName());
@@ -76,7 +78,7 @@ public class ActiveRecordTest extends TestBase {
 		Member member3 = orm.insert(Member.class)
 				.value("name", "Yuzo")
 				.executeSelect();
-		member2.createUpdateStatement()
+		member2.update()
 				.set("name", "hoge")
 				.execute();
 		Optional<Member> got = member2.refetch();

@@ -49,7 +49,9 @@ public class ListTest extends TestBase {
 			FooUpdateForm fooUpdateForm = new FooUpdateForm();
 			List<Integer> ints2 = Arrays.asList(123, 456);
 			fooUpdateForm.setCsvInt(ints2);
-			foo.updateByBean(fooUpdateForm);
+			foo.update()
+					.setBean(fooUpdateForm)
+					.execute();
 			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),
 					123);
 		}
@@ -59,7 +61,9 @@ public class ListTest extends TestBase {
 			FooUpdateForm fooUpdateForm = new FooUpdateForm();
 			List<Integer> ints2 = Arrays.asList(123, 456); // same as previous
 			fooUpdateForm.setCsvInt(ints2);
-			foo.updateByBean(fooUpdateForm);
+			foo.update()
+					.setBean(fooUpdateForm)
+					.execute();
 			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),
 					123);
 		}
@@ -81,7 +85,7 @@ public class ListTest extends TestBase {
 		// updateByBean
 		{
 			List<Integer> ints2 = Arrays.asList(123, 456);
-			foo.createUpdateStatement()
+			foo.update()
 					.set("csvInt", ints2)
 					.execute();
 			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),

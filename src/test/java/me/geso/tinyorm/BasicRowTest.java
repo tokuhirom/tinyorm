@@ -97,7 +97,9 @@ public class BasicRowTest extends TestBase {
 				.executeSelect();
 		XForm xform = new XForm();
 		xform.setName("Nick");
-		orm.updateByBean(member, xform);
+		member.update()
+			.setBean(xform)
+			.execute();;
 		assertEquals("Taro", orm.refetch(taro).get().getName()); // not modified.
 		assertEquals("Nick", orm.refetch(member).get().getName());
 	}
