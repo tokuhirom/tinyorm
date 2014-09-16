@@ -15,7 +15,7 @@ public class PaginatedSelectStatement<T> extends
 
 	PaginatedSelectStatement(Connection connection,
 			Class<T> klass, TableMeta tableMeta, TinyORM orm, long entriesPerPage) {
-		super(connection, tableMeta.getName(), klass);
+		super(connection, tableMeta.getName());
 		this.klass = klass;
 		this.orm = orm;
 		this.entriesPerPage = entriesPerPage;

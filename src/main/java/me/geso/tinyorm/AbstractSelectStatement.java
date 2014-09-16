@@ -9,17 +9,14 @@ public abstract class AbstractSelectStatement<T, Impl> {
 	private final List<String> orderBy = new ArrayList<>();
 	private final Connection connection;
 	private String tableName;
-	private Class<T> klass;
 	private List<String> whereQuery = new ArrayList<>();
 	private List<Object> whereParams = new ArrayList<>();
-	private  Long limit;
+	private Long limit;
 	private Long offset;
 
-	AbstractSelectStatement(Connection connection, String tableName,
-			Class<T> klass) {
+	AbstractSelectStatement(Connection connection, String tableName) {
 		this.connection = connection;
 		this.tableName = tableName;
-		this.klass = klass;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -30,17 +27,17 @@ public abstract class AbstractSelectStatement<T, Impl> {
 		}
 		return (Impl) this;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public Impl limit(long limit) {
 		this.limit = limit;
-		return (Impl)this;
+		return (Impl) this;
 	}
 
 	@SuppressWarnings("unchecked")
 	public Impl offset(long offset) {
 		this.offset = offset;
-		return (Impl)this;
+		return (Impl) this;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -75,7 +72,7 @@ public abstract class AbstractSelectStatement<T, Impl> {
 		}
 		return new Query(buf.toString(), params);
 	}
-	
+
 	Connection getConnection() {
 		return this.connection;
 	}

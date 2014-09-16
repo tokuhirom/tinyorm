@@ -15,7 +15,7 @@ public class BeanSelectStatement<T> extends
 
 	BeanSelectStatement(Connection connection,
 			Class<T> klass, TableMeta tableMeta, TinyORM orm) {
-		super(connection, tableMeta.getName(), klass);
+		super(connection, tableMeta.getName());
 		this.tableMeta = tableMeta;
 		this.orm = orm;
 		this.klass = klass;
