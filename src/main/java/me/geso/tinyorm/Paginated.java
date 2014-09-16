@@ -35,13 +35,9 @@ public class Paginated<T> {
 	}
 
 	/**
-	 * Create new Paginated instance with row object mapping.
+	 * Create new Paginated instance with row object mapping.<br>
 	 * 
-	 * <pre>
-	 * <code>
-	 * 	paginated.mapRows(row -> row.toJTO());
-	 * </code>
-	 * </pre>
+	 * {@code paginated.mapRows(row -> row.toJTO());}
 	 * 
 	 * @param f
 	 * @return

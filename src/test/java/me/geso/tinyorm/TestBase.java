@@ -9,10 +9,6 @@ import java.sql.SQLException;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- *
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
- */
 @Slf4j
 public class TestBase {
 

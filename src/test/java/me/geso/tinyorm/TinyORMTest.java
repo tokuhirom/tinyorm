@@ -17,10 +17,6 @@ import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- *
- * @author Tokuhiro Matsuno <tokuhirom@gmail.com>
- */
 public class TinyORMTest extends TestBase {
 
 	@Before

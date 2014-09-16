@@ -6,14 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * <pre>
- * <code>
- * 		@BeforeInsert
+ * <pre>{@code
+ * 		{@literal @}BeforeInsert
  * 		public static void beforeInsert(InsertStatement<Row> statement) {
  * 			stmt.value("y", "fill");
  * 		}
- * 		</code>
- * </pre>
+ * }</pre>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

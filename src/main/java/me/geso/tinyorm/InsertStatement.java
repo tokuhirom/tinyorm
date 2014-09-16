@@ -49,7 +49,7 @@ public class InsertStatement<T> {
 	/**
 	 * Add new value.
 	 * 
-	 * @param column
+	 * @param columnName
 	 * @param value
 	 * @return
 	 */
