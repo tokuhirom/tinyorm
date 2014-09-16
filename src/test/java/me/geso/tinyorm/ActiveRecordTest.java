@@ -96,12 +96,11 @@ public class ActiveRecordTest extends TestBase {
 		Member member3 = orm.insert(Member.class)
 				.value("name", "Yuzo")
 				.executeSelect();
-		member2.createUpdateStatement()
-				.set("name", "hoge")
-				.execute();
+		member2.delete();
 		Optional<Member> got = member2.refetch();
-		assertTrue(got.isPresent());
-		assertEquals("hoge", got.get().getName());
+		assertTrue(member1.refetch().isPresent());
+		assertFalse(member2.refetch().isPresent());
+		assertTrue(member3.refetch().isPresent());
 	}
 
 	@Table("member")
