@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class AbstractSelectStatement<T extends Row, Impl> {
+public abstract class AbstractSelectStatement<T, Impl> {
 	private final List<String> orderBy = new ArrayList<>();
 	protected final Connection connection;
 	private String tableName;

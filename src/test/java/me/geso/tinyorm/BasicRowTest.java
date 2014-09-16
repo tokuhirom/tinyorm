@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
@@ -42,33 +41,33 @@ public class BasicRowTest extends TestBase {
 		assertEquals(x.getId(), 1);
 		assertEquals("inserted", x.getY());
 
-		x.createUpdateStatement()
+		orm.createUpdateStatement(x)
 				.set("name", "Taro")
 				.execute();
 		;
-		X refetched = x.refetch().get();
+		X refetched = orm.refetch(x).get();
 		assertEquals("Taro", refetched.getName());
 		assertEquals(1, refetched.getId());
 		assertEquals("updated", refetched.getY());
 	}
 
-	@Test
-	public void testWhere() {
-		thrownLike(() -> {
-			X x = new X();
-			x.setConnection(connection);
-			x.setTableMeta(orm.getSchema().getTableMeta(X.class));
-			Query where = x.where();
-			System.out.println(where);
-		}, "Primary key should not be zero");
-	}
+//	@Test
+//	public void testWhere() {
+//		thrownLike(() -> {
+//			X x = new X();
+//			x.setConnection(connection);
+//			x.setTableMeta(orm.getSchema().getTableMeta(X.class));
+//			Query where = x.where();
+//			System.out.println(where);
+//		}, "Primary key should not be zero");
+//	}
 
 	@Test
 	public void testRefetch() throws SQLException {
 		X x = orm.insert(X.class)
 				.value("name", "John")
 				.executeSelect();
-		Optional<X> refetched = x.refetch();
+		Optional<X> refetched = orm.refetch(x);
 		assertEquals(refetched.get().getName(), "John");
 	}
 
@@ -79,11 +78,11 @@ public class BasicRowTest extends TestBase {
 
 		X john = orm.insert(X.class).value("name", "John")
 				.executeSelect();
-		john.delete();
+		orm.delete(john);
 		long count = orm.selectLong("SELECT COUNT(*) FROM x").getAsLong();
 		assertEquals(1, count);
-		assertTrue(taro.refetch().isPresent());
-		assertFalse(john.refetch().isPresent());
+		assertTrue(orm.refetch(taro).isPresent());
+		assertFalse(orm.refetch(john).isPresent());
 	}
 
 	@Test
@@ -96,15 +95,14 @@ public class BasicRowTest extends TestBase {
 				.executeSelect();
 		XForm xform = new XForm();
 		xform.setName("Nick");
-		member.updateByBean(xform);
-		assertEquals("Taro", taro.refetch().get().getName()); // not modified.
-		assertEquals("Nick", member.refetch().get().getName());
+		orm.updateByBean(member, xform);
+		assertEquals("Taro", orm.refetch(taro).get().getName()); // not modified.
+		assertEquals("Nick", orm.refetch(member).get().getName());
 	}
 
 	@Data
 	@Table("x")
-	@EqualsAndHashCode(callSuper = false)
-	public static class X extends BasicRow<X> {
+	public static class X {
 		@PrimaryKey
 		long id;
 		@Column
@@ -113,7 +111,7 @@ public class BasicRowTest extends TestBase {
 		String y;
 
 		@BeforeInsert
-		public static void fillYBeforeInsert(InsertStatement<Row> stmt) {
+		public static void fillYBeforeInsert(InsertStatement<X> stmt) {
 			stmt.value("y", "inserted");
 		}
 

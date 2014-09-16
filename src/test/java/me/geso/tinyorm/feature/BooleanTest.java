@@ -6,7 +6,6 @@ import java.sql.SQLException;
 
 import org.junit.Test;
 
-import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -26,7 +25,6 @@ public class BooleanTest extends TestBase {
 				.prepareStatement(
 						"CREATE TABLE b (id int unsigned not null auto_increment primary key, c boolean)")
 				.executeUpdate();
-		orm.getSchema().loadClass(B.class);
 
 		{
 			BForm bform = new BForm();
@@ -42,7 +40,7 @@ public class BooleanTest extends TestBase {
 		}
 	}
 
-	public static class BForm extends BasicRow<B> {
+	public static class BForm {
 		private boolean c;
 
 		public boolean isC() {
@@ -55,7 +53,7 @@ public class BooleanTest extends TestBase {
 	}
 
 	@Table("b")
-	public static class B extends BasicRow<B> {
+	public static class B {
 		@PrimaryKey
 		private long id;
 

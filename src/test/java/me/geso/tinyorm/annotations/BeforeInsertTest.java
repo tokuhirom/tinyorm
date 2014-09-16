@@ -5,11 +5,8 @@ import static org.junit.Assert.*;
 import java.sql.SQLException;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.InsertStatement;
-import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 
 import org.junit.Test;
@@ -26,7 +23,6 @@ public class BeforeInsertTest extends TestBase {
 				.prepareStatement(
 						"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, y VARCHAR(255) NOT NULL)")
 				.executeUpdate();
-		orm.getSchema().loadClass(X.class);
 		X created = orm.insert(X.class)
 				.value("name", "John")
 				.executeSelect();
@@ -36,8 +32,7 @@ public class BeforeInsertTest extends TestBase {
 	@Slf4j
 	@Data
 	@Table("x")
-	@EqualsAndHashCode(callSuper=false)
-	public static class X extends BasicRow<X> {
+	public static class X {
 		@PrimaryKey
 		private long id;
 
@@ -48,7 +43,7 @@ public class BeforeInsertTest extends TestBase {
 		private String y;
 		
 		@BeforeInsert
-		public static void beforeInsert(InsertStatement<Row> stmt) {
+		public static void beforeInsert(InsertStatement<X> stmt) {
 			log.info("BEFORE INSERT");
 			stmt.value("y", "hoge");
 		}

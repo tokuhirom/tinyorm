@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.Deflate;
@@ -34,9 +33,6 @@ public class ListTest extends TestBase {
 
 	@Test
 	public void testFoo() throws SQLException {
-		DBSchema schema = new DBSchema();
-		schema.loadClass(Foo.class);
-
 		List<Integer> ints = Arrays.asList(5963, 4649);
 		List<String> strings = Arrays.asList("John", "Manjiro");
 		Foo foo = this.orm.insert(Foo.class).value("csvInt", ints)
@@ -53,8 +49,8 @@ public class ListTest extends TestBase {
 			FooUpdateForm fooUpdateForm = new FooUpdateForm();
 			List<Integer> ints2 = Arrays.asList(123, 456);
 			fooUpdateForm.setCsvInt(ints2);
-			foo.updateByBean(fooUpdateForm);
-			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(), 123);
+			orm.updateByBean(foo, fooUpdateForm);
+			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(), 123);
 		}
 
 		// updateByBean(no UPDATE query required. Because the data set is same)
@@ -62,8 +58,8 @@ public class ListTest extends TestBase {
 			FooUpdateForm fooUpdateForm = new FooUpdateForm();
 			List<Integer> ints2 = Arrays.asList(123, 456); // same as previous
 			fooUpdateForm.setCsvInt(ints2);
-			foo.updateByBean(fooUpdateForm);
-			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(), 123);
+			orm.updateByBean(foo, fooUpdateForm);
+			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(), 123);
 		}
 	}
 
@@ -80,7 +76,7 @@ public class ListTest extends TestBase {
 	}
 
 	@Table("foo")
-	public static class Foo extends BasicRow<Foo> {
+	public static class Foo {
 		@PrimaryKey
 		private long id;
 		@Column

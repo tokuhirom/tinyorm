@@ -6,8 +6,6 @@ import java.beans.PropertyDescriptor;
 import java.util.List;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -31,8 +29,7 @@ public class TableMetaTest {
 
 	@Table("member")
 	@Data
-	@EqualsAndHashCode(callSuper = false)
-	public class Member extends BasicRow<Member> {
+	public class Member {
 		@PrimaryKey
 		private long id;
 		@Column

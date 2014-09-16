@@ -9,11 +9,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,7 +27,8 @@ import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import me.geso.tinyorm.InsertStatement;
-import me.geso.tinyorm.Row;
+import me.geso.tinyorm.Query;
+import me.geso.tinyorm.TinyORM;
 import me.geso.tinyorm.UpdateRowStatement;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
@@ -70,7 +73,7 @@ public class TableMeta {
 
 	// Internal use.
 	@SneakyThrows
-	public static TableMeta build(Class<? extends Row> rowClass) {
+	public static TableMeta build(Class<?> rowClass) {
 		BeanInfo beanInfo = Introspector.getBeanInfo(rowClass, Object.class);
 		PropertyDescriptor[] propertyDescriptors = beanInfo
 				.getPropertyDescriptors();
@@ -214,7 +217,7 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	private static String getTableName(Class<? extends Row> rowClass) {
+	private static String getTableName(Class<?> rowClass) {
 		Table table = rowClass.getAnnotation(Table.class);
 		if (table == null) {
 			throw new RuntimeException("Missing @Table annotation");
@@ -224,7 +227,7 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	public Map<String, Object> getColumnValueMap(Row row) {
+	public Map<String, Object> getColumnValueMap(Object row) {
 		Map<String, Object> map = new LinkedHashMap<>(); // I guess it should be
 															// ordered.
 		try {
@@ -243,7 +246,7 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	public Map<String, Object> getPrimaryKeyValueMap(Row row) {
+	public Map<String, Object> getPrimaryKeyValueMap(Object row) {
 		Map<String, Object> map = new LinkedHashMap<>(); // I guess it should be
 															// ordered.
 		try {
@@ -260,7 +263,7 @@ public class TableMeta {
 	}
 
 	// Internal use.
-	public void setValue(Row row, String columnName, Object value) {
+	public void setValue(Object row, String columnName, Object value) {
 		PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
 				.get(columnName);
 		if (propertyDescriptor == null) {
@@ -285,6 +288,57 @@ public class TableMeta {
 					row, columnName, writeMethod.getName(), value,
 					value == null ? null : value.getClass());
 			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Get a where clause that selects the row from table. This method throws
+	 * exception if the row doesn't have a primary key.
+	 */
+	public Query createWhereClauseFromRow(Object row, Connection connection) {
+		Map<String, Object> pkmap = this.getPrimaryKeyValueMap(row);
+		if (pkmap.isEmpty()) {
+			throw new RuntimeException(
+					"You can't delete row, doesn't have a primary keys.");
+		}
+
+		String sql = pkmap.keySet().stream().map(it
+				-> "(" + TinyORM.quoteIdentifier(it, connection) + "=?)"
+				).collect(Collectors.joining(" AND "));
+		List<Object> vars = pkmap.values().stream()
+				.collect(Collectors.toList());
+		this.validatePrimaryKeysForSelect(vars);
+		return new Query(sql, vars);
+	}
+
+	/**
+	 * This method validates primary keys for SELECT row from the table. You can
+	 * override this method.
+	 * 
+	 * If you detected primary key constraints violation, you can throw the
+	 * RuntimeException.
+	 */
+	protected void validatePrimaryKeysForSelect(List<Object> values) {
+		for (Object value : values) {
+			if (value == null) {
+				throw new RuntimeException("Primary key should not be null: "
+						+ this);
+			}
+		}
+
+		/*
+		 * 0 is a valid value for primary key. But, normally, it's just a bug.
+		 * If you want to use 0 as a primary key value, please overwrite this
+		 * method.
+		 */
+		if (values.size() == 1) {
+			Object value = values.get(0);
+			if ((value instanceof Integer && (((Integer) value) == 0))
+					|| (value instanceof Long && (((Long) value) == 0))
+					|| (value instanceof Short && (((Short) value) == 0))) {
+				throw new RuntimeException("Primary key should not be zero: "
+						+ value);
+			}
 		}
 	}
 
@@ -362,9 +416,9 @@ public class TableMeta {
 	@ToString
 	static class BeforeInsertMethodTrigger implements BeforeInsertHandler {
 		private final Method method;
-		private final Class<? extends Row> rowClass;
+		private final Class<?> rowClass;
 
-		BeforeInsertMethodTrigger(final Class<? extends Row> rowClass,
+		BeforeInsertMethodTrigger(final Class<?> rowClass,
 				final Method method) {
 			this.method = method;
 			this.rowClass = rowClass;
@@ -384,9 +438,9 @@ public class TableMeta {
 	@ToString
 	static class BeforeUpdateMethodTrigger implements BeforeUpdateHandler {
 		private final Method method;
-		private final Class<? extends Row> rowClass;
+		private final Class<?> rowClass;
 
-		BeforeUpdateMethodTrigger(final Class<? extends Row> rowClass,
+		BeforeUpdateMethodTrigger(final Class<?> rowClass,
 				final Method method) {
 			this.method = method;
 			this.rowClass = rowClass;
@@ -407,9 +461,9 @@ public class TableMeta {
 	@ToString
 	static class MethodInflater implements Inflater {
 		private final Method method;
-		private final Class<? extends Row> rowClass;
+		private final Class<?> rowClass;
 
-		public MethodInflater(Class<? extends Row> rowClass, Method method) {
+		public MethodInflater(Class<?> rowClass, Method method) {
 			this.rowClass = rowClass;
 			this.method = method;
 		}
@@ -431,9 +485,9 @@ public class TableMeta {
 	@ToString
 	static class MethodDeflater implements Deflater {
 		private final Method method;
-		private final Class<? extends Row> rowClass;
+		private final Class<?> rowClass;
 
-		public MethodDeflater(Class<? extends Row> rowClass,
+		public MethodDeflater(Class<?> rowClass,
 				@NonNull Method method) {
 			this.rowClass = rowClass;
 			this.method = method;
@@ -454,12 +508,12 @@ public class TableMeta {
 
 	@ToString
 	static class JsonInflater implements Inflater {
-		private final Class<? extends Row> rowClass;
+		private final Class<?> rowClass;
 		private final PropertyDescriptor propertyDescriptor;
 		private final JavaType javaType;
 		private final ObjectMapper mapper = new ObjectMapper();
 
-		JsonInflater(Class<? extends Row> rowClass,
+		JsonInflater(Class<?> rowClass,
 				PropertyDescriptor propertyDescriptor, JavaType javaType) {
 			this.rowClass = rowClass;
 			this.propertyDescriptor = propertyDescriptor;
@@ -483,12 +537,12 @@ public class TableMeta {
 
 	@ToString
 	static class JsonDeflater implements Deflater {
-		private final Class<? extends Row> rowClass;
+		private final Class<?> rowClass;
 		private final PropertyDescriptor propertyDescriptor;
 		private final JavaType javaType;
 		private final ObjectMapper mapper = new ObjectMapper();
 
-		JsonDeflater(Class<? extends Row> rowClass,
+		JsonDeflater(Class<?> rowClass,
 				PropertyDescriptor propertyDescriptor, JavaType javaType) {
 			this.rowClass = rowClass;
 			this.propertyDescriptor = propertyDescriptor;

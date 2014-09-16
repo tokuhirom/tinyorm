@@ -5,15 +5,20 @@
  */
 package me.geso.tinyorm;
 
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+import lombok.extern.slf4j.Slf4j;
 import me.geso.tinyorm.meta.DBSchema;
 import me.geso.tinyorm.meta.TableMeta;
 
@@ -22,20 +27,21 @@ import me.geso.tinyorm.meta.TableMeta;
  * 
  * @author Tokuhiro Matsuno
  */
+@Slf4j
 public abstract class TinyORM {
 
 	public abstract Connection getConnection();
 
 	public abstract DBSchema getSchema();
 
-	public <T extends Row> InsertStatement<T> insert(Class<T> klass) {
+	public <T> InsertStatement<T> insert(Class<T> klass) {
 		return new InsertStatement<>(this, klass, this.getTableMeta(klass));
 	}
 
 	/**
 	 * Select one row from the database.
 	 */
-	public <T extends Row> Optional<T> single(Class<T> klass, String sql,
+	public <T> Optional<T> single(Class<T> klass, String sql,
 			Object... params) {
 		try {
 			Connection connection = this.getConnection();
@@ -66,7 +72,7 @@ public abstract class TinyORM {
 	 *            Target entity class.
 	 * @return
 	 */
-	public <T extends Row> BeanSelectStatement<T> single(Class<T> klass) {
+	public <T> BeanSelectStatement<T> single(Class<T> klass) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return new BeanSelectStatement<>(this.getConnection(),
 				klass, tableMeta);
@@ -79,7 +85,7 @@ public abstract class TinyORM {
 	 *            Target entity class.
 	 * @return
 	 */
-	public <T extends Row> ListSelectStatement<T> search(Class<T> klass) {
+	public <T> ListSelectStatement<T> search(Class<T> klass) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return new ListSelectStatement<>(this.getConnection(),
 				klass, tableMeta);
@@ -91,7 +97,7 @@ public abstract class TinyORM {
 	 * @param klass
 	 * @return
 	 */
-	public <T extends Row> PaginatedSelectStatement<T> searchWithPager(
+	public <T> PaginatedSelectStatement<T> searchWithPager(
 			Class<T> klass) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return new PaginatedSelectStatement<>(this.getConnection(),
@@ -101,7 +107,7 @@ public abstract class TinyORM {
 	/**
 	 * Select multiple rows from the database.
 	 */
-	public <T extends Row> List<T> search(Class<T> klass, String sql,
+	public <T> List<T> search(Class<T> klass, String sql,
 			Object... params) {
 		try {
 			Connection connection = this.getConnection();
@@ -124,6 +130,65 @@ public abstract class TinyORM {
 			throw new RuntimeException(ex);
 		}
 	}
+
+	public UpdateRowStatement createUpdateStatement(Object row) {
+		TableMeta tableMeta = this.getTableMeta(row.getClass());
+		UpdateRowStatement stmt = new UpdateRowStatement(row,
+				this.getConnection(), tableMeta);
+		return stmt;
+	}
+
+	/**
+	 * Update row's properties by bean. And send UPDATE statement to the server.
+	 * 
+	 * @param bean
+	 */
+	public void updateByBean(Object row, Object bean) {
+		TableMeta tableMeta = this.getTableMeta(row.getClass());
+		Map<String, Object> currentValueMap = tableMeta.getColumnValueMap(row);
+
+		try {
+			UpdateRowStatement stmt = new UpdateRowStatement(row,
+					this.getConnection(), tableMeta);
+			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(),
+					Object.class);
+			PropertyDescriptor[] propertyDescriptors = beanInfo
+					.getPropertyDescriptors();
+			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
+				String name = propertyDescriptor.getName();
+				if (!currentValueMap.containsKey(name)) {
+					continue;
+				}
+
+				Object current = currentValueMap.get(name);
+				Object newval = propertyDescriptor.getReadMethod().invoke(bean);
+				if (newval != null) {
+					if (!newval.equals(current)) {
+						Object deflated = tableMeta.invokeDeflaters(name,
+								newval);
+						stmt.set(name, deflated);
+						tableMeta.setValue(row, name, newval);
+					}
+				} else { // newval IS NULL.
+					if (current != null) {
+						stmt.set(name, null);
+						tableMeta.setValue(row, name, null);
+					}
+				}
+			}
+			if (!stmt.hasSetClause()) {
+				if (log.isDebugEnabled()) {
+					log.debug("There is no modification: {} == {}",
+							currentValueMap.toString(), bean.toString());
+				}
+				return; // There is no updates.
+			}
+			stmt.execute();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
@@ -175,7 +240,7 @@ public abstract class TinyORM {
 		}
 	}
 
-	static <T extends Row> T mapResultSet(Class<T> klass, ResultSet rs,
+	static <T> T mapResultSet(Class<T> klass, ResultSet rs,
 			Connection connection, TableMeta tableMeta) {
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
@@ -186,8 +251,6 @@ public abstract class TinyORM {
 				value = tableMeta.invokeInflaters(columnName, value);
 				tableMeta.setValue(row, columnName, value);
 			}
-			row.setConnection(connection);
-			row.setTableMeta(tableMeta);
 			return row;
 		} catch (SQLException | InstantiationException | IllegalAccessException e) {
 			throw new RuntimeException(e);
@@ -216,8 +279,79 @@ public abstract class TinyORM {
 		}
 	}
 
-	private TableMeta getTableMeta(Class<? extends Row> klass) {
+	private TableMeta getTableMeta(Class<?> klass) {
 		return this.getSchema().getTableMeta(klass);
+	}
+
+	public void delete(Object row) {
+		try {
+			Connection connection = this.getConnection();
+			TableMeta tableMeta = this.getTableMeta(row.getClass());
+			String tableName = tableMeta.getName();
+			Query where = tableMeta.createWhereClauseFromRow(row, connection);
+
+			StringBuilder buf = new StringBuilder();
+			buf.append("DELETE FROM ")
+					.append(TinyORM.quoteIdentifier(tableName, connection))
+					.append(" WHERE ");
+			buf.append(where.getSQL());
+			String sql = buf.toString();
+
+			try (PreparedStatement preparedStatement = connection
+					.prepareStatement(sql)) {
+				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+						where.getValues());
+				int updated = preparedStatement
+						.executeUpdate();
+				if (updated != 1) {
+					throw new RuntimeException("Cannot delete row: " + sql
+							+ " "
+							+ where.getValues());
+				}
+			}
+		} catch (SQLException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	/**
+	 * Fetch the latest row data from database.
+	 * 
+	 * @return
+	 */
+	public <T> Optional<T> refetch(T row) {
+		Connection connection = this.getConnection();
+		TableMeta tableMeta = this.getTableMeta(row.getClass());
+		Query where = tableMeta.createWhereClauseFromRow(row, connection);
+
+		StringBuilder buf = new StringBuilder();
+		buf.append("SELECT * FROM ").append(
+				TinyORM.quoteIdentifier(tableMeta.getName(), connection));
+		buf.append(" WHERE ").append(where.getSQL());
+		String sql = buf.toString();
+
+		try {
+			Object[] params = where.getValues();
+			try (PreparedStatement preparedStatement = connection
+					.prepareStatement(sql)) {
+				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+						params);
+				try (ResultSet rs = preparedStatement
+						.executeQuery()) {
+					if (rs.next()) {
+						@SuppressWarnings("unchecked")
+						T refetched = TinyORM.mapResultSet(
+								(Class<T>) row.getClass(),
+								rs, connection, tableMeta);
+						return Optional.of(refetched);
+					} else {
+						return Optional.empty();
+					}
+				}
+			}
+		} catch (SQLException ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 
 }

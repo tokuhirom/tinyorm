@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
 
 import org.junit.Test;
@@ -27,13 +25,12 @@ public class JsonColumnTest extends TestBase {
 				.prepareStatement(
 						"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, propertiesDump LONGBLOB NOT NULL)")
 				.executeUpdate();
-		orm.getSchema().loadClass(X.class);
 		Map<String, String> map = new HashMap<>();
 		map.put("hoge", "fuga");
 		X created = orm.insert(X.class)
 				.value("propertiesDump", map)
 				.executeSelect();
-		created = created.refetch().get();
+		created = orm.refetch(created).get();
 		assertEquals("fuga", created.getPropertiesDump().get("hoge"));
 
 		ResultSet rs = orm.getConnection()
@@ -46,9 +43,8 @@ public class JsonColumnTest extends TestBase {
 	}
 
 	@Data
-	@EqualsAndHashCode(callSuper=false)
 	@Table("x")
-	public static class X extends BasicRow<X> {
+	public static class X {
 		@PrimaryKey
 		private long id;
 

@@ -6,8 +6,6 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
 
 import org.junit.Test;
@@ -24,7 +22,6 @@ public class UpdatedEpochTimestampTest extends TestBase {
 				.prepareStatement(
 						"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, updatedOn INT UNSIGNED)")
 				.executeUpdate();
-		orm.getSchema().loadClass(X.class);
 		X created = orm.insert(X.class)
 				.value("name", "John")
 				.executeSelect();
@@ -38,8 +35,8 @@ public class UpdatedEpochTimestampTest extends TestBase {
 		// updated updatedOn column
 		XForm form = new XForm();
 		form.setName("Taro");
-		created.updateByBean(form);
-		Optional<X> maybeUpdated = created.refetch();
+		orm.updateByBean(created, form);
+		Optional<X> maybeUpdated = orm.refetch(created);
 		assertTrue(maybeUpdated.isPresent());
 		X updated = maybeUpdated.get();
 		assertNotNull(updated);
@@ -49,8 +46,7 @@ public class UpdatedEpochTimestampTest extends TestBase {
 
 	@Data
 	@Table("x")
-	@EqualsAndHashCode(callSuper=false)
-	public static class X extends BasicRow<X> {
+	public static class X {
 		@PrimaryKey
 		private long id;
 

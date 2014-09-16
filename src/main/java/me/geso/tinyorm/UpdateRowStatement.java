@@ -19,13 +19,13 @@ import me.geso.tinyorm.meta.TableMeta;
 @ToString
 public class UpdateRowStatement {
 
-	private final Row row;
+	private final Object row;
 	private final Map<String, Object> set = new TreeMap<>();
 	private boolean executed = false;
 	private final Connection connection;
 	private final TableMeta tableMeta;
 
-	UpdateRowStatement(Row row, Connection connection, TableMeta tableMeta) {
+	UpdateRowStatement(Object row, Connection connection, TableMeta tableMeta) {
 		this.row = row;
 		this.connection = connection;
 		this.tableMeta = tableMeta;
@@ -52,7 +52,7 @@ public class UpdateRowStatement {
 		this.tableMeta.invokeBeforeUpdateTriggers(this);
 		String tableName = tableMeta.getName();
 
-		Query where = row.where();
+		Query where = tableMeta.createWhereClauseFromRow(row, connection);
 		String whereSQL = where.getSQL();
 		if (whereSQL.isEmpty()) {
 			throw new RuntimeException("Empty where clause");

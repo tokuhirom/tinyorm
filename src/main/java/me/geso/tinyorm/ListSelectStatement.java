@@ -9,7 +9,7 @@ import java.util.List;
 
 import me.geso.tinyorm.meta.TableMeta;
 
-public class ListSelectStatement<T extends Row> extends
+public class ListSelectStatement<T> extends
 		AbstractSelectStatement<T, ListSelectStatement<T>> {
 
 	private final TableMeta tableMeta;

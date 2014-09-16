@@ -1,13 +1,11 @@
 package me.geso.tinyorm.annotations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.sql.SQLException;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import me.geso.tinyorm.BasicRow;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.UpdateRowStatement;
 
@@ -25,15 +23,14 @@ public class BeforeUpdateTest extends TestBase {
 				.prepareStatement(
 						"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, y VARCHAR(255) NOT NULL)")
 				.executeUpdate();
-		orm.getSchema().loadClass(X.class);
 		X created = orm.insert(X.class)
 				.value("name", "John")
 				.value("y", "XXX")
 				.executeSelect();
 		XForm xform = new XForm();
 		xform.setName("Ben");
-		created.updateByBean(xform);
-		created = created.refetch().get();
+		orm.updateByBean(created, xform);
+		created = orm.refetch(created).get();
 		assertEquals("fuga", created.getY());
 	}
 	
@@ -47,8 +44,7 @@ public class BeforeUpdateTest extends TestBase {
 	@Slf4j
 	@Data
 	@Table("x")
-	@EqualsAndHashCode(callSuper=false)
-	public static class X extends BasicRow<X> {
+	public static class X  {
 		@PrimaryKey
 		private long id;
 

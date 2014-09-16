@@ -8,7 +8,7 @@ import java.util.Optional;
 
 import me.geso.tinyorm.meta.TableMeta;
 
-public class BeanSelectStatement<T extends Row> extends
+public class BeanSelectStatement<T> extends
 		AbstractSelectStatement<T, BeanSelectStatement<T>> {
 
 	private final TableMeta tableMeta;

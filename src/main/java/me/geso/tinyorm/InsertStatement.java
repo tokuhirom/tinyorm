@@ -26,7 +26,7 @@ import me.geso.tinyorm.meta.TableMeta;
  * @author Tokuhiro Matsuno
  * @param <T>
  */
-public class InsertStatement<T extends Row> {
+public class InsertStatement<T> {
 
 	// it should be ordered.
 	private final Map<String, Object> values = new LinkedHashMap<>();

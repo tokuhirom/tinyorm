@@ -9,7 +9,7 @@ import java.util.List;
 
 import me.geso.tinyorm.meta.TableMeta;
 
-public class PaginatedSelectStatement<T extends Row> extends
+public class PaginatedSelectStatement<T> extends
 		AbstractSelectStatement<T, PaginatedSelectStatement<T>> {
 
 	private final TableMeta tableMeta;
