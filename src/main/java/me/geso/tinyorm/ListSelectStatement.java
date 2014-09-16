@@ -13,6 +13,7 @@ public class ListSelectStatement<T> extends
 	private final TableMeta tableMeta;
 	private final TinyORM orm;
 	private final Class<T> klass;
+	private final Connection connection;
 
 	ListSelectStatement(Connection connection,
 			Class<T> klass, TableMeta tableMeta, TinyORM orm) {
@@ -20,12 +21,12 @@ public class ListSelectStatement<T> extends
 		this.tableMeta = tableMeta;
 		this.orm = orm;
 		this.klass = klass;
+		this.connection = connection;
 	}
 
 	public List<T> execute() {
 		Query query = this.buildQuery();
-		Connection connection = this.getConnection();
-		try (PreparedStatement preparedStatement = connection
+		try (PreparedStatement preparedStatement = this.connection
 				.prepareStatement(query.getSQL())) {
 			TinyORMUtil.fillPreparedStatementParams(preparedStatement,
 					query.getValues());

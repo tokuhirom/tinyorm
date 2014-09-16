@@ -12,6 +12,7 @@ public class BeanSelectStatement<T> extends
 	private final TableMeta tableMeta;
 	private final TinyORM orm;
 	private final Class<T> klass;
+	private final Connection connection;
 
 	BeanSelectStatement(Connection connection,
 			Class<T> klass, TableMeta tableMeta, TinyORM orm) {
@@ -19,6 +20,7 @@ public class BeanSelectStatement<T> extends
 		this.tableMeta = tableMeta;
 		this.orm = orm;
 		this.klass = klass;
+		this.connection = connection;
 	}
 
 	public Optional<T> execute() {
@@ -26,8 +28,7 @@ public class BeanSelectStatement<T> extends
 		try {
 			String sql = query.getSQL();
 			Object[] params= query.getValues();
-			Connection connection = this.getConnection();
-			try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+			try (PreparedStatement preparedStatement = this.connection.prepareStatement(sql)) {
 				TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					if (rs.next()) {

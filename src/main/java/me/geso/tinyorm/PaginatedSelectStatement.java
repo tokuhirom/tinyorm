@@ -12,6 +12,7 @@ public class PaginatedSelectStatement<T> extends
 	private final TinyORM orm;
 	private final long entriesPerPage;
 	private final Class<T> klass;
+	private final Connection connection;
 
 	PaginatedSelectStatement(Connection connection,
 			Class<T> klass, TableMeta tableMeta, TinyORM orm, long entriesPerPage) {
@@ -19,13 +20,13 @@ public class PaginatedSelectStatement<T> extends
 		this.klass = klass;
 		this.orm = orm;
 		this.entriesPerPage = entriesPerPage;
+		this.connection = connection;
 	}
 
 	public Paginated<T> execute() {
 		Query query = this.limit(entriesPerPage + 1).buildQuery();
 		try {
-			Connection connection = this.getConnection();
-			try (PreparedStatement preparedStatement = connection
+			try (PreparedStatement preparedStatement = this.connection
 					.prepareStatement(query.getSQL())) {
 				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
 						query.getValues());

@@ -1,22 +1,27 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class AbstractSelectStatement<T, Impl> {
+	private final String tableName;
+	private final String identifierQuoteString;
+	private final List<String> whereQuery = new ArrayList<>();
+	private final List<Object> whereParams = new ArrayList<>();
 	private final List<String> orderBy = new ArrayList<>();
-	private final Connection connection;
-	private String tableName;
-	private List<String> whereQuery = new ArrayList<>();
-	private List<Object> whereParams = new ArrayList<>();
 	private Long limit;
 	private Long offset;
 
 	AbstractSelectStatement(Connection connection, String tableName) {
-		this.connection = connection;
 		this.tableName = tableName;
+		try {
+			this.identifierQuoteString = connection.getMetaData().getIdentifierQuoteString();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -50,7 +55,7 @@ public abstract class AbstractSelectStatement<T, Impl> {
 		List<Object> params = new ArrayList<>();
 		StringBuilder buf = new StringBuilder();
 		buf.append("SELECT * FROM ").append(
-				TinyORM.quoteIdentifier(tableName, connection));
+				TinyORM.quoteIdentifier(tableName, this.identifierQuoteString));
 		if (whereQuery != null && !whereQuery.isEmpty()) {
 			buf.append(" WHERE ");
 			buf.append(whereQuery.stream()
@@ -71,9 +76,5 @@ public abstract class AbstractSelectStatement<T, Impl> {
 			buf.append(this.offset);
 		}
 		return new Query(buf.toString(), params);
-	}
-
-	Connection getConnection() {
-		return this.connection;
 	}
 }
