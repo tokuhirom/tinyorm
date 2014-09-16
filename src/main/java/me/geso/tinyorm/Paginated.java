@@ -1,5 +1,7 @@
 package me.geso.tinyorm;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -8,10 +10,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Paginated<T> {
-	private List<T> rows;
+	private final List<T> rows;
 
-	private long entriesPerPage;
-	private boolean hasNextPage;
+	private final long entriesPerPage;
+	private final boolean hasNextPage;
 
 	@JsonCreator
 	public Paginated(@JsonProperty("rows") List<T> rows,
@@ -20,6 +22,19 @@ public class Paginated<T> {
 		this.rows = rows;
 		this.entriesPerPage = entriesPerPage;
 		this.hasNextPage = hasNextPage;
+	}
+
+	Paginated(final List<T> rows, final long entriesPerPage) {
+		if (rows.size() == entriesPerPage + 1) {
+			List<T> copied = new ArrayList<>(rows); // copy
+			copied.remove(rows.size() - 1); // pop tail
+			this.rows = Collections.unmodifiableList(copied);
+			this.hasNextPage = true;
+		} else {
+			this.rows = Collections.unmodifiableList(rows);
+			this.hasNextPage = false;
+		}
+		this.entriesPerPage = entriesPerPage;
 	}
 
 	public List<T> getRows() {

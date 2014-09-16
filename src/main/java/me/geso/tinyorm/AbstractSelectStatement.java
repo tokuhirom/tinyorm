@@ -7,12 +7,12 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractSelectStatement<T, Impl> {
 	private final List<String> orderBy = new ArrayList<>();
-	protected final Connection connection;
+	private final Connection connection;
 	private String tableName;
-	protected Class<T> klass;
+	private Class<T> klass;
 	private List<String> whereQuery = new ArrayList<>();
 	private List<Object> whereParams = new ArrayList<>();
-	private Long limit;
+	private  Long limit;
 	private Long offset;
 
 	AbstractSelectStatement(Connection connection, String tableName,
@@ -74,5 +74,9 @@ public abstract class AbstractSelectStatement<T, Impl> {
 			buf.append(this.offset);
 		}
 		return new Query(buf.toString(), params);
+	}
+	
+	Connection getConnection() {
+		return this.connection;
 	}
 }

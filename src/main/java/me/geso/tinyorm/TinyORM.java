@@ -96,10 +96,31 @@ public abstract class TinyORM {
 	 * @return
 	 */
 	public <T> PaginatedSelectStatement<T> searchWithPager(
-			Class<T> klass) {
+			final Class<T> klass, final long limit) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return new PaginatedSelectStatement<>(this.getConnection(),
-				klass, tableMeta, this);
+				klass, tableMeta, this, limit);
+	}
+
+	/**
+	 * Search with SQL.
+	 * 
+	 * @param klass
+	 * @return
+	 */
+	public <T> Paginated<T> searchBySQLWithPager(
+			final Class<T> klass, final String sql, final Object[] params, final long limit) {
+		String limitedSql = sql + " LIMIT " + (limit+1);
+		Connection connection = this.getConnection();
+		try (PreparedStatement ps = connection.prepareStatement(limitedSql)) {
+			TinyORMUtil.fillPreparedStatementParams(ps, params);
+			try (ResultSet rs = ps.executeQuery()) {
+				List<T> rows = this.mapRowListFromResultSet(klass, rs);
+				return new Paginated<T>(rows, limit);
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -235,7 +256,7 @@ public abstract class TinyORM {
 		}
 	}
 
-	public <T> List<T> mapRowListFromResultSet(Class<T> klass, ResultSet rs) {
+	<T> List<T> mapRowListFromResultSet(Class<T> klass, ResultSet rs) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		try {
 			ArrayList<T> rows = new ArrayList<>();
@@ -251,16 +272,17 @@ public abstract class TinyORM {
 
 	/**
 	 * Shortcut method.
+	 * 
 	 * @param klass
 	 * @param rs
 	 * @return
 	 */
-	public <T> T mapRowFromResultSet(Class<T> klass, ResultSet rs) {
+	<T> T mapRowFromResultSet(Class<T> klass, ResultSet rs) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return this.mapRowFromResultSet(klass, rs, tableMeta);
 	}
 
-	public <T> T mapRowFromResultSet(Class<T> klass, ResultSet rs,
+	<T> T mapRowFromResultSet(Class<T> klass, ResultSet rs,
 			TableMeta tableMeta) {
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
