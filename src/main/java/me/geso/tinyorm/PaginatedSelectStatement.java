@@ -32,7 +32,7 @@ public class PaginatedSelectStatement<T> extends
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					List<T> rows = new ArrayList<>();
 					while (rs.next()) {
-						T row = orm.mapResultSet(klass, rs, connection,
+						T row = orm.mapRowFromResultSet(klass, rs,
 								tableMeta);
 						rows.add(row);
 					}

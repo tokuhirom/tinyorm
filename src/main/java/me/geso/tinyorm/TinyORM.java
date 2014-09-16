@@ -51,8 +51,7 @@ public abstract class TinyORM {
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					TableMeta tableMeta = this.getTableMeta(klass);
 					if (rs.next()) {
-						T row = this.mapResultSet(klass, rs, connection,
-								tableMeta);
+						T row = this.mapRowFromResultSet(klass, rs, tableMeta);
 						return Optional.of(row);
 					} else {
 						return Optional.empty();
@@ -118,8 +117,7 @@ public abstract class TinyORM {
 					List<T> list = new ArrayList<>();
 					TableMeta tableMeta = this.getTableMeta(klass);
 					while (rs.next()) {
-						T row = this.mapResultSet(klass, rs, connection,
-								tableMeta);
+						T row = this.mapRowFromResultSet(klass, rs, tableMeta);
 						list.add(row);
 					}
 					return list;
@@ -187,7 +185,6 @@ public abstract class TinyORM {
 		}
 	}
 
-
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
 	 */
@@ -238,8 +235,33 @@ public abstract class TinyORM {
 		}
 	}
 
-	<T> T mapResultSet(Class<T> klass, ResultSet rs,
-			Connection connection, TableMeta tableMeta) {
+	public <T> List<T> mapRowListFromResultSet(Class<T> klass, ResultSet rs) {
+		TableMeta tableMeta = this.getTableMeta(klass);
+		try {
+			ArrayList<T> rows = new ArrayList<>();
+			while (rs.next()) {
+				T row = this.mapRowFromResultSet(klass, rs, tableMeta);
+				rows.add(row);
+			}
+			return rows;
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Shortcut method.
+	 * @param klass
+	 * @param rs
+	 * @return
+	 */
+	public <T> T mapRowFromResultSet(Class<T> klass, ResultSet rs) {
+		TableMeta tableMeta = this.getTableMeta(klass);
+		return this.mapRowFromResultSet(klass, rs, tableMeta);
+	}
+
+	public <T> T mapRowFromResultSet(Class<T> klass, ResultSet rs,
+			TableMeta tableMeta) {
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
 			T row = klass.newInstance();
@@ -337,9 +359,9 @@ public abstract class TinyORM {
 						.executeQuery()) {
 					if (rs.next()) {
 						@SuppressWarnings("unchecked")
-						T refetched = this.mapResultSet(
+						T refetched = this.mapRowFromResultSet(
 								(Class<T>) row.getClass(),
-								rs, connection, tableMeta);
+								rs, tableMeta);
 						return Optional.of(refetched);
 					} else {
 						return Optional.empty();

@@ -2,6 +2,8 @@ package me.geso.tinyorm;
 
 import static org.junit.Assert.assertEquals;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -43,7 +45,8 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
-	public void testInsert() throws SQLException, InstantiationException, IllegalAccessException {
+	public void testInsert() throws SQLException, InstantiationException,
+			IllegalAccessException {
 		Member member = orm.insert(Member.class)
 				.value("name", "John")
 				.executeSelect();
@@ -185,9 +188,22 @@ public class TinyORMTest extends TestBase {
 		assertEquals("`hoge`", got);
 	}
 
+	@Test
+	public void testMapRowsFromResultSet() throws SQLException {
+		orm.getConnection()
+				.prepareStatement("INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
+				.executeUpdate();
+		try (PreparedStatement ps = orm.getConnection().prepareStatement(
+				"SELECT * FROM member")) {
+			try (ResultSet rs = ps.executeQuery()) {
+				orm.mapRowListFromResultSet(Member.class, rs);
+			}
+		}
+	}
+
 	@Table("member")
 	@Data
-	@EqualsAndHashCode(callSuper=false)
+	@EqualsAndHashCode(callSuper = false)
 	public static class Member {
 		@PrimaryKey
 		private long id;

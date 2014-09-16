@@ -28,8 +28,7 @@ public class BeanSelectStatement<T> extends
 				TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					if (rs.next()) {
-						T row = this.orm.mapResultSet(klass, rs, connection,
-								tableMeta);
+						T row = this.orm.mapRowFromResultSet(klass, rs, tableMeta);
 						rs.close();
 						return Optional.of(row);
 					} else {

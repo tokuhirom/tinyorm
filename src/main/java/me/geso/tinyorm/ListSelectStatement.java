@@ -29,8 +29,7 @@ public class ListSelectStatement<T> extends
 			try (ResultSet rs = preparedStatement.executeQuery()) {
 				List<T> rows = new ArrayList<>();
 				while (rs.next()) {
-					T row = orm.mapResultSet(klass, rs, connection,
-							tableMeta);
+					T row = orm.mapRowFromResultSet(klass, rs, tableMeta);
 					rows.add(row);
 				}
 				return rows;
