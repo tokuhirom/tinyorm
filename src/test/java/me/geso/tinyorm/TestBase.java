@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TestBase {
 
 	protected final Connection connection;
-	protected final ORM orm;
+	protected final TinyORM orm;
 
 	public TestBase() {
 		try {
@@ -34,17 +34,10 @@ public class TestBase {
 			// connection =
 			// DriverManager.getConnection("jdbc:mysql://localhost/test?profileSQL=true&logger=com.mysql.jdbc.log.Slf4JLogger",
 			// "root", null);
-			this.orm = new ORM();
+			this.orm = new TinyORM(connection);
 		} catch (ClassNotFoundException | SQLException | InstantiationException
 				| IllegalAccessException ex) {
 			throw new RuntimeException(ex);
-		}
-	}
-
-	public class ORM extends TinyORM {
-		@Override
-		public Connection getConnection() {
-			return connection;
 		}
 	}
 

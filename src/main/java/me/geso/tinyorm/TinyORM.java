@@ -27,9 +27,17 @@ import lombok.extern.slf4j.Slf4j;
  * @author Tokuhiro Matsuno
  */
 @Slf4j
-public abstract class TinyORM {
+public class TinyORM {
+	
+	private final Connection connection;
 
-	public abstract Connection getConnection();
+	public TinyORM(Connection connection) {
+		this.connection = connection;
+	}
+	
+	public Connection getConnection() {
+		return this.connection;
+	}
 
 	private static ConcurrentHashMap<Class<?>, TableMeta> tableMetaRegistry = new ConcurrentHashMap<>();
 
