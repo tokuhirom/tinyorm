@@ -5,7 +5,10 @@ import static org.junit.Assert.assertEquals;
 import java.sql.SQLException;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import me.geso.tinyorm.ActiveRecord;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.UpdateRowStatement;
 
@@ -29,7 +32,7 @@ public class BeforeUpdateTest extends TestBase {
 				.executeSelect();
 		XForm xform = new XForm();
 		xform.setName("Ben");
-		orm.updateByBean(created, xform);
+		created.updateByBean(xform);
 		created = orm.refetch(created).get();
 		assertEquals("fuga", created.getY());
 	}
@@ -42,9 +45,10 @@ public class BeforeUpdateTest extends TestBase {
 	}
 
 	@Slf4j
-	@Data
+	@Getter
+	@Setter
 	@Table("x")
-	public static class X  {
+	public static class X extends ActiveRecord<X> {
 		@PrimaryKey
 		private long id;
 

@@ -1,11 +1,15 @@
 package me.geso.tinyorm.annotations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.SQLException;
 import java.util.Optional;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import me.geso.tinyorm.ActiveRecord;
 import me.geso.tinyorm.TestBase;
 
 import org.junit.Test;
@@ -35,7 +39,7 @@ public class UpdatedEpochTimestampTest extends TestBase {
 		// updated updatedOn column
 		XForm form = new XForm();
 		form.setName("Taro");
-		orm.updateByBean(created, form);
+		created.updateByBean(form);
 		Optional<X> maybeUpdated = orm.refetch(created);
 		assertTrue(maybeUpdated.isPresent());
 		X updated = maybeUpdated.get();
@@ -44,9 +48,10 @@ public class UpdatedEpochTimestampTest extends TestBase {
 		assertTrue((updated.getUpdatedOn() - System.currentTimeMillis() / 1000) < 3);
 	}
 
-	@Data
+	@Getter
+	@Setter
 	@Table("x")
-	public static class X {
+	public static class X extends ActiveRecord<X> {
 		@PrimaryKey
 		private long id;
 
@@ -56,7 +61,7 @@ public class UpdatedEpochTimestampTest extends TestBase {
 		@UpdatedTimestampColumn
 		private Long updatedOn;
 	}
-	
+
 	@Data
 	public static class XForm {
 		private String name;

@@ -178,7 +178,7 @@ public abstract class TinyORM {
 	 * 
 	 * @param bean
 	 */
-	public void updateByBean(Object row, Object bean) {
+	void updateByBean(ActiveRecord<?> row, Object bean) {
 		TableMeta tableMeta = this.getTableMeta(row.getClass());
 		Map<String, Object> currentValueMap = tableMeta.getColumnValueMap(row);
 

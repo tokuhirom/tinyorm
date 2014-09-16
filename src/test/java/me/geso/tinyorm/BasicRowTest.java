@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
@@ -100,9 +102,10 @@ public class BasicRowTest extends TestBase {
 		assertEquals("Nick", orm.refetch(member).get().getName());
 	}
 
-	@Data
+	@Getter
+	@Setter
 	@Table("x")
-	public static class X {
+	public static class X extends ActiveRecord<X> {
 		@PrimaryKey
 		long id;
 		@Column

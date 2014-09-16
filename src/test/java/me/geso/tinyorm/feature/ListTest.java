@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import me.geso.tinyorm.ActiveRecord;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.Deflate;
@@ -48,7 +49,7 @@ public class ListTest extends TestBase {
 			FooUpdateForm fooUpdateForm = new FooUpdateForm();
 			List<Integer> ints2 = Arrays.asList(123, 456);
 			fooUpdateForm.setCsvInt(ints2);
-			orm.updateByBean(foo, fooUpdateForm);
+			foo.updateByBean(fooUpdateForm);
 			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(), 123);
 		}
 
@@ -57,7 +58,7 @@ public class ListTest extends TestBase {
 			FooUpdateForm fooUpdateForm = new FooUpdateForm();
 			List<Integer> ints2 = Arrays.asList(123, 456); // same as previous
 			fooUpdateForm.setCsvInt(ints2);
-			orm.updateByBean(foo, fooUpdateForm);
+			foo.updateByBean(fooUpdateForm);
 			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(), 123);
 		}
 	}
@@ -75,7 +76,7 @@ public class ListTest extends TestBase {
 	}
 
 	@Table("foo")
-	public static class Foo {
+	public static class Foo extends ActiveRecord<Foo> {
 		@PrimaryKey
 		private long id;
 		@Column
