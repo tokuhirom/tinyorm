@@ -13,11 +13,13 @@ public class PaginatedSelectStatement<T> extends
 		AbstractSelectStatement<T, PaginatedSelectStatement<T>> {
 
 	private final TableMeta tableMeta;
+	private final TinyORM orm;
 
 	PaginatedSelectStatement(Connection connection,
-			Class<T> klass, TableMeta tableMeta) {
+			Class<T> klass, TableMeta tableMeta, TinyORM orm) {
 		super(connection, tableMeta.getName(), klass);
 		this.tableMeta = tableMeta;
+		this.orm = orm;
 	}
 
 	public PaginatedWithCurrentPage<T> execute(long currentPage,
@@ -32,7 +34,7 @@ public class PaginatedSelectStatement<T> extends
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					List<T> rows = new ArrayList<>();
 					while (rs.next()) {
-						T row = TinyORM.mapResultSet(klass, rs, connection,
+						T row = orm.mapResultSet(klass, rs, connection,
 								tableMeta);
 						rows.add(row);
 					}

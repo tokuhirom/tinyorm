@@ -52,7 +52,7 @@ public abstract class TinyORM {
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					TableMeta tableMeta = this.getTableMeta(klass);
 					if (rs.next()) {
-						T row = TinyORM.mapResultSet(klass, rs, connection,
+						T row = this.mapResultSet(klass, rs, connection,
 								tableMeta);
 						return Optional.of(row);
 					} else {
@@ -75,7 +75,7 @@ public abstract class TinyORM {
 	public <T> BeanSelectStatement<T> single(Class<T> klass) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return new BeanSelectStatement<>(this.getConnection(),
-				klass, tableMeta);
+				klass, tableMeta, this);
 	}
 
 	/**
@@ -88,7 +88,7 @@ public abstract class TinyORM {
 	public <T> ListSelectStatement<T> search(Class<T> klass) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return new ListSelectStatement<>(this.getConnection(),
-				klass, tableMeta);
+				klass, tableMeta, this);
 	}
 
 	/**
@@ -101,7 +101,7 @@ public abstract class TinyORM {
 			Class<T> klass) {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return new PaginatedSelectStatement<>(this.getConnection(),
-				klass, tableMeta);
+				klass, tableMeta, this);
 	}
 
 	/**
@@ -119,7 +119,7 @@ public abstract class TinyORM {
 					List<T> list = new ArrayList<>();
 					TableMeta tableMeta = this.getTableMeta(klass);
 					while (rs.next()) {
-						T row = TinyORM.mapResultSet(klass, rs, connection,
+						T row = this.mapResultSet(klass, rs, connection,
 								tableMeta);
 						list.add(row);
 					}
@@ -240,7 +240,7 @@ public abstract class TinyORM {
 		}
 	}
 
-	static <T> T mapResultSet(Class<T> klass, ResultSet rs,
+	<T> T mapResultSet(Class<T> klass, ResultSet rs,
 			Connection connection, TableMeta tableMeta) {
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
@@ -250,6 +250,9 @@ public abstract class TinyORM {
 				Object value = rs.getObject(i + 1);
 				value = tableMeta.invokeInflaters(columnName, value);
 				tableMeta.setValue(row, columnName, value);
+			}
+			if (row instanceof ORMInjectable) {
+				((ORMInjectable) row).setOrm(this);
 			}
 			return row;
 		} catch (SQLException | InstantiationException | IllegalAccessException e) {
@@ -340,7 +343,7 @@ public abstract class TinyORM {
 						.executeQuery()) {
 					if (rs.next()) {
 						@SuppressWarnings("unchecked")
-						T refetched = TinyORM.mapResultSet(
+						T refetched = this.mapResultSet(
 								(Class<T>) row.getClass(),
 								rs, connection, tableMeta);
 						return Optional.of(refetched);

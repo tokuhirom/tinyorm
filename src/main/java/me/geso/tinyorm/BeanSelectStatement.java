@@ -12,11 +12,13 @@ public class BeanSelectStatement<T> extends
 		AbstractSelectStatement<T, BeanSelectStatement<T>> {
 
 	private final TableMeta tableMeta;
+	private final TinyORM orm;
 
 	BeanSelectStatement(Connection connection,
-			Class<T> klass, TableMeta tableMeta) {
+			Class<T> klass, TableMeta tableMeta, TinyORM orm) {
 		super(connection, tableMeta.getName(), klass);
 		this.tableMeta = tableMeta;
+		this.orm = orm;
 	}
 
 	public Optional<T> execute() {
@@ -28,7 +30,7 @@ public class BeanSelectStatement<T> extends
 				TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					if (rs.next()) {
-						T row = TinyORM.mapResultSet(klass, rs, connection,
+						T row = this.orm.mapResultSet(klass, rs, connection,
 								tableMeta);
 						rs.close();
 						return Optional.of(row);

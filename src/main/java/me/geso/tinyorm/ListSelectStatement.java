@@ -13,11 +13,13 @@ public class ListSelectStatement<T> extends
 		AbstractSelectStatement<T, ListSelectStatement<T>> {
 
 	private final TableMeta tableMeta;
+	private final TinyORM orm;
 
 	ListSelectStatement(Connection connection,
-			Class<T> klass, TableMeta tableMeta) {
+			Class<T> klass, TableMeta tableMeta, TinyORM orm) {
 		super(connection, tableMeta.getName(), klass);
 		this.tableMeta = tableMeta;
+		this.orm = orm;
 	}
 
 	public List<T> execute() {
@@ -29,7 +31,7 @@ public class ListSelectStatement<T> extends
 			try (ResultSet rs = preparedStatement.executeQuery()) {
 				List<T> rows = new ArrayList<>();
 				while (rs.next()) {
-					T row = TinyORM.mapResultSet(klass, rs, connection,
+					T row = orm.mapResultSet(klass, rs, connection,
 							tableMeta);
 					rows.add(row);
 				}

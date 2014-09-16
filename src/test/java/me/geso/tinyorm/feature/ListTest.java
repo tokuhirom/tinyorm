@@ -14,7 +14,6 @@ import me.geso.tinyorm.annotations.Deflate;
 import me.geso.tinyorm.annotations.Inflate;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
-import me.geso.tinyorm.meta.DBSchema;
 
 import org.junit.Before;
 import org.junit.Test;
