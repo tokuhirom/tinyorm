@@ -156,6 +156,7 @@ public abstract class TinyORM {
 			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 				String name = propertyDescriptor.getName();
 				if (!currentValueMap.containsKey(name)) {
+					// Ignore values doesn't exists in Row bean.
 					continue;
 				}
 
@@ -166,12 +167,10 @@ public abstract class TinyORM {
 						Object deflated = tableMeta.invokeDeflaters(name,
 								newval);
 						stmt.set(name, deflated);
-						tableMeta.setValue(row, name, newval);
 					}
 				} else { // newval IS NULL.
 					if (current != null) {
 						stmt.set(name, null);
-						tableMeta.setValue(row, name, null);
 					}
 				}
 			}
