@@ -106,6 +106,24 @@ public abstract class TinyORM {
 	 * Search with SQL.
 	 * 
 	 */
+	public <T> List<T> searchBySQL(
+			final Class<T> klass, final String sql, final Object[] params) {
+		Connection connection = this.getConnection();
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
+			TinyORMUtil.fillPreparedStatementParams(ps, params);
+			try (ResultSet rs = ps.executeQuery()) {
+				List<T> rows = this.mapRowListFromResultSet(klass, rs);
+				return rows;
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Search by SQL with Pager.
+	 * 
+	 */
 	public <T> Paginated<T> searchBySQLWithPager(
 			final Class<T> klass, final String sql, final Object[] params,
 			final long entriesPerPage) {

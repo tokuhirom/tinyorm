@@ -165,6 +165,28 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
+	public void testSearchBySQL() throws SQLException {
+		IntStream.rangeClosed(1, 10).forEach(i -> {
+			orm.insert(Member.class).value("name", "m" + i)
+					.execute();
+		});
+
+		{
+			List<Member> members = orm.searchBySQL(
+					Member.class, "SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC",
+					new Object[] {});
+			System.out.println(members);
+			assertEquals(10, members.size());
+			assertEquals("10,9,8,7,6,5,4,3,2,1", members.stream()
+					.map(row -> "" + row.getId())
+					.collect(Collectors.joining(",")));
+			assertEquals("11,10,9,8,7,6,5,4,3,2", members.stream()
+					.map(row -> "" + row.getExtraColumn("idPlusOne"))
+					.collect(Collectors.joining(",")));
+		}
+	}
+
+	@Test
 	public void testSearchBySQLWithPager() throws SQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
 			orm.insert(Member.class).value("name", "m" + i)
@@ -179,29 +201,31 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getHasNextPage(), true);
 			assertEquals("10,9,8,7", paginated.getRows().stream()
-					.map(row -> ""+row.getId())
+					.map(row -> "" + row.getId())
 					.collect(Collectors.joining(",")));
 		}
 		{
 			Paginated<Member> paginated = orm.searchBySQLWithPager(
-					Member.class, "SELECT * FROM member WHERE id<7 ORDER BY id DESC",
+					Member.class,
+					"SELECT * FROM member WHERE id<7 ORDER BY id DESC",
 					new Object[] {}, 4);
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getHasNextPage(), true);
 			assertEquals("6,5,4,3", paginated.getRows().stream()
-					.map(row -> ""+row.getId())
+					.map(row -> "" + row.getId())
 					.collect(Collectors.joining(",")));
 		}
 		{
 			Paginated<Member> paginated = orm.searchBySQLWithPager(
-					Member.class, "SELECT * FROM member WHERE id<? ORDER BY id DESC",
-					new Object[] {3}, 4);
+					Member.class,
+					"SELECT * FROM member WHERE id<? ORDER BY id DESC",
+					new Object[] { 3 }, 4);
 			assertEquals(paginated.getRows().size(), 2);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getHasNextPage(), false);
 			assertEquals("2,1", paginated.getRows().stream()
-					.map(row -> ""+row.getId())
+					.map(row -> "" + row.getId())
 					.collect(Collectors.joining(",")));
 		}
 	}
@@ -248,7 +272,7 @@ public class TinyORMTest extends TestBase {
 	@Table("member")
 	@Data
 	@EqualsAndHashCode(callSuper = false)
-	public static class Member {
+	public static class Member extends ActiveRecord<Member> {
 		@PrimaryKey
 		private long id;
 		@Column

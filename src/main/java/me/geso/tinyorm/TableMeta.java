@@ -259,33 +259,40 @@ public class TableMeta {
 	void setValue(Object row, String columnName, Object value) {
 		PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
 				.get(columnName);
-		if (propertyDescriptor == null) {
-			throw new RuntimeException(
-					String.format(
-							"setValue: %s doesn't have a %s column. You may forget to set @Column annotation.",
-							row.getClass(), columnName
-							));
-		}
-		Method writeMethod = propertyDescriptor.getWriteMethod();
-		if (writeMethod == null) {
-			throw new RuntimeException(String.format(
-					"There is no writer method: %s.%s", this.getName(),
-					propertyDescriptor.getName()));
-		}
-		try {
-			writeMethod.invoke(row, value);
-		} catch (NullPointerException | IllegalAccessException
-				| IllegalArgumentException | InvocationTargetException e) {
-			log.error("Error:{}: table: {}, column: {}, writeMethod:{}, valueClass:{}, value:{}, row:{}",
-					e.getClass(),
-					this.getName(),
-					columnName,
-					writeMethod.getName(),
-					value == null ? null : value.getClass(),
-					value,
-					row.toString()
-					);
-			throw new RuntimeException(e);
+		if (propertyDescriptor != null) {
+			Method writeMethod = propertyDescriptor.getWriteMethod();
+			if (writeMethod != null) {
+				try {
+					writeMethod.invoke(row, value);
+				} catch (NullPointerException | IllegalAccessException
+						| IllegalArgumentException | InvocationTargetException e) {
+					log.error(
+							"Error:{}: table: {}, column: {}, writeMethod:{}, valueClass:{}, value:{}, row:{}",
+							e.getClass(),
+							this.getName(),
+							columnName,
+							writeMethod.getName(),
+							value == null ? null : value.getClass(),
+							value,
+							row.toString()
+							);
+					throw new RuntimeException(e);
+				}
+			} else {
+				throw new RuntimeException(String.format(
+						"There is no writer method: %s.%s", this.getName(),
+						propertyDescriptor.getName()));
+			}
+		} else {
+			if (row instanceof ExtraColumnSettable) {
+				((ExtraColumnSettable) row).setExtraColumn(columnName, value);
+			} else {
+				throw new RuntimeException(
+						String.format(
+								"setValue: %s doesn't have a %s column. You may forget to set @Column annotation for the field.",
+								row.getClass(), columnName
+								));
+			}
 		}
 	}
 
