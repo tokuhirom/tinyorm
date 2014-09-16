@@ -34,7 +34,7 @@ public class UpdateRowStatement {
 		if (columnName == null) {
 			throw new IllegalArgumentException("Column name must not be null");
 		}
-		value = this.tableMeta.invokeDeflaters(columnName, value);
+		value = this.tableMeta.invokeDeflater(columnName, value);
 		this.set.put(columnName, value);
 		return this;
 	}

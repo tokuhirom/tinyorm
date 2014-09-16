@@ -182,7 +182,7 @@ public class TinyORM {
 				Object newval = propertyDescriptor.getReadMethod().invoke(bean);
 				if (newval != null) {
 					if (!newval.equals(current)) {
-						Object deflated = tableMeta.invokeDeflaters(name,
+						Object deflated = tableMeta.invokeDeflater(name,
 								newval);
 						stmt.set(name, deflated);
 					}
@@ -289,7 +289,7 @@ public class TinyORM {
 			for (int i = 0; i < columnCount; ++i) {
 				String columnName = rs.getMetaData().getColumnName(i + 1);
 				Object value = rs.getObject(i + 1);
-				value = tableMeta.invokeInflaters(columnName, value);
+				value = tableMeta.invokeInflater(columnName, value);
 				tableMeta.setValue(row, columnName, value);
 			}
 			if (row instanceof ORMInjectable) {

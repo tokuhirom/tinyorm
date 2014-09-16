@@ -347,22 +347,19 @@ public class TableMeta {
 		}
 	}
 
-	// Ineternal use
-	public void invokeBeforeInsertTriggers(InsertStatement<?> stmt) {
+	void invokeBeforeInsertTriggers(InsertStatement<?> stmt) {
 		for (BeforeInsertHandler trigger : this.beforeInsertHandlers) {
 			trigger.callBeforeInsertHandler(stmt);
 		}
 	}
 
-	// Ineternal use
-	public void invokeBeforeUpdateTriggers(UpdateRowStatement stmt) {
+	void invokeBeforeUpdateTriggers(UpdateRowStatement stmt) {
 		for (BeforeUpdateHandler trigger : this.beforeUpdateHandlers) {
 			trigger.callBeforeUpdateHandler(stmt);
 		}
 	}
 
-	// Ineternal use
-	public Object invokeInflaters(String columnName, Object value) {
+	Object invokeInflater(String columnName, Object value) {
 		Inflater inflater = this.inflaters.get(columnName);
 		if (inflater != null) {
 			return inflater.inflate(value);
@@ -371,8 +368,7 @@ public class TableMeta {
 		}
 	}
 
-	// Ineternal use
-	public Object invokeDeflaters(String columnName, Object value) {
+	Object invokeDeflater(String columnName, Object value) {
 		Deflater deflater = this.deflaters.get(columnName);
 		if (deflater != null) {
 			return deflater.deflate(value);

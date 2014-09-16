@@ -55,7 +55,7 @@ public class InsertStatement<T> {
 	 */
 	public InsertStatement<T> value(String columnName, Object value) {
 		try {
-			Object deflated = this.tableMeta.invokeDeflaters(columnName, value);
+			Object deflated = this.tableMeta.invokeDeflater(columnName, value);
 			values.put(columnName, deflated);
 			return this;
 		} catch (Exception e) {
