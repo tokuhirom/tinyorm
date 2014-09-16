@@ -1,4 +1,4 @@
-package me.geso.tinyorm.meta;
+package me.geso.tinyorm;
 
 import static org.junit.Assert.*;
 
@@ -7,7 +7,6 @@ import java.util.List;
 
 import lombok.Data;
 import me.geso.tinyorm.TableMeta;
-import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;

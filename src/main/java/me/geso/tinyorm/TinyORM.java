@@ -412,7 +412,7 @@ public abstract class TinyORM {
 		}
 	}
 
-	public TableMeta getTableMeta(Class<?> klass) {
+	TableMeta getTableMeta(Class<?> klass) {
 		return tableMetaRegistry.computeIfAbsent(klass, key -> {
 			log.info("Loading {}", klass);
 			try {
