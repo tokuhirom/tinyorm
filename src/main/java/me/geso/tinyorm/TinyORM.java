@@ -105,18 +105,17 @@ public abstract class TinyORM {
 	/**
 	 * Search with SQL.
 	 * 
-	 * @param klass
-	 * @return
 	 */
 	public <T> Paginated<T> searchBySQLWithPager(
-			final Class<T> klass, final String sql, final Object[] params, final long limit) {
-		String limitedSql = sql + " LIMIT " + (limit+1);
+			final Class<T> klass, final String sql, final Object[] params,
+			final long entriesPerPage) {
+		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
 		Connection connection = this.getConnection();
 		try (PreparedStatement ps = connection.prepareStatement(limitedSql)) {
 			TinyORMUtil.fillPreparedStatementParams(ps, params);
 			try (ResultSet rs = ps.executeQuery()) {
 				List<T> rows = this.mapRowListFromResultSet(klass, rs);
-				return new Paginated<T>(rows, limit);
+				return new Paginated<T>(rows, entriesPerPage);
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
