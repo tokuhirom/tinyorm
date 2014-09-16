@@ -50,7 +50,8 @@ public class ListTest extends TestBase {
 			List<Integer> ints2 = Arrays.asList(123, 456);
 			fooUpdateForm.setCsvInt(ints2);
 			foo.updateByBean(fooUpdateForm);
-			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(), 123);
+			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),
+					123);
 		}
 
 		// updateByBean(no UPDATE query required. Because the data set is same)
@@ -59,7 +60,34 @@ public class ListTest extends TestBase {
 			List<Integer> ints2 = Arrays.asList(123, 456); // same as previous
 			fooUpdateForm.setCsvInt(ints2);
 			foo.updateByBean(fooUpdateForm);
-			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(), 123);
+			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),
+					123);
+		}
+	}
+
+	@Test
+	public void testUpdateWithStatement() throws SQLException {
+		List<Integer> ints = Arrays.asList(5963, 4649);
+		List<String> strings = Arrays.asList("John", "Manjiro");
+		Foo foo = this.orm.insert(Foo.class).value("csvInt", ints)
+				.value("csvString", strings).executeSelect();
+		assertEquals(foo.getCsvInt().size(), 2);
+		assertEquals(foo.getCsvInt().get(0), (Integer) 5963);
+		assertEquals(foo.getCsvInt().get(1), (Integer) 4649);
+		assertEquals(foo.getCsvString().size(), 2);
+		assertEquals(foo.getCsvString().get(0), "John");
+		assertEquals(foo.getCsvString().get(1), "Manjiro");
+
+		// updateByBean
+		{
+			List<Integer> ints2 = Arrays.asList(123, 456);
+			foo.createUpdateStatement()
+					.set("csvInt", ints2)
+					.execute();
+			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),
+					123);
+			assertEquals(orm.refetch(foo).get().getCsvInt().get(1).intValue(),
+					456);
 		}
 	}
 

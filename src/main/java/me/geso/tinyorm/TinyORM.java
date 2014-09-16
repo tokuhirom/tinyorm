@@ -31,6 +31,8 @@ public class TinyORM {
 	
 	private final Connection connection;
 
+	private static ConcurrentHashMap<Class<?>, TableMeta> tableMetaRegistry = new ConcurrentHashMap<>();
+
 	public TinyORM(Connection connection) {
 		this.connection = connection;
 	}
@@ -38,8 +40,6 @@ public class TinyORM {
 	public Connection getConnection() {
 		return this.connection;
 	}
-
-	private static ConcurrentHashMap<Class<?>, TableMeta> tableMetaRegistry = new ConcurrentHashMap<>();
 
 	public <T> InsertStatement<T> insert(Class<T> klass) {
 		return new InsertStatement<>(this, klass, this.getTableMeta(klass));

@@ -30,11 +30,12 @@ public class UpdateRowStatement {
 		this.tableMeta = tableMeta;
 	}
 
-	public UpdateRowStatement set(String column, Object value) {
-		if (column == null) {
+	public UpdateRowStatement set(String columnName, Object value) {
+		if (columnName == null) {
 			throw new IllegalArgumentException("Column name must not be null");
 		}
-		this.set.put(column, value);
+		value = this.tableMeta.invokeDeflaters(columnName, value);
+		this.set.put(columnName, value);
 		return this;
 	}
 
