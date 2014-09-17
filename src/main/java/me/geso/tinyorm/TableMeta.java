@@ -679,7 +679,12 @@ class TableMeta {
 					try (final CSVPrinter printer = new CSVPrinter(builder,
 							CSVFormat.RFC4180)) {
 						printer.printRecord((Iterable<?>) value);
-						return builder.toString();
+						String csv = builder.toString();
+						if (csv.endsWith("\n")) {
+							return csv.substring(0, csv.length()-2);
+						} else {
+							return csv;
+						}
 					}
 				} else {
 					throw new RuntimeException(

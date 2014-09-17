@@ -30,16 +30,21 @@ public class CsvColumnTest extends TestBase {
 		assertEquals(foo.getCsvString().get(0), "John");
 		assertEquals(foo.getCsvString().get(1), "Manjiro");
 
-		// updateByBean
 		{
 			List<Integer> ints2 = Arrays.asList(123, 456);
+			List<String> strings2 = Arrays.asList("h,oge", "fuga");
 			foo.update()
 					.set("csvInt", ints2)
+					.set("csvString", strings2)
 					.execute();
 			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(),
 					123);
 			assertEquals(foo.refetch().get().getCsvInt().get(1).intValue(),
 					456);
+			assertEquals(foo.refetch().get().getCsvString().get(0),
+					"h,oge");
+			assertEquals(foo.refetch().get().getCsvString().get(1),
+					"fuga");
 		}
 	}
 
