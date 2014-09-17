@@ -151,7 +151,7 @@ public class InsertStatement<T> {
 					+ " WHERE "
 					+ TinyORM.quoteIdentifier(pkName, connection)
 					+ "=last_insert_id()";
-			Optional<T> maybeRow = this.orm.single(klass, sql);
+			Optional<T> maybeRow = this.orm.singleBySQL(klass, sql, new Object[] {});
 			if (maybeRow.isPresent()) {
 				return maybeRow.get();
 			} else {

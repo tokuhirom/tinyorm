@@ -39,8 +39,9 @@ public class TinyORMTest extends TestBase {
 						"INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)")
 				.executeUpdate();
 
-		Member got = orm.single(Member.class,
-				"SELECT * FROM member WHERE name=?", "m1").get();
+		Member got = orm.singleBySQL(Member.class,
+				"SELECT * FROM member WHERE name=?", new Object[] { "m1" })
+				.get();
 		assertEquals(1, got.getId());
 		assertEquals("m1", got.getName());
 	}
@@ -77,8 +78,9 @@ public class TinyORMTest extends TestBase {
 		Member member3 = orm.insert(Member.class).value("name", "m3")
 				.executeSelect();
 
-		Member got = orm.single(Member.class,
-				"SELECT * FROM member WHERE name=?", "m2").get();
+		Member got = orm.singleBySQL(Member.class,
+				"SELECT * FROM member WHERE name=?", new Object[] { "m2" })
+				.get();
 		assertEquals(got.getId(), member2.getId());
 		assertEquals(got.getName(), "m2");
 	}
@@ -153,9 +155,11 @@ public class TinyORMTest extends TestBase {
 		});
 
 		{
-			List<Member> members = orm.searchBySQL(
-					Member.class, "SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC",
-					new Object[] {});
+			List<Member> members = orm
+					.searchBySQL(
+							Member.class,
+							"SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC",
+							new Object[] {});
 			System.out.println(members);
 			assertEquals(10, members.size());
 			assertEquals("10,9,8,7,6,5,4,3,2,1", members.stream()

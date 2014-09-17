@@ -44,8 +44,8 @@ public class TinyORM {
 	/**
 	 * Select one row from the database.
 	 */
-	public <T> Optional<T> single(Class<T> klass, String sql,
-			Object... params) {
+	public <T> Optional<T> singleBySQL(Class<T> klass, String sql,
+			Object[] params) {
 		try {
 			Connection connection = this.getConnection();
 			try (PreparedStatement preparedStatement = connection
