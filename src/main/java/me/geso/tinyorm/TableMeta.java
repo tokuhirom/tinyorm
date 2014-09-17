@@ -9,14 +9,22 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +37,7 @@ import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
+import me.geso.tinyorm.annotations.CsvColumn;
 import me.geso.tinyorm.annotations.Deflate;
 import me.geso.tinyorm.annotations.Inflate;
 import me.geso.tinyorm.annotations.JsonColumn;
@@ -124,6 +133,50 @@ class TableMeta {
 						rowClass, propertyDescriptor, javaType);
 				deflaters.put(propertyDescriptor.getName(), deflater);
 				isColumn = true;
+			}
+			if (field.getAnnotation(CsvColumn.class) != null) {
+				// deserialize json
+				if (!Collection.class.isAssignableFrom(field.getType())) {
+					throw new RuntimeException(
+							"You can't add @CsvColumn annotation for non-Collection field.");
+				}
+				Type type = field.getGenericType();
+				if (type instanceof ParameterizedType) {
+					Type[] actualTypeArguments = ((ParameterizedType) type)
+							.getActualTypeArguments();
+					if (actualTypeArguments.length != 1) {
+						throw new RuntimeException(
+								"You can only use List<String>, List<Integer> for @CsvColumn.");
+					}
+					Type actualTypeArgument = actualTypeArguments[0];
+					Class<?> klass = null;
+					if (actualTypeArgument instanceof Class) {
+						if (Integer.class
+								.isAssignableFrom((Class<?>) actualTypeArgument)) {
+							klass = Integer.class;
+						} else if (String.class
+								.isAssignableFrom((Class<?>) actualTypeArgument)) {
+							klass = String.class;
+						} else {
+							throw new RuntimeException(
+									"You can only use List<String>, List<Integer> for @CsvColumn.");
+						}
+						CsvInflater inflater = new CsvInflater(
+								klass);
+						inflaters.put(propertyDescriptor.getName(), inflater);
+						// serialize json
+						CsvDeflater deflater = new CsvDeflater();
+						deflaters.put(propertyDescriptor.getName(), deflater);
+						isColumn = true;
+					} else {
+						throw new RuntimeException(
+								"@CsvColumn should be List<String> or List<Integer>.");
+					}
+
+				} else {
+					throw new RuntimeException(field.getName()
+							+ " field isn't generic type.");
+				}
 			}
 
 			if (isColumn) {
@@ -562,6 +615,77 @@ class TableMeta {
 			try {
 				byte[] bytes = mapper.writeValueAsBytes(value);
 				return bytes;
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	@ToString
+	static class CsvInflater implements Inflater {
+		private final Class<?> klass;
+
+		public CsvInflater(Class<?> klass) {
+			this.klass = klass;
+		}
+
+		@Override
+		public Object inflate(Object value) {
+			if (value == null) {
+				return null;
+			}
+
+			if (value instanceof String) {
+				try {
+					try (CSVParser parse = CSVParser.parse((String) value,
+							CSVFormat.RFC4180)) {
+						for (CSVRecord record : parse.getRecords()) {
+							if (this.klass == String.class) {
+								List<String> list = new ArrayList<>();
+								for (String column : record) {
+									list.add(column);
+								}
+								return Collections.unmodifiableList(list);
+							} else if (this.klass == Integer.class) {
+								List<Integer> list = new ArrayList<>();
+								for (String column : record) {
+									list.add(Integer.parseInt(column));
+								}
+								return Collections.unmodifiableList(list);
+							} else {
+								throw new RuntimeException(
+										"Should not reache here.");
+							}
+						}
+						return null;
+					}
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			} else {
+				throw new RuntimeException(
+						"You shouldn't apply @CsvColumn for non String.");
+			}
+		}
+	}
+
+	@ToString
+	static class CsvDeflater implements Deflater {
+		@Override
+		public Object deflate(Object value) {
+			try {
+				if (value instanceof Iterable) {
+					StringBuilder builder = new StringBuilder();
+					try (final CSVPrinter printer = new CSVPrinter(builder,
+							CSVFormat.RFC4180)) {
+						printer.printRecord((Iterable<?>) value);
+						return builder.toString();
+					}
+				} else {
+					throw new RuntimeException(
+							"@CsvColumn must be Iterable but "
+									+ value.getClass());
+				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
