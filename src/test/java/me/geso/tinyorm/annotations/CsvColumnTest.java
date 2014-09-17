@@ -2,6 +2,7 @@ package me.geso.tinyorm.annotations;
 
 import static org.junit.Assert.*;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -12,9 +13,19 @@ import lombok.ToString;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 
+import org.junit.Before;
 import org.junit.Test;
 
 public class CsvColumnTest extends TestBase {
+	@Before
+	public void beefffff() throws SQLException {
+		Connection connection = this.connection;
+		connection.prepareStatement("DROP TABLE IF EXISTS foo").executeUpdate();
+		connection
+				.prepareStatement(
+						"CREATE TABLE foo (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, csvInt TEXT NOT NULL, csvString TEXT NOT NULL)")
+				.executeUpdate();
+	}
 
 	@Test
 	public void testUpdateWithStatement() throws SQLException {
@@ -49,7 +60,9 @@ public class CsvColumnTest extends TestBase {
 	}
 
 	@Table("foo")
-	@Getter @Setter @ToString
+	@Getter
+	@Setter
+	@ToString
 	public static class Foo extends Row<Foo> {
 		@PrimaryKey
 		private long id;
