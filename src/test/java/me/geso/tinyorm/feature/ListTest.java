@@ -52,7 +52,7 @@ public class ListTest extends TestBase {
 			foo.update()
 					.setBean(fooUpdateForm)
 					.execute();
-			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),
+			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(),
 					123);
 		}
 
@@ -64,7 +64,7 @@ public class ListTest extends TestBase {
 			foo.update()
 					.setBean(fooUpdateForm)
 					.execute();
-			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),
+			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(),
 					123);
 		}
 	}
@@ -88,9 +88,9 @@ public class ListTest extends TestBase {
 			foo.update()
 					.set("csvInt", ints2)
 					.execute();
-			assertEquals(orm.refetch(foo).get().getCsvInt().get(0).intValue(),
+			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(),
 					123);
-			assertEquals(orm.refetch(foo).get().getCsvInt().get(1).intValue(),
+			assertEquals(foo.refetch().get().getCsvInt().get(1).intValue(),
 					456);
 		}
 	}

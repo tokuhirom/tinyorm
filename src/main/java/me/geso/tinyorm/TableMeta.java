@@ -41,7 +41,7 @@ import me.geso.tinyorm.trigger.Deflater;
 import me.geso.tinyorm.trigger.Inflater;
 
 @Slf4j
-public class TableMeta {
+class TableMeta {
 	private final String name;
 	private final List<PropertyDescriptor> primaryKeys;
 	private final Map<String, PropertyDescriptor> propertyDescriptorMap;
@@ -64,8 +64,7 @@ public class TableMeta {
 		this.deflaters = deflaters;
 	}
 
-	// Internal use.
-	public static TableMeta build(Class<?> rowClass)
+	static TableMeta build(Class<?> rowClass)
 			throws IntrospectionException {
 		BeanInfo beanInfo = Introspector.getBeanInfo(rowClass, Object.class);
 		PropertyDescriptor[] propertyDescriptors = beanInfo
@@ -308,7 +307,7 @@ public class TableMeta {
 		}
 
 		String sql = pkmap.keySet().stream().map(it
-				-> "(" + TinyORM.quoteIdentifier(it, connection) + "=?)"
+				-> "(" + TinyORMUtil.quoteIdentifier(it, connection) + "=?)"
 				).collect(Collectors.joining(" AND "));
 		List<Object> vars = pkmap.values().stream()
 				.collect(Collectors.toList());

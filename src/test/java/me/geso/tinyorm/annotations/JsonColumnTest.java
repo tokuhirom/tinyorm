@@ -1,6 +1,8 @@
 package me.geso.tinyorm.annotations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.Charset;
 import java.sql.ResultSet;
@@ -8,7 +10,9 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import me.geso.tinyorm.ActiveRecord;
 import me.geso.tinyorm.TestBase;
 
 import org.junit.Test;
@@ -30,7 +34,7 @@ public class JsonColumnTest extends TestBase {
 		X created = orm.insert(X.class)
 				.value("propertiesDump", map)
 				.executeSelect();
-		created = orm.refetch(created).get();
+		created = created.refetch().get();
 		assertEquals("fuga", created.getPropertiesDump().get("hoge"));
 
 		ResultSet rs = orm.getConnection()
@@ -42,9 +46,10 @@ public class JsonColumnTest extends TestBase {
 		assertFalse(rs.next());
 	}
 
-	@Data
+	@Getter
+	@Setter
 	@Table("x")
-	public static class X {
+	public static class X extends ActiveRecord<X>{
 		@PrimaryKey
 		private long id;
 

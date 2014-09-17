@@ -55,7 +55,7 @@ public abstract class AbstractSelectStatement<T, Impl> {
 		List<Object> params = new ArrayList<>();
 		StringBuilder buf = new StringBuilder();
 		buf.append("SELECT * FROM ").append(
-				TinyORM.quoteIdentifier(tableName, this.identifierQuoteString));
+				TinyORMUtil.quoteIdentifier(tableName, this.identifierQuoteString));
 		if (whereQuery != null && !whereQuery.isEmpty()) {
 			buf.append(" WHERE ");
 			buf.append(whereQuery.stream()

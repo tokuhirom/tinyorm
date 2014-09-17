@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TinyORM {
-	
+
 	private final Connection connection;
 
 	private static ConcurrentHashMap<Class<?>, TableMeta> tableMetaRegistry = new ConcurrentHashMap<>();
@@ -32,11 +32,21 @@ public class TinyORM {
 	public TinyORM(Connection connection) {
 		this.connection = connection;
 	}
-	
+
 	public Connection getConnection() {
 		return this.connection;
 	}
 
+	/**
+	 * Create {@code InsertStatement} for sending INSERT statement.<br>
+	 * {@code orm.insert(Member.class)
+	 * 	.value("name", "John")
+	 * 	.execute();
+	 * }
+	 * 
+	 * @param klass
+	 * @return
+	 */
 	public <T> InsertStatement<T> insert(Class<T> klass) {
 		return new InsertStatement<>(this, klass, this.getTableMeta(klass));
 	}
@@ -144,7 +154,7 @@ public class TinyORM {
 		}
 	}
 
-	public UpdateRowStatement createUpdateStatement(Object row) {
+	UpdateRowStatement createUpdateStatement(Object row) {
 		TableMeta tableMeta = this.getTableMeta(row.getClass());
 		UpdateRowStatement stmt = new UpdateRowStatement(row,
 				this.getConnection(), tableMeta);
@@ -161,43 +171,6 @@ public class TinyORM {
 			return preparedStatement.executeUpdate();
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
-		}
-	}
-
-	/**
-	 * Quote SQL identifier. You should get identifierQuoteString from
-	 * DatabaseMetadata.
-	 *
-	 * @param identifier
-	 * @param identifierQuoteString
-	 * @return Escaped identifier.
-	 */
-	public static String quoteIdentifier(String identifier,
-			String identifierQuoteString) {
-		return identifierQuoteString
-				+ identifier.replace(identifierQuoteString,
-						identifierQuoteString + identifierQuoteString)
-				+ identifierQuoteString;
-	}
-
-	/**
-	 * Quote SQL indentifier.
-	 * 
-	 * @param identifier
-	 * @param connection
-	 * @return
-	 */
-	public static String quoteIdentifier(String identifier,
-			Connection connection) {
-		if (connection == null) {
-			throw new NullPointerException();
-		}
-		try {
-			String identifierQuoteString = connection.getMetaData()
-					.getIdentifierQuoteString();
-			return quoteIdentifier(identifier, identifierQuoteString);
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
 		}
 	}
 
@@ -278,7 +251,7 @@ public class TinyORM {
 
 			StringBuilder buf = new StringBuilder();
 			buf.append("DELETE FROM ")
-					.append(TinyORM.quoteIdentifier(tableName, connection))
+					.append(TinyORMUtil.quoteIdentifier(tableName, connection))
 					.append(" WHERE ");
 			buf.append(where.getSQL());
 			String sql = buf.toString();
@@ -300,19 +273,14 @@ public class TinyORM {
 		}
 	}
 
-	/**
-	 * Fetch the latest row data from database.
-	 * 
-	 * @return
-	 */
-	public <T> Optional<T> refetch(T row) {
+	<T> Optional<T> refetch(T row) {
 		Connection connection = this.getConnection();
 		TableMeta tableMeta = this.getTableMeta(row.getClass());
 		Query where = tableMeta.createWhereClauseFromRow(row, connection);
 
 		StringBuilder buf = new StringBuilder();
 		buf.append("SELECT * FROM ").append(
-				TinyORM.quoteIdentifier(tableMeta.getName(), connection));
+				TinyORMUtil.quoteIdentifier(tableMeta.getName(), connection));
 		buf.append(" WHERE ").append(where.getSQL());
 		String sql = buf.toString();
 

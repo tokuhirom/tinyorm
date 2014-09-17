@@ -147,9 +147,9 @@ public class InsertStatement<T> {
 
 			Connection connection = this.orm.getConnection();
 			String sql = "SELECT * FROM "
-					+ TinyORM.quoteIdentifier(tableName, connection)
+					+ TinyORMUtil.quoteIdentifier(tableName, connection)
 					+ " WHERE "
-					+ TinyORM.quoteIdentifier(pkName, connection)
+					+ TinyORMUtil.quoteIdentifier(pkName, connection)
 					+ "=last_insert_id()";
 			Optional<T> maybeRow = this.orm.singleBySQL(klass, sql, new Object[] {});
 			if (maybeRow.isPresent()) {

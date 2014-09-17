@@ -35,7 +35,7 @@ public class BeforeUpdateTest extends TestBase {
 		created.update()
 				.setBean(xform)
 				.execute();
-		created = orm.refetch(created).get();
+		created = created.refetch().get();
 		assertEquals("fuga", created.getY());
 	}
 

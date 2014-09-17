@@ -42,7 +42,7 @@ public class UpdatedEpochTimestampTest extends TestBase {
 		created.update()
 				.setBean(form)
 				.execute();
-		Optional<X> maybeUpdated = orm.refetch(created);
+		Optional<X> maybeUpdated = created.refetch();
 		assertTrue(maybeUpdated.isPresent());
 		X updated = maybeUpdated.get();
 		assertNotNull(updated);
