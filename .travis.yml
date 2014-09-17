@@ -1,3 +1,5 @@
 language: java
 jdk:
   - oraclejdk8
+before_install:
+  - mysql -e "create database IF NOT EXISTS test;" -uroot
