@@ -164,7 +164,7 @@ public class TinyORM {
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
 	 */
-	public int update(String sql, Object... params) {
+	public int updateBySQL(String sql, Object[] params) {
 		try (PreparedStatement preparedStatement = this.getConnection()
 				.prepareStatement(sql)) {
 			TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
