@@ -6,8 +6,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @see me.geso.tinyorm.TableMeta
- * @author tokuhirom
  *
  */
 @Retention(RetentionPolicy.RUNTIME)
