@@ -12,7 +12,7 @@ import java.util.Map;
 
 import lombok.Getter;
 import lombok.Setter;
-import me.geso.tinyorm.ActiveRecord;
+import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class JsonColumnTest extends TestBase {
 	@Getter
 	@Setter
 	@Table("x")
-	public static class X extends ActiveRecord<X>{
+	public static class X extends Row<X>{
 		@PrimaryKey
 		private long id;
 

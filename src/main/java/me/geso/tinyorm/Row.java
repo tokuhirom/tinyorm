@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class ActiveRecord<T extends ActiveRecord<?>> implements
+public abstract class Row<T extends Row<?>> implements
 		ORMInjectable, ExtraColumnSettable {
 	private TinyORM orm;
 	private Map<String, Object> extraColumns = new LinkedHashMap<>();

@@ -257,7 +257,7 @@ public class TinyORMTest extends TestBase {
 	@Table("member")
 	@Data
 	@EqualsAndHashCode(callSuper = false)
-	public static class Member extends ActiveRecord<Member> {
+	public static class Member extends Row<Member> {
 		@PrimaryKey
 		private long id;
 		@Column

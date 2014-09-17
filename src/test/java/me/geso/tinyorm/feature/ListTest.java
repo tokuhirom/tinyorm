@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import me.geso.tinyorm.ActiveRecord;
+import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.Deflate;
@@ -108,7 +108,7 @@ public class ListTest extends TestBase {
 	}
 
 	@Table("foo")
-	public static class Foo extends ActiveRecord<Foo> {
+	public static class Foo extends Row<Foo> {
 		@PrimaryKey
 		private long id;
 		@Column

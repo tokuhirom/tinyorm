@@ -37,14 +37,29 @@ public class Paginated<T> {
 		this.entriesPerPage = entriesPerPage;
 	}
 
+	/**
+	 * Get row objects.
+	 * 
+	 * @return
+	 */
 	public List<T> getRows() {
 		return rows;
 	}
 
+	/**
+	 * Get "entriesPerPage".
+	 * 
+	 * @return
+	 */
 	public long getEntriesPerPage() {
 		return entriesPerPage;
 	}
 
+	/**
+	 * Return true if the pager has next page. False otherwise.
+	 * 
+	 * @return
+	 */
 	public boolean getHasNextPage() {
 		return hasNextPage;
 	}

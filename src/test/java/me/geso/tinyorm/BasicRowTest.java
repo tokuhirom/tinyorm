@@ -107,7 +107,7 @@ public class BasicRowTest extends TestBase {
 	@Getter
 	@Setter
 	@Table("x")
-	public static class X extends ActiveRecord<X> {
+	public static class X extends Row<X> {
 		@PrimaryKey
 		long id;
 		@Column
