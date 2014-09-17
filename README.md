@@ -1,6 +1,8 @@
 tinyorm
 =======
 
+[![Build Status](https://travis-ci.org/tokuhirom/tinyorm.svg?branch=master)](https://travis-ci.org/tokuhirom/tinyorm)
+
 This is a tiny o/r mapper for Java 8.
 
 ## Setup
