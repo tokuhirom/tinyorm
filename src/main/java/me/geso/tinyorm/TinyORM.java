@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -265,7 +266,7 @@ public class TinyORM {
 				if (updated != 1) {
 					throw new RuntimeException("Cannot delete row: " + sql
 							+ " "
-							+ where.getValues().toString());
+							+ Arrays.toString(where.getValues()));
 				}
 			}
 		} catch (SQLException ex) {
