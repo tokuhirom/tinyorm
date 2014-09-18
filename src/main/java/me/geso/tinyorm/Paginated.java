@@ -24,7 +24,7 @@ public class Paginated<T> {
 		this.hasNextPage = hasNextPage;
 	}
 
-	Paginated(final List<T> rows, final long entriesPerPage) {
+	public Paginated(final List<T> rows, final long entriesPerPage) {
 		if (rows.size() == entriesPerPage + 1) {
 			List<T> copied = new ArrayList<>(rows); // copy
 			copied.remove(rows.size() - 1); // pop tail
