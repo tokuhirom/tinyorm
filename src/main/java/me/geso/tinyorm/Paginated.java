@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import me.geso.tinyvalidator.Valid;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -42,6 +44,7 @@ public class Paginated<T> {
 	 * 
 	 * @return
 	 */
+	@Valid
 	public List<T> getRows() {
 		return rows;
 	}
