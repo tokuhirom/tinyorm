@@ -14,11 +14,15 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -26,6 +30,8 @@ import java.util.stream.Collectors;
  * @param <T>
  */
 public class InsertStatement<T> {
+	private static final Logger logger = LoggerFactory
+			.getLogger(InsertStatement.class);
 
 	// it should be ordered.
 	private final Map<String, Object> values = new LinkedHashMap<>();
@@ -109,10 +115,11 @@ public class InsertStatement<T> {
 	}
 
 	public void execute() {
+		this.tableMeta.invokeBeforeInsertTriggers(this);
+		String sql = buildSQL();
+		Object[] params = values.values().toArray();
+
 		try {
-			this.tableMeta.invokeBeforeInsertTriggers(this);
-			String sql = buildSQL();
-			Object[] params = values.values().toArray();
 			try (PreparedStatement preparedStatement = orm.getConnection()
 					.prepareStatement(sql)) {
 				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
@@ -124,6 +131,8 @@ public class InsertStatement<T> {
 				}
 			}
 		} catch (SQLException ex) {
+			logger.error("SQLException: {} {} {}", ex.getMessage(), sql,
+					Arrays.toString(params));
 			throw new RuntimeException(ex);
 		}
 	}
@@ -151,7 +160,8 @@ public class InsertStatement<T> {
 					+ " WHERE "
 					+ TinyORMUtil.quoteIdentifier(pkName, connection)
 					+ "=last_insert_id()";
-			Optional<T> maybeRow = this.orm.singleBySQL(klass, sql, new Object[] {});
+			Optional<T> maybeRow = this.orm.singleBySQL(klass, sql,
+					new Object[] {});
 			if (maybeRow.isPresent()) {
 				return maybeRow.get();
 			} else {
