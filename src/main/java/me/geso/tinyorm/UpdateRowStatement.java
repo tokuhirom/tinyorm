@@ -134,7 +134,7 @@ public class UpdateRowStatement {
 
 		try (PreparedStatement preparedStatement = connection
 				.prepareStatement(sql)) {
-			TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+			TinyORMUtils.fillPreparedStatementParams(preparedStatement,
 					values.toArray());
 			preparedStatement.executeUpdate();
 		} catch (SQLException ex) {
