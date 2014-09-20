@@ -29,7 +29,7 @@ public class BeanSelectStatement<T> extends
 			String sql = query.getSQL();
 			Object[] params= query.getValues();
 			try (PreparedStatement preparedStatement = this.connection.prepareStatement(sql)) {
-				TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
+				TinyORMUtils.fillPreparedStatementParams(preparedStatement, params);
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					if (rs.next()) {
 						T row = this.orm.mapRowFromResultSet(klass, rs, tableMeta);

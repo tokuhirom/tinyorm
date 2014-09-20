@@ -5,7 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 // Internal utility class
-class TinyORMUtil {
+class TinyORMUtils {
 	static void fillPreparedStatementParams(
 			PreparedStatement preparedStatement,
 			Object[] params) throws SQLException {

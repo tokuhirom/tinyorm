@@ -8,7 +8,7 @@ public class TinyORMUtilTest {
 
 	@Test
 	public void test() {
-		String got = TinyORMUtil.quoteIdentifier("hogefuga\"higehige\"hagahaga", "\"");
+		String got = TinyORMUtils.quoteIdentifier("hogefuga\"higehige\"hagahaga", "\"");
 		assertEquals("\"hogefuga\"\"higehige\"\"hagahaga\"", got);
 	}
 

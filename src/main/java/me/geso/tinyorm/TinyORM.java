@@ -61,7 +61,7 @@ public class TinyORM {
 			Connection connection = this.getConnection();
 			try (PreparedStatement preparedStatement = connection
 					.prepareStatement(sql)) {
-				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
 						params);
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					TableMeta tableMeta = this.getTableMeta(klass);
@@ -125,7 +125,7 @@ public class TinyORM {
 			final Class<T> klass, final String sql, final Object[] params) {
 		Connection connection = this.getConnection();
 		try (PreparedStatement ps = connection.prepareStatement(sql)) {
-			TinyORMUtil.fillPreparedStatementParams(ps, params);
+			TinyORMUtils.fillPreparedStatementParams(ps, params);
 			try (ResultSet rs = ps.executeQuery()) {
 				List<T> rows = this.mapRowListFromResultSet(klass, rs);
 				return rows;
@@ -145,7 +145,7 @@ public class TinyORM {
 		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
 		Connection connection = this.getConnection();
 		try (PreparedStatement ps = connection.prepareStatement(limitedSql)) {
-			TinyORMUtil.fillPreparedStatementParams(ps, params);
+			TinyORMUtils.fillPreparedStatementParams(ps, params);
 			try (ResultSet rs = ps.executeQuery()) {
 				List<T> rows = this.mapRowListFromResultSet(klass, rs);
 				return new Paginated<T>(rows, entriesPerPage);
@@ -168,7 +168,7 @@ public class TinyORM {
 	public int updateBySQL(String sql, Object[] params) {
 		try (PreparedStatement preparedStatement = this.getConnection()
 				.prepareStatement(sql)) {
-			TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
+			TinyORMUtils.fillPreparedStatementParams(preparedStatement, params);
 			return preparedStatement.executeUpdate();
 		} catch (SQLException ex) {
 			throw new RuntimeException(ex);
@@ -229,7 +229,7 @@ public class TinyORM {
 	public OptionalLong selectLong(String sql, Object... params) {
 		try (PreparedStatement preparedStatement = this.getConnection()
 				.prepareStatement(sql)) {
-			TinyORMUtil.fillPreparedStatementParams(preparedStatement, params);
+			TinyORMUtils.fillPreparedStatementParams(preparedStatement, params);
 			try (ResultSet rs = preparedStatement.executeQuery()) {
 				if (rs.next()) {
 					long l = rs.getLong(1);
@@ -252,14 +252,14 @@ public class TinyORM {
 
 			StringBuilder buf = new StringBuilder();
 			buf.append("DELETE FROM ")
-					.append(TinyORMUtil.quoteIdentifier(tableName, connection))
+					.append(TinyORMUtils.quoteIdentifier(tableName, connection))
 					.append(" WHERE ");
 			buf.append(where.getSQL());
 			String sql = buf.toString();
 
 			try (PreparedStatement preparedStatement = connection
 					.prepareStatement(sql)) {
-				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
 						where.getValues());
 				int updated = preparedStatement
 						.executeUpdate();
@@ -281,7 +281,7 @@ public class TinyORM {
 
 		StringBuilder buf = new StringBuilder();
 		buf.append("SELECT * FROM ").append(
-				TinyORMUtil.quoteIdentifier(tableMeta.getName(), connection));
+				TinyORMUtils.quoteIdentifier(tableMeta.getName(), connection));
 		buf.append(" WHERE ").append(where.getSQL());
 		String sql = buf.toString();
 
@@ -289,7 +289,7 @@ public class TinyORM {
 			Object[] params = where.getValues();
 			try (PreparedStatement preparedStatement = connection
 					.prepareStatement(sql)) {
-				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
 						params);
 				try (ResultSet rs = preparedStatement
 						.executeQuery()) {

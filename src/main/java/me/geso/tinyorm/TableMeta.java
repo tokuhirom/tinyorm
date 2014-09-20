@@ -376,7 +376,7 @@ class TableMeta {
 		}
 
 		String sql = pkmap.keySet().stream().map(it
-				-> "(" + TinyORMUtil.quoteIdentifier(it, connection) + "=?)"
+				-> "(" + TinyORMUtils.quoteIdentifier(it, connection) + "=?)"
 				).collect(Collectors.joining(" AND "));
 		List<Object> vars = pkmap.values().stream()
 				.collect(Collectors.toList());

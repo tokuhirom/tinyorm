@@ -28,7 +28,7 @@ public class PaginatedSelectStatement<T> extends
 		try {
 			try (PreparedStatement preparedStatement = this.connection
 					.prepareStatement(query.getSQL())) {
-				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
 						query.getValues());
 				try (ResultSet rs = preparedStatement.executeQuery()) {
 					List<T> rows = orm.mapRowListFromResultSet(klass, rs);

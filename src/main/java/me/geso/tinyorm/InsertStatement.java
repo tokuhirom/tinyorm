@@ -137,7 +137,7 @@ public class InsertStatement<T> {
 		try {
 			try (PreparedStatement preparedStatement = orm.getConnection()
 					.prepareStatement(sql)) {
-				TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
 						params);
 				int inserted = preparedStatement.executeUpdate();
 				if (inserted != 1) {
@@ -171,9 +171,9 @@ public class InsertStatement<T> {
 
 			Connection connection = this.orm.getConnection();
 			String sql = "SELECT * FROM "
-					+ TinyORMUtil.quoteIdentifier(tableName, connection)
+					+ TinyORMUtils.quoteIdentifier(tableName, connection)
 					+ " WHERE "
-					+ TinyORMUtil.quoteIdentifier(pkName, connection)
+					+ TinyORMUtils.quoteIdentifier(pkName, connection)
 					+ "=last_insert_id()";
 			Optional<T> maybeRow = this.orm.singleBySQL(klass, sql,
 					new Object[] {});

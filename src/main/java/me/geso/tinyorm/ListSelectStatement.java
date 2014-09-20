@@ -28,7 +28,7 @@ public class ListSelectStatement<T> extends
 		Query query = this.buildQuery();
 		try (PreparedStatement preparedStatement = this.connection
 				.prepareStatement(query.getSQL())) {
-			TinyORMUtil.fillPreparedStatementParams(preparedStatement,
+			TinyORMUtils.fillPreparedStatementParams(preparedStatement,
 					query.getValues());
 			try (ResultSet rs = preparedStatement.executeQuery()) {
 				List<T> rows = new ArrayList<>();

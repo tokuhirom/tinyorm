@@ -236,7 +236,7 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void testQuoteIdentifier() throws SQLException {
-		String got = TinyORMUtil.quoteIdentifier("hoge", connection);
+		String got = TinyORMUtils.quoteIdentifier("hoge", connection);
 		assertEquals("`hoge`", got);
 	}
 
