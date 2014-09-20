@@ -9,6 +9,7 @@ import java.util.Optional;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 
@@ -36,6 +37,7 @@ public class UpdatedEpochTimestampTest extends TestBase {
 				.prepareStatement(
 						"UPDATE x SET updatedOn=NULL")
 				.executeUpdate();
+		created = created.refetch().get(); // we need to refresh the data.
 		// updated updatedOn column
 		XForm form = new XForm();
 		form.setName("Taro");
@@ -45,11 +47,13 @@ public class UpdatedEpochTimestampTest extends TestBase {
 		Optional<X> maybeUpdated = created.refetch();
 		assertTrue(maybeUpdated.isPresent());
 		X updated = maybeUpdated.get();
+		System.out.println(updated);
 		assertNotNull(updated);
 		assertNotNull(updated.getUpdatedOn());
 		assertTrue((updated.getUpdatedOn() - System.currentTimeMillis() / 1000) < 3);
 	}
 
+	@ToString
 	@Getter
 	@Setter
 	@Table("x")

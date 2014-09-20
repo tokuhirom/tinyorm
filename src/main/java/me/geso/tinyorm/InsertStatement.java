@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +38,7 @@ public class InsertStatement<T> {
 	private final Class<T> klass;
 	private final TinyORM orm;
 	private final TableMeta tableMeta;
+	private final Map<String, Object> onDuplicateKeyUpdate = new LinkedHashMap<>();
 
 	InsertStatement(TinyORM orm, Class<T> klass, TableMeta tableMeta) {
 		if (orm == null) {
@@ -110,14 +111,28 @@ public class InsertStatement<T> {
 		buf.append(values.values().stream().map(e -> "?")
 				.collect(Collectors.joining(",")));
 		buf.append(")");
+		if (!onDuplicateKeyUpdate.isEmpty()) {
+			buf.append(" ON DUPLICATE KEY UPDATE ");
+			String piece = onDuplicateKeyUpdate.keySet().stream()
+					.map(column -> column + "=?")
+					.collect(Collectors.joining(","))
+			; // TODO quote identifier
+			buf.append(piece);
+		}
 		String sql = buf.toString();
 		return sql;
+	}
+	
+	public Object[] buildValues() {
+		List<Object> params = new ArrayList<>(values.values());
+		params.addAll(onDuplicateKeyUpdate.values());
+		return params.toArray();
 	}
 
 	public void execute() {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
 		String sql = buildSQL();
-		Object[] params = values.values().toArray();
+		Object[] params = this.buildValues();
 
 		try {
 			try (PreparedStatement preparedStatement = orm.getConnection()
@@ -132,7 +147,7 @@ public class InsertStatement<T> {
 			}
 		} catch (SQLException ex) {
 			logger.error("SQLException: {} {} {}", ex.getMessage(), sql,
-					Arrays.toString(params));
+					params.toString());
 			throw new RuntimeException(ex);
 		}
 	}

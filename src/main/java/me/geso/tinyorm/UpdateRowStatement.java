@@ -44,7 +44,17 @@ public class UpdateRowStatement {
 		if (value != null) {
 			value = this.tableMeta.invokeDeflater(columnName, value);
 		}
-		this.set.put(columnName, value);
+		if (!tableMeta.hasColumn(columnName)) {
+			throw new IllegalArgumentException(columnName
+					+ " is not listed in " + tableMeta.getName()
+					+ " column list.");
+		}
+		Object current = tableMeta.getValue(this.row, columnName);
+		if (ObjectUtils._equals(current, value)) {
+			// We don't need to update database. do nothing.
+		} else {
+			this.set.put(columnName, value);
+		}
 		return this;
 	}
 
@@ -53,8 +63,6 @@ public class UpdateRowStatement {
 			throw new RuntimeException(
 					"You can't call setBean() method the UpdateRowStatement has SET clause information.");
 		}
-		Map<String, Object> currentValueMap = tableMeta
-				.getColumnValueMap(this.row);
 
 		try {
 			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(),
@@ -63,22 +71,16 @@ public class UpdateRowStatement {
 					.getPropertyDescriptors();
 			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 				String name = propertyDescriptor.getName();
-				if (!currentValueMap.containsKey(name)) {
+				if (!tableMeta.hasColumn(name)) {
 					// Ignore values doesn't exists in Row bean.
 					continue;
 				}
-
-				Object current = currentValueMap.get(name);
-				Object newval = propertyDescriptor.getReadMethod().invoke(bean);
-				if (newval != null) {
-					if (!newval.equals(current)) {
-						this.set(name, newval);
-					}
-				} else { // newval IS NULL.
-					if (current != null) {
-						this.set(name, null);
-					}
+				if (propertyDescriptor.getReadMethod() == null) {
+					continue;
 				}
+
+				Object value = propertyDescriptor.getReadMethod().invoke(bean);
+				this.set(name, value);
 			}
 		} catch (IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException | IntrospectionException e) {
@@ -148,7 +150,7 @@ public class UpdateRowStatement {
 	}
 
 	protected void finalize() throws Throwable {
-		if (!this.executed) {
+		if (!this.executed && this.hasSetClause()) {
 			throw new RuntimeException(
 					"You may forgot to call 'execute' method on UpdateRowStatement.");
 		}

@@ -53,6 +53,7 @@ import me.geso.tinyorm.trigger.Inflater;
 class TableMeta {
 	private final String name;
 	private final List<PropertyDescriptor> primaryKeys;
+	// columnName -> propertyDescriptor
 	private final Map<String, PropertyDescriptor> propertyDescriptorMap;
 	private final List<BeforeInsertHandler> beforeInsertHandlers;
 	private final List<BeforeUpdateHandler> beforeUpdateHandlers;
@@ -271,6 +272,22 @@ class TableMeta {
 		return tableName;
 	}
 
+	Object getValue(Object row, String columnName) {
+		try {
+			PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
+					.get(columnName);
+			if (propertyDescriptor == null) {
+				throw new RuntimeException("Unknown column: " + columnName + " in " + this.getName());
+			}
+			Method readMethod = propertyDescriptor.getReadMethod();
+			Object value = readMethod.invoke(row);
+			return value;
+		} catch (IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	// Internal use.
 	Map<String, Object> getColumnValueMap(Object row) {
 		Map<String, Object> map = new LinkedHashMap<>(); // I guess it should be
@@ -279,8 +296,7 @@ class TableMeta {
 			for (PropertyDescriptor propertyDescriptor : this.propertyDescriptorMap
 					.values()) {
 				Method readMethod = propertyDescriptor.getReadMethod();
-				Object value;
-				value = readMethod.invoke(row);
+				Object value = readMethod.invoke(row);
 				map.put(propertyDescriptor.getName(), value);
 			}
 		} catch (IllegalAccessException | IllegalArgumentException
@@ -435,6 +451,10 @@ class TableMeta {
 
 	public List<PropertyDescriptor> getPrimaryKeys() {
 		return primaryKeys;
+	}
+
+	public boolean hasColumn(String columnName) {
+		return propertyDescriptorMap.containsKey(columnName);
 	}
 
 	@ToString
@@ -681,7 +701,7 @@ class TableMeta {
 						printer.printRecord((Iterable<?>) value);
 						String csv = builder.toString();
 						if (csv.endsWith("\n")) {
-							return csv.substring(0, csv.length()-2);
+							return csv.substring(0, csv.length() - 2);
 						} else {
 							return csv;
 						}
