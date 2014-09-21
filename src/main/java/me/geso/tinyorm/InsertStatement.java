@@ -12,17 +12,16 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.RichSQLException;
 
 /**
  *
@@ -30,9 +29,6 @@ import org.slf4j.LoggerFactory;
  * @param <T>
  */
 public class InsertStatement<T> {
-	private static final Logger logger = LoggerFactory
-			.getLogger(InsertStatement.class);
-
 	// it should be ordered.
 	private final Map<String, Object> values = new LinkedHashMap<>();
 	private final Class<T> klass;
@@ -61,13 +57,9 @@ public class InsertStatement<T> {
 	 * @return
 	 */
 	public InsertStatement<T> value(String columnName, Object value) {
-		try {
-			Object deflated = this.tableMeta.invokeDeflater(columnName, value);
-			values.put(columnName, deflated);
-			return this;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		Object deflated = this.tableMeta.invokeDeflater(columnName, value);
+		values.put(columnName, deflated);
+		return this;
 	}
 
 	public InsertStatement<T> value(Map<String, Object> values) {
@@ -103,7 +95,7 @@ public class InsertStatement<T> {
 		}
 	}
 
-	public String buildSQL() {
+	private String buildSQL() {
 		StringBuilder buf = new StringBuilder();
 		buf.append("INSERT INTO ").append(tableMeta.getName()).append(" (");
 		buf.append(values.keySet().stream().collect(Collectors.joining(",")));
@@ -115,44 +107,33 @@ public class InsertStatement<T> {
 			buf.append(" ON DUPLICATE KEY UPDATE ");
 			String piece = onDuplicateKeyUpdate.keySet().stream()
 					.map(column -> column + "=?")
-					.collect(Collectors.joining(","))
-			; // TODO quote identifier
+					.collect(Collectors.joining(",")); // TODO quote identifier
 			buf.append(piece);
 		}
 		String sql = buf.toString();
 		return sql;
 	}
-	
-	public Object[] buildValues() {
+
+	private List<Object> buildValues() {
 		List<Object> params = new ArrayList<>(values.values());
 		params.addAll(onDuplicateKeyUpdate.values());
-		return params.toArray();
+		return Collections.unmodifiableList(params);
 	}
 
-	public void execute() {
+	public void execute() throws RichSQLException {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
-		String sql = buildSQL();
-		Object[] params = this.buildValues();
+		final String sql = buildSQL();
+		final List<Object> params = this.buildValues();
 
-		try {
-			try (PreparedStatement preparedStatement = orm.getConnection()
-					.prepareStatement(sql)) {
-				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
-						params);
-				int inserted = preparedStatement.executeUpdate();
-				if (inserted != 1) {
-					throw new RuntimeException("Cannot insert to database:"
-							+ sql);
-				}
-			}
-		} catch (SQLException ex) {
-			logger.error("SQLException: {} {} {}", ex.getMessage(), sql,
-					params.toString());
-			throw new RuntimeException(ex);
+		final int inserted = JDBCUtils
+				.executeUpdate(orm.getConnection(), sql, params);
+		if (inserted != 1) {
+			throw new RuntimeException("Cannot insert to database:"
+					+ sql);
 		}
 	}
 
-	public T executeSelect() {
+	public T executeSelect() throws RichSQLException {
 		try {
 			this.execute();
 
@@ -175,8 +156,8 @@ public class InsertStatement<T> {
 					+ " WHERE "
 					+ TinyORMUtils.quoteIdentifier(pkName, connection)
 					+ "=last_insert_id()";
-			Optional<T> maybeRow = this.orm.singleBySQL(klass, sql,
-					new Object[] {});
+			final Optional<T> maybeRow = this.orm.singleBySQL(klass, sql,
+					Collections.emptyList());
 			if (maybeRow.isPresent()) {
 				return maybeRow.get();
 			} else {

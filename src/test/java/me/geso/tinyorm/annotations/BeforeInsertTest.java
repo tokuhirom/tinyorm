@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.InsertStatement;
 import me.geso.tinyorm.TestBase;
 
@@ -14,7 +15,7 @@ import org.junit.Test;
 public class BeforeInsertTest extends TestBase {
 
 	@Test
-	public void test() throws SQLException {
+	public void test() throws SQLException, RichSQLException {
 		orm.getConnection()
 				.prepareStatement(
 						"DROP TABLE IF EXISTS x")

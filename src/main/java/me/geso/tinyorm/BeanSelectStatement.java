@@ -1,10 +1,11 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Optional;
+
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.RichSQLException;
 
 public class BeanSelectStatement<T> extends
 		AbstractSelectStatement<T, BeanSelectStatement<T>> {
@@ -23,25 +24,17 @@ public class BeanSelectStatement<T> extends
 		this.connection = connection;
 	}
 
-	public Optional<T> execute() {
+	public Optional<T> execute() throws RichSQLException {
 		Query query = this.buildQuery();
-		try {
-			String sql = query.getSQL();
-			Object[] params= query.getValues();
-			try (PreparedStatement preparedStatement = this.connection.prepareStatement(sql)) {
-				TinyORMUtils.fillPreparedStatementParams(preparedStatement, params);
-				try (ResultSet rs = preparedStatement.executeQuery()) {
-					if (rs.next()) {
-						T row = this.orm.mapRowFromResultSet(klass, rs, tableMeta);
-						rs.close();
-						return Optional.of(row);
-					} else {
-						return Optional.empty();
-					}
+
+		return JDBCUtils.executeQuery(connection, query, (rs) -> {
+				if (rs.next()) {
+					T row = this.orm.mapRowFromResultSet(klass, rs, tableMeta);
+					rs.close();
+					return Optional.of(row);
+				} else {
+					return Optional.empty();
 				}
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		});
 	}
 }

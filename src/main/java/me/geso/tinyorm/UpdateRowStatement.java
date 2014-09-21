@@ -6,8 +6,6 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
@@ -15,6 +13,9 @@ import java.util.stream.Collectors;
 
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.RichSQLException;
 
 /**
  * UPDATE statement for one row.
@@ -99,7 +100,7 @@ public class UpdateRowStatement {
 		return !this.set.isEmpty();
 	}
 
-	public void execute() {
+	public void execute() throws RichSQLException {
 		if (!this.hasSetClause()) {
 			if (log.isDebugEnabled()) {
 				log.debug("There is no modification");
@@ -126,20 +127,13 @@ public class UpdateRowStatement {
 		String sql = buf.toString();
 		ArrayList<Object> values = new ArrayList<>();
 		values.addAll(set.values());
-		for (Object o : where.getValues()) {
+		for (Object o : where.getParameters()) {
 			values.add(o);
 		}
 
 		this.executed = true;
 
-		try (PreparedStatement preparedStatement = connection
-				.prepareStatement(sql)) {
-			TinyORMUtils.fillPreparedStatementParams(preparedStatement,
-					values.toArray());
-			preparedStatement.executeUpdate();
-		} catch (SQLException ex) {
-			throw new RuntimeException(ex);
-		}
+		JDBCUtils.executeUpdate(connection, sql, values);
 	}
 
 	/**

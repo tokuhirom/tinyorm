@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
@@ -32,7 +33,7 @@ public class ListTest extends TestBase {
 	}
 
 	@Test
-	public void testFoo() throws SQLException {
+	public void testFoo() throws SQLException, RichSQLException {
 		List<Integer> ints = Arrays.asList(5963, 4649);
 		List<String> strings = Arrays.asList("John", "Manjiro");
 		Foo foo = this.orm.insert(Foo.class).value("csvInt", ints)
@@ -70,7 +71,7 @@ public class ListTest extends TestBase {
 	}
 
 	@Test
-	public void testUpdateWithStatement() throws SQLException {
+	public void testUpdateWithStatement() throws SQLException, RichSQLException {
 		List<Integer> ints = Arrays.asList(5963, 4649);
 		List<String> strings = Arrays.asList("John", "Manjiro");
 		Foo foo = this.orm.insert(Foo.class).value("csvInt", ints)

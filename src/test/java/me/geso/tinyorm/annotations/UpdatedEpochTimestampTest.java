@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 
@@ -18,7 +19,7 @@ import org.junit.Test;
 public class UpdatedEpochTimestampTest extends TestBase {
 
 	@Test
-	public void test() throws SQLException {
+	public void test() throws SQLException, RichSQLException {
 		orm.getConnection()
 				.prepareStatement(
 						"DROP TABLE IF EXISTS x")

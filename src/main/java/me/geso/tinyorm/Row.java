@@ -4,6 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import me.geso.jdbcutils.RichSQLException;
+
 public abstract class Row<T extends Row<?>> implements
 		ORMInjectable, ExtraColumnSettable {
 	private TinyORM orm;
@@ -27,9 +29,10 @@ public abstract class Row<T extends Row<?>> implements
 	 * Fetch the latest row data from database.
 	 * 
 	 * @return
+	 * @throws RichSQLException 
 	 */
 	@SuppressWarnings("unchecked")
-	public Optional<T> refetch() {
+	public Optional<T> refetch() throws RichSQLException {
 		checkORM();
 		return this.orm.refetch((T) this);
 	}
@@ -47,8 +50,9 @@ public abstract class Row<T extends Row<?>> implements
 
 	/**
 	 * Delete this line from the database.
+	 * @throws RichSQLException 
 	 */
-	public void delete() {
+	public void delete() throws RichSQLException {
 		checkORM();
 		this.orm.delete(this);
 	}

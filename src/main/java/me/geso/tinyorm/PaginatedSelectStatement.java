@@ -1,10 +1,11 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
+
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.RichSQLException;
 
 public class PaginatedSelectStatement<T> extends
 		AbstractSelectStatement<T, PaginatedSelectStatement<T>> {
@@ -15,7 +16,8 @@ public class PaginatedSelectStatement<T> extends
 	private final Connection connection;
 
 	PaginatedSelectStatement(Connection connection,
-			Class<T> klass, TableMeta tableMeta, TinyORM orm, long entriesPerPage) {
+			Class<T> klass, TableMeta tableMeta, TinyORM orm,
+			long entriesPerPage) {
 		super(connection, tableMeta.getName());
 		this.klass = klass;
 		this.orm = orm;
@@ -23,23 +25,15 @@ public class PaginatedSelectStatement<T> extends
 		this.connection = connection;
 	}
 
-	public Paginated<T> execute() {
+	public Paginated<T> execute() throws RichSQLException {
 		Query query = this.limit(entriesPerPage + 1).buildQuery();
-		try {
-			try (PreparedStatement preparedStatement = this.connection
-					.prepareStatement(query.getSQL())) {
-				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
-						query.getValues());
-				try (ResultSet rs = preparedStatement.executeQuery()) {
-					List<T> rows = orm.mapRowListFromResultSet(klass, rs);
 
-					final Paginated<T> paginated = new Paginated<T>(
-							rows, entriesPerPage);
-					return paginated;
-				}
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		return JDBCUtils.executeQuery(connection, query, (rs) -> {
+				List<T> rows = orm.mapRowListFromResultSet(klass, rs);
+
+				final Paginated<T> paginated = new Paginated<T>(
+						rows, entriesPerPage);
+				return paginated;
+		});
 	}
 }

@@ -6,17 +6,20 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.RichSQLException;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -54,28 +57,21 @@ public class TinyORM {
 
 	/**
 	 * Select one row from the database.
+	 * 
+	 * @throws SQLException
+	 * @throws RichSQLException
 	 */
 	public <T> Optional<T> singleBySQL(Class<T> klass, String sql,
-			Object[] params) {
-		try {
-			Connection connection = this.getConnection();
-			try (PreparedStatement preparedStatement = connection
-					.prepareStatement(sql)) {
-				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
-						params);
-				try (ResultSet rs = preparedStatement.executeQuery()) {
-					TableMeta tableMeta = this.getTableMeta(klass);
-					if (rs.next()) {
-						T row = this.mapRowFromResultSet(klass, rs, tableMeta);
-						return Optional.of(row);
-					} else {
-						return Optional.empty();
-					}
-				}
+			List<Object> params) throws RichSQLException {
+		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+			TableMeta tableMeta = this.getTableMeta(klass);
+			if (rs.next()) {
+				T row = this.mapRowFromResultSet(klass, rs, tableMeta);
+				return Optional.of(row);
+			} else {
+				return Optional.empty();
 			}
-		} catch (SQLException ex) {
-			throw new RuntimeException(ex);
-		}
+		});
 	}
 
 	/**
@@ -120,39 +116,44 @@ public class TinyORM {
 	/**
 	 * Search by SQL.
 	 * 
+	 * @throws RichSQLException
+	 * 
 	 */
 	public <T> List<T> searchBySQL(
-			final Class<T> klass, final String sql, final Object[] params) {
-		Connection connection = this.getConnection();
-		try (PreparedStatement ps = connection.prepareStatement(sql)) {
-			TinyORMUtils.fillPreparedStatementParams(ps, params);
-			try (ResultSet rs = ps.executeQuery()) {
-				List<T> rows = this.mapRowListFromResultSet(klass, rs);
-				return rows;
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+			final Class<T> klass, final String sql, final List<Object> params)
+			throws RichSQLException {
+		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+			List<T> rows = this.mapRowListFromResultSet(klass, rs);
+			return rows;
+		});
+	}
+
+	/**
+	 * Search by SQL.
+	 * 
+	 * @throws RichSQLException
+	 * 
+	 */
+	public <T> List<T> searchBySQL(final Class<T> klass, final String sql)
+			throws RichSQLException {
+		return this.searchBySQL(klass, sql, Collections.emptyList());
 	}
 
 	/**
 	 * Search by SQL with Pager.
 	 * 
+	 * @throws RichSQLException
+	 * 
 	 */
 	public <T> Paginated<T> searchBySQLWithPager(
-			final Class<T> klass, final String sql, final Object[] params,
-			final long entriesPerPage) {
+			final Class<T> klass, final String sql, final List<Object> params,
+			final long entriesPerPage) throws RichSQLException {
 		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
 		Connection connection = this.getConnection();
-		try (PreparedStatement ps = connection.prepareStatement(limitedSql)) {
-			TinyORMUtils.fillPreparedStatementParams(ps, params);
-			try (ResultSet rs = ps.executeQuery()) {
-				List<T> rows = this.mapRowListFromResultSet(klass, rs);
-				return new Paginated<T>(rows, entriesPerPage);
-			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		return JDBCUtils.executeQuery(connection, limitedSql, params, (rs) -> {
+			List<T> rows = this.mapRowListFromResultSet(klass, rs);
+			return new Paginated<T>(rows, entriesPerPage);
+		});
 	}
 
 	UpdateRowStatement createUpdateStatement(Object row) {
@@ -164,29 +165,32 @@ public class TinyORM {
 
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
+	 * 
+	 * @throws RichSQLException
 	 */
-	public int updateBySQL(String sql, Object[] params) {
-		try (PreparedStatement preparedStatement = this.getConnection()
-				.prepareStatement(sql)) {
-			TinyORMUtils.fillPreparedStatementParams(preparedStatement, params);
-			return preparedStatement.executeUpdate();
-		} catch (SQLException ex) {
-			throw new RuntimeException(ex);
-		}
+	public int updateBySQL(final String sql, final List<Object> params)
+			throws RichSQLException {
+		return JDBCUtils.executeUpdate(connection, sql, params);
 	}
 
-	<T> List<T> mapRowListFromResultSet(Class<T> klass, ResultSet rs) {
+	/**
+	 * Execute an UPDATE, INSERT, and DELETE query.
+	 * 
+	 * @throws RichSQLException
+	 */
+	public int updateBySQL(String sql) throws RichSQLException {
+		return JDBCUtils.executeUpdate(connection, sql);
+	}
+
+	<T> List<T> mapRowListFromResultSet(Class<T> klass, ResultSet rs)
+			throws SQLException {
 		TableMeta tableMeta = this.getTableMeta(klass);
-		try {
-			ArrayList<T> rows = new ArrayList<>();
-			while (rs.next()) {
-				T row = this.mapRowFromResultSet(klass, rs, tableMeta);
-				rows.add(row);
-			}
-			return rows;
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
+		ArrayList<T> rows = new ArrayList<>();
+		while (rs.next()) {
+			T row = this.mapRowFromResultSet(klass, rs, tableMeta);
+			rows.add(row);
 		}
+		return rows;
 	}
 
 	/**
@@ -195,14 +199,15 @@ public class TinyORM {
 	 * @param klass
 	 * @param rs
 	 * @return
+	 * @throws SQLException
 	 */
-	<T> T mapRowFromResultSet(Class<T> klass, ResultSet rs) {
+	<T> T mapRowFromResultSet(Class<T> klass, ResultSet rs) throws SQLException {
 		TableMeta tableMeta = this.getTableMeta(klass);
 		return this.mapRowFromResultSet(klass, rs, tableMeta);
 	}
 
-	<T> T mapRowFromResultSet(Class<T> klass, ResultSet rs,
-			TableMeta tableMeta) {
+	<T> T mapRowFromResultSet(final Class<T> klass, final ResultSet rs,
+			final TableMeta tableMeta) throws SQLException {
 		try {
 			int columnCount = rs.getMetaData().getColumnCount();
 			T row = klass.newInstance();
@@ -216,7 +221,7 @@ public class TinyORM {
 				((ORMInjectable) row).setOrm(this);
 			}
 			return row;
-		} catch (SQLException | InstantiationException | IllegalAccessException e) {
+		} catch (InstantiationException | IllegalAccessException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -225,91 +230,70 @@ public class TinyORM {
 	 * Select single long value
 	 * 
 	 * @return
+	 * @throws SQLException
+	 * @throws RichSQLException
 	 */
-	public OptionalLong selectLong(String sql, Object... params) {
-		try (PreparedStatement preparedStatement = this.getConnection()
-				.prepareStatement(sql)) {
-			TinyORMUtils.fillPreparedStatementParams(preparedStatement, params);
-			try (ResultSet rs = preparedStatement.executeQuery()) {
-				if (rs.next()) {
-					long l = rs.getLong(1);
-					return OptionalLong.of(l);
-				} else {
-					return OptionalLong.empty();
-				}
+	public OptionalLong selectLong(final String sql,
+			@NonNull final List<Object> params)
+			throws RichSQLException {
+		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+			if (rs.next()) {
+				final long l = rs.getLong(1);
+				return OptionalLong.of(l);
+			} else {
+				return OptionalLong.empty();
 			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
+		});
+	}
+
+	public void delete(final Object row) throws RichSQLException {
+		final Connection connection = this.getConnection();
+		final TableMeta tableMeta = this.getTableMeta(row.getClass());
+		final String tableName = tableMeta.getName();
+		final Query where = tableMeta.createWhereClauseFromRow(row, connection);
+
+		final StringBuilder buf = new StringBuilder();
+		buf.append("DELETE FROM ")
+				.append(TinyORMUtils.quoteIdentifier(tableName, connection))
+				.append(" WHERE ");
+		buf.append(where.getSQL());
+		final String sql = buf.toString();
+
+		final int updated = JDBCUtils.executeUpdate(connection, sql,
+				where.getParameters());
+		if (updated != 1) {
+			throw new RuntimeException("Cannot delete row: " + sql
+					+ " "
+					+ where.getParameters());
 		}
 	}
 
-	public void delete(Object row) {
-		try {
-			Connection connection = this.getConnection();
-			TableMeta tableMeta = this.getTableMeta(row.getClass());
-			String tableName = tableMeta.getName();
-			Query where = tableMeta.createWhereClauseFromRow(row, connection);
+	@SuppressWarnings("unchecked")
+	<T> Optional<T> refetch(final T row) throws RichSQLException {
+		final Connection connection = this.getConnection();
+		final TableMeta tableMeta = this.getTableMeta(row.getClass());
+		final Query where = tableMeta.createWhereClauseFromRow(row, connection);
 
-			StringBuilder buf = new StringBuilder();
-			buf.append("DELETE FROM ")
-					.append(TinyORMUtils.quoteIdentifier(tableName, connection))
-					.append(" WHERE ");
-			buf.append(where.getSQL());
-			String sql = buf.toString();
-
-			try (PreparedStatement preparedStatement = connection
-					.prepareStatement(sql)) {
-				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
-						where.getValues());
-				int updated = preparedStatement
-						.executeUpdate();
-				if (updated != 1) {
-					throw new RuntimeException("Cannot delete row: " + sql
-							+ " "
-							+ Arrays.toString(where.getValues()));
-				}
-			}
-		} catch (SQLException ex) {
-			throw new RuntimeException(ex);
-		}
-	}
-
-	<T> Optional<T> refetch(T row) {
-		Connection connection = this.getConnection();
-		TableMeta tableMeta = this.getTableMeta(row.getClass());
-		Query where = tableMeta.createWhereClauseFromRow(row, connection);
-
-		StringBuilder buf = new StringBuilder();
+		final StringBuilder buf = new StringBuilder();
 		buf.append("SELECT * FROM ").append(
 				TinyORMUtils.quoteIdentifier(tableMeta.getName(), connection));
 		buf.append(" WHERE ").append(where.getSQL());
-		String sql = buf.toString();
+		final String sql = buf.toString();
 
-		try {
-			Object[] params = where.getValues();
-			try (PreparedStatement preparedStatement = connection
-					.prepareStatement(sql)) {
-				TinyORMUtils.fillPreparedStatementParams(preparedStatement,
-						params);
-				try (ResultSet rs = preparedStatement
-						.executeQuery()) {
-					if (rs.next()) {
-						@SuppressWarnings("unchecked")
-						T refetched = this.mapRowFromResultSet(
-								(Class<T>) row.getClass(),
-								rs, tableMeta);
-						return Optional.of(refetched);
-					} else {
-						return Optional.empty();
-					}
-				}
+		final List<Object> params = where.getParameters();
+		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+			if (rs.next()) {
+				final T refetched = this.mapRowFromResultSet(
+						(Class<T>) row.getClass(),
+						rs, tableMeta);
+				return Optional.of(refetched);
+			} else {
+				return Optional.empty();
 			}
-		} catch (SQLException ex) {
-			throw new RuntimeException(ex);
-		}
+		});
 	}
 
-	TableMeta getTableMeta(Class<?> klass) {
+	TableMeta getTableMeta(final Class<?> klass) {
 		return tableMetaRegistry.computeIfAbsent(klass, key -> {
 			log.info("Loading {}", klass);
 			try {

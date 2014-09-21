@@ -12,6 +12,7 @@ import java.util.Map;
 
 import lombok.Getter;
 import lombok.Setter;
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 
@@ -20,7 +21,7 @@ import org.junit.Test;
 public class JsonColumnTest extends TestBase {
 
 	@Test
-	public void test() throws SQLException {
+	public void test() throws SQLException, RichSQLException {
 		orm.getConnection()
 				.prepareStatement(
 						"DROP TABLE IF EXISTS x")

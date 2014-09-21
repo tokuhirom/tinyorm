@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.UpdateRowStatement;
@@ -17,7 +18,7 @@ import org.junit.Test;
 public class BeforeUpdateTest extends TestBase {
 
 	@Test
-	public void test() throws SQLException {
+	public void test() throws SQLException, RichSQLException {
 		orm.getConnection()
 				.prepareStatement(
 						"DROP TABLE IF EXISTS x")

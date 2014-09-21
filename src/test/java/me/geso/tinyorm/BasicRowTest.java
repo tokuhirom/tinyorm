@@ -5,11 +5,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Optional;
 
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
@@ -35,7 +37,8 @@ public class BasicRowTest extends TestBase {
 	}
 
 	@Test
-	public void testCreateUpdateStatement() throws SQLException {
+	public void testCreateUpdateStatement() throws SQLException,
+			RichSQLException {
 		X x = orm.insert(X.class)
 				.value("name", "John")
 				.executeSelect();
@@ -53,19 +56,19 @@ public class BasicRowTest extends TestBase {
 		assertEquals("updated", refetched.getY());
 	}
 
-//	@Test
-//	public void testWhere() {
-//		thrownLike(() -> {
-//			X x = new X();
-//			x.setConnection(connection);
-//			x.setTableMeta(orm.getSchema().getTableMeta(X.class));
-//			Query where = x.where();
-//			System.out.println(where);
-//		}, "Primary key should not be zero");
-//	}
+	// @Test
+	// public void testWhere() {
+	// thrownLike(() -> {
+	// X x = new X();
+	// x.setConnection(connection);
+	// x.setTableMeta(orm.getSchema().getTableMeta(X.class));
+	// Query where = x.where();
+	// System.out.println(where);
+	// }, "Primary key should not be zero");
+	// }
 
 	@Test
-	public void testRefetch() throws SQLException {
+	public void testRefetch() throws SQLException, RichSQLException {
 		X x = orm.insert(X.class)
 				.value("name", "John")
 				.executeSelect();
@@ -74,21 +77,21 @@ public class BasicRowTest extends TestBase {
 	}
 
 	@Test
-	public void testDelete() throws SQLException {
+	public void testDelete() throws SQLException, RichSQLException {
 		X taro = orm.insert(X.class).value("name", "Taro")
 				.executeSelect();
 
 		X john = orm.insert(X.class).value("name", "John")
 				.executeSelect();
 		orm.delete(john);
-		long count = orm.selectLong("SELECT COUNT(*) FROM x").getAsLong();
+		long count = orm.selectLong("SELECT COUNT(*) FROM x", Collections.emptyList()).getAsLong();
 		assertEquals(1, count);
 		assertTrue(orm.refetch(taro).isPresent());
 		assertFalse(orm.refetch(john).isPresent());
 	}
 
 	@Test
-	public void testUpdateByBean() {
+	public void testUpdateByBean() throws RichSQLException {
 		X taro = orm.insert(X.class)
 				.value("name", "Taro")
 				.executeSelect();
@@ -98,9 +101,11 @@ public class BasicRowTest extends TestBase {
 		XForm xform = new XForm();
 		xform.setName("Nick");
 		member.update()
-			.setBean(xform)
-			.execute();;
-		assertEquals("Taro", orm.refetch(taro).get().getName()); // not modified.
+				.setBean(xform)
+				.execute();
+		;
+		assertEquals("Taro", orm.refetch(taro).get().getName()); // not
+																	// modified.
 		assertEquals("Nick", orm.refetch(member).get().getName());
 	}
 
@@ -125,7 +130,7 @@ public class BasicRowTest extends TestBase {
 			stmt.set("y", "updated");
 		}
 	}
-	
+
 	@Data
 	public static class XForm {
 		String name;

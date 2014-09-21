@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
@@ -378,8 +379,7 @@ class TableMeta {
 		String sql = pkmap.keySet().stream().map(it
 				-> "(" + TinyORMUtils.quoteIdentifier(it, connection) + "=?)"
 				).collect(Collectors.joining(" AND "));
-		List<Object> vars = pkmap.values().stream()
-				.collect(Collectors.toList());
+		List<Object> vars = new ArrayList<>(pkmap.values());
 		this.validatePrimaryKeysForSelect(vars);
 		return new Query(sql, vars);
 	}

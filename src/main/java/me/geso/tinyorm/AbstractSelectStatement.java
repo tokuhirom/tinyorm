@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import me.geso.jdbcutils.Query;
+
 public abstract class AbstractSelectStatement<T, Impl> {
 	private final String tableName;
 	private final String identifierQuoteString;

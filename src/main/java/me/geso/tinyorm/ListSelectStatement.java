@@ -1,11 +1,12 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.RichSQLException;
 
 public class ListSelectStatement<T> extends
 		AbstractSelectStatement<T, ListSelectStatement<T>> {
@@ -24,33 +25,21 @@ public class ListSelectStatement<T> extends
 		this.connection = connection;
 	}
 
-	public List<T> execute() {
+	public List<T> execute() throws RichSQLException {
 		Query query = this.buildQuery();
-		try (PreparedStatement preparedStatement = this.connection
-				.prepareStatement(query.getSQL())) {
-			TinyORMUtils.fillPreparedStatementParams(preparedStatement,
-					query.getValues());
-			try (ResultSet rs = preparedStatement.executeQuery()) {
-				List<T> rows = new ArrayList<>();
-				while (rs.next()) {
-					T row = orm.mapRowFromResultSet(klass, rs, tableMeta);
-					rows.add(row);
-				}
-				return rows;
+		return JDBCUtils.executeQuery(connection, query, (rs) -> {
+			List<T> rows = new ArrayList<>();
+			while (rs.next()) {
+				T row = orm.mapRowFromResultSet(klass, rs, tableMeta);
+				rows.add(row);
 			}
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+			return rows;
+		});
 	}
 
-	public Paginated<T> executeWithPagination(long entriesPerPage) {
+	public Paginated<T> executeWithPagination(long entriesPerPage) throws RichSQLException {
 		List<T> rows = this.limit(entriesPerPage + 1).execute();
-		boolean hasNextPage = false;
-		if (rows.size() == entriesPerPage + 1) {
-			hasNextPage = true;
-			rows.remove(rows.size() - 1);
-		}
-		return new Paginated<T>(rows, entriesPerPage, hasNextPage);
+		return new Paginated<T>(rows, entriesPerPage);
 	}
 
 }

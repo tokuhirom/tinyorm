@@ -1,19 +1,10 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 // Internal utility class
 class TinyORMUtils {
-	static void fillPreparedStatementParams(
-			PreparedStatement preparedStatement,
-			Object[] params) throws SQLException {
-		for (int i = 0; i < params.length; ++i) {
-			preparedStatement.setObject(i + 1, params[i]);
-		}
-	}
-
 	/**
 	 * Quote SQL identifier. You should get identifierQuoteString from
 	 * DatabaseMetadata.

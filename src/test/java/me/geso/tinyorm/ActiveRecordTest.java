@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -29,7 +30,7 @@ public class ActiveRecordTest extends TestBase {
 
 	@SuppressWarnings("unused")
 	@Test
-	public void testRefetch() {
+	public void testRefetch() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
 				.value("name", "John")
 				.executeSelect();
@@ -46,7 +47,7 @@ public class ActiveRecordTest extends TestBase {
 
 	@SuppressWarnings("unused")
 	@Test
-	public void testUpdateByBean() {
+	public void testUpdateByBean() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
 				.value("name", "John")
 				.executeSelect();
@@ -68,7 +69,7 @@ public class ActiveRecordTest extends TestBase {
 
 	@SuppressWarnings("unused")
 	@Test
-	public void testCreateUpdateStatement() {
+	public void testCreateUpdateStatement() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
 				.value("name", "John")
 				.executeSelect();
@@ -88,7 +89,7 @@ public class ActiveRecordTest extends TestBase {
 
 	@SuppressWarnings("unused")
 	@Test
-	public void testDelete() {
+	public void testDelete() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
 				.value("name", "John")
 				.executeSelect();

@@ -5,12 +5,15 @@ import static org.junit.Assert.assertEquals;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -23,21 +26,21 @@ import org.junit.Test;
 public class TinyORMTest extends TestBase {
 
 	@Before
-	public final void setupSchema() throws SQLException {
-		connection.prepareStatement("DROP TABLE IF EXISTS member")
-				.executeUpdate();
-		connection
-				.prepareStatement(
-						"CREATE TABLE member (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), createdOn INT UNSIGNED DEFAULT NULL, updatedOn INT UNSIGNED DEFAULT NULL)")
-				.executeUpdate();
+	public final void setupSchema() throws RichSQLException {
+		this.orm.updateBySQL("DROP TABLE IF EXISTS member");
+		this.orm.updateBySQL(
+				"CREATE TABLE member ("
+						+ "id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,"
+						+ "name VARCHAR(255),"
+						+ "createdOn INT UNSIGNED DEFAULT NULL,"
+						+ "updatedOn INT UNSIGNED DEFAULT NULL"
+						+ ")"
+				);
 	}
 
 	@Test
-	public void singleSimple() throws SQLException {
-		orm.getConnection()
-				.prepareStatement(
-						"INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)")
-				.executeUpdate();
+	public void singleSimple() throws SQLException, RichSQLException {
+		orm.updateBySQL("INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)");
 
 		Member got = orm.singleBySQL(Member.class,
 				"SELECT * FROM member WHERE name=?", new Object[] { "m1" })
@@ -48,7 +51,7 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void testInsert() throws SQLException, InstantiationException,
-			IllegalAccessException {
+			IllegalAccessException, RichSQLException {
 		Member member = orm.insert(Member.class)
 				.value("name", "John")
 				.executeSelect();
@@ -58,7 +61,7 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
-	public void insertByBean() throws SQLException {
+	public void insertByBean() throws SQLException, RichSQLException {
 		MemberForm form = new MemberForm();
 		form.setName("Nick");
 		Member member = orm.insert(Member.class)
@@ -70,7 +73,7 @@ public class TinyORMTest extends TestBase {
 
 	@SuppressWarnings("unused")
 	@Test
-	public void single() throws SQLException {
+	public void single() throws SQLException, RichSQLException {
 		Member member1 = orm.insert(Member.class).value("name", "m1")
 				.executeSelect();
 		Member member2 = orm.insert(Member.class).value("name", "m2")
@@ -79,7 +82,7 @@ public class TinyORMTest extends TestBase {
 				.executeSelect();
 
 		Member got = orm.singleBySQL(Member.class,
-				"SELECT * FROM member WHERE name=?", new Object[] { "m2" })
+				"SELECT * FROM member WHERE name=?", Arrays.asList("m2"))
 				.get();
 		assertEquals(got.getId(), member2.getId());
 		assertEquals(got.getName(), "m2");
@@ -87,7 +90,7 @@ public class TinyORMTest extends TestBase {
 
 	@SuppressWarnings("unused")
 	@Test
-	public void singleWithStmt() throws SQLException {
+	public void singleWithStmt() throws SQLException, RichSQLException {
 		Member member1 = orm.insert(Member.class).value("name", "m1")
 				.executeSelect();
 		Member member2 = orm.insert(Member.class).value("name", "m2")
@@ -103,10 +106,14 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
-	public void searchWithPager() throws SQLException {
+	public void searchWithPager() throws SQLException, RichSQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
-			orm.insert(Member.class).value("name", "m" + i)
-					.executeSelect();
+			try {
+				orm.insert(Member.class).value("name", "m" + i)
+						.executeSelect();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		});
 
 		{
@@ -148,10 +155,14 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
-	public void testSearchBySQL() throws SQLException {
+	public void testSearchBySQL() throws RichSQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
-			orm.insert(Member.class).value("name", "m" + i)
-					.execute();
+			try {
+				orm.insert(Member.class).value("name", "m" + i)
+						.execute();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		});
 
 		{
@@ -159,7 +170,7 @@ public class TinyORMTest extends TestBase {
 					.searchBySQL(
 							Member.class,
 							"SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC",
-							new Object[] {});
+							Collections.emptyList());
 			System.out.println(members);
 			assertEquals(10, members.size());
 			assertEquals("10,9,8,7,6,5,4,3,2,1", members.stream()
@@ -172,16 +183,21 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
-	public void testSearchBySQLWithPager() throws SQLException {
+	public void testSearchBySQLWithPager() throws SQLException,
+			RichSQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
-			orm.insert(Member.class).value("name", "m" + i)
-					.executeSelect();
+			try {
+				orm.insert(Member.class).value("name", "m" + i)
+						.executeSelect();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		});
 
 		{
 			Paginated<Member> paginated = orm.searchBySQLWithPager(
 					Member.class, "SELECT * FROM member ORDER BY id DESC",
-					new Object[] {}, 4);
+					Collections.emptyList(), 4);
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getHasNextPage(), true);
@@ -193,7 +209,7 @@ public class TinyORMTest extends TestBase {
 			Paginated<Member> paginated = orm.searchBySQLWithPager(
 					Member.class,
 					"SELECT * FROM member WHERE id<7 ORDER BY id DESC",
-					new Object[] {}, 4);
+					Collections.emptyList(), 4);
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getHasNextPage(), true);
@@ -205,7 +221,7 @@ public class TinyORMTest extends TestBase {
 			Paginated<Member> paginated = orm.searchBySQLWithPager(
 					Member.class,
 					"SELECT * FROM member WHERE id<? ORDER BY id DESC",
-					new Object[] { 3 }, 4);
+					Arrays.asList(3), 4);
 			assertEquals(paginated.getRows().size(), 2);
 			assertEquals(paginated.getEntriesPerPage(), 4);
 			assertEquals(paginated.getHasNextPage(), false);
@@ -217,7 +233,7 @@ public class TinyORMTest extends TestBase {
 
 	@SuppressWarnings("unused")
 	@Test
-	public void searchWithStmt() throws SQLException {
+	public void searchWithStmt() throws SQLException, RichSQLException {
 		Member member1 = orm.insert(Member.class).value("name", "m1")
 				.executeSelect();
 		Member member2 = orm.insert(Member.class).value("name", "m2")

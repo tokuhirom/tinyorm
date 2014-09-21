@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 import org.junit.Test;
 
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -18,7 +19,7 @@ import me.geso.tinyorm.annotations.Table;
 public class BooleanTest extends TestBase {
 
 	@Test
-	public void test() throws SQLException {
+	public void test() throws SQLException, RichSQLException {
 		this.connection.prepareStatement("DROP TABLE IF EXISTS b")
 				.executeUpdate();
 		this.connection
