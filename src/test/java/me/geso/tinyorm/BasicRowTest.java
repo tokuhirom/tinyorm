@@ -84,7 +84,7 @@ public class BasicRowTest extends TestBase {
 		X john = orm.insert(X.class).value("name", "John")
 				.executeSelect();
 		orm.delete(john);
-		long count = orm.selectLong("SELECT COUNT(*) FROM x", Collections.emptyList()).getAsLong();
+		long count = orm.queryForLong("SELECT COUNT(*) FROM x", Collections.emptyList()).getAsLong();
 		assertEquals(1, count);
 		assertTrue(orm.refetch(taro).isPresent());
 		assertFalse(orm.refetch(john).isPresent());

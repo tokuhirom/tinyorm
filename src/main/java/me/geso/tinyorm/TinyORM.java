@@ -233,7 +233,7 @@ public class TinyORM {
 	 * @throws SQLException
 	 * @throws RichSQLException
 	 */
-	public OptionalLong selectLong(final String sql,
+	public OptionalLong queryForLong(final String sql,
 			@NonNull final List<Object> params)
 			throws RichSQLException {
 		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
@@ -244,6 +244,50 @@ public class TinyORM {
 				return OptionalLong.empty();
 			}
 		});
+	}
+
+	/**
+	 * Select single long value from database.
+	 * 
+	 * @param string
+	 * @return
+	 * @throws RichSQLException
+	 */
+	public OptionalLong queryForLong(@NonNull final String sql)
+			throws RichSQLException {
+		return this.queryForLong(sql, Collections.emptyList());
+	}
+
+	/**
+	 * Select single String value from database.
+	 * 
+	 * @return
+	 * @throws SQLException
+	 * @throws RichSQLException
+	 */
+	public Optional<String> queryForString(final String sql,
+			@NonNull final List<Object> params)
+			throws RichSQLException {
+		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+			if (rs.next()) {
+				final String s = rs.getString(1);
+				return Optional.of(s);
+			} else {
+				return Optional.empty();
+			}
+		});
+	}
+
+	/**
+	 * Select single String value from database without parameters.
+	 * 
+	 * @return
+	 * @throws SQLException
+	 * @throws RichSQLException
+	 */
+	public Optional<String> queryForString(@NonNull final String sql)
+			throws RichSQLException {
+		return this.queryForString(sql, Collections.emptyList());
 	}
 
 	public void delete(final Object row) throws RichSQLException {
@@ -303,4 +347,5 @@ public class TinyORM {
 			}
 		});
 	}
+
 }

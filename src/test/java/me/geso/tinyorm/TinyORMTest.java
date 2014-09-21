@@ -1,6 +1,9 @@
 package me.geso.tinyorm;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,6 +11,8 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -43,7 +48,7 @@ public class TinyORMTest extends TestBase {
 		orm.updateBySQL("INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)");
 
 		Member got = orm.singleBySQL(Member.class,
-				"SELECT * FROM member WHERE name=?", new Object[] { "m1" })
+				"SELECT * FROM member WHERE name=?", Arrays.asList("m1"))
 				.get();
 		assertEquals(1, got.getId());
 		assertEquals("m1", got.getName());
@@ -267,6 +272,76 @@ public class TinyORMTest extends TestBase {
 			try (ResultSet rs = ps.executeQuery()) {
 				orm.mapRowListFromResultSet(Member.class, rs);
 			}
+		}
+	}
+
+	@Test
+	public void testQueryForLong() throws SQLException, RichSQLException {
+		orm.updateBySQL(
+				"CREATE TEMPORARY TABLE x (y integer, z varchar(255));"
+				);
+		orm.updateBySQL(
+				"INSERT INTO x (y,z) values (5963, 'hey')"
+				);
+		{
+			OptionalLong got = orm
+					.queryForLong("SELECT y FROM x WHERE z='hey'");
+			assertThat(got.isPresent(), is(true));
+			assertThat(got.getAsLong(), is(5963L));
+		}
+		{
+			OptionalLong got = orm
+					.queryForLong("SELECT y FROM x WHERE z='nothing'");
+			assertThat(got.isPresent(), is(false));
+		}
+		// with placeholders
+		{
+			OptionalLong got = orm
+					.queryForLong("SELECT y FROM x WHERE z=?",
+							Arrays.asList("hey"));
+			assertThat(got.isPresent(), is(true));
+			assertThat(got.getAsLong(), is(5963L));
+		}
+		{
+			OptionalLong got = orm
+					.queryForLong("SELECT y FROM x WHERE z=?",
+							Arrays.asList("Nothing"));
+			assertThat(got.isPresent(), is(false));
+		}
+	}
+
+	@Test
+	public void testQueryForString() throws SQLException, RichSQLException {
+		orm.updateBySQL(
+				"CREATE TEMPORARY TABLE x (y varchar(255), z varchar(255));"
+				);
+		orm.updateBySQL(
+				"INSERT INTO x (y,z) values ('ho', 'hey')"
+				);
+		{
+			Optional<String> got = orm
+					.queryForString("SELECT y FROM x WHERE z='hey'");
+			assertThat(got.isPresent(), is(true));
+			assertThat(got.get(), is("ho"));
+		}
+		{
+			Optional<String> got = orm
+					.queryForString("SELECT y FROM x WHERE z='nothing'");
+			assertThat(got.isPresent(), is(false));
+		}
+		// with placeholders
+		{
+			Optional<String> got = orm
+					.queryForString("SELECT y FROM x WHERE z=?",
+							Arrays.asList("hey"));
+			assertThat(got.isPresent(), is(true));
+			assertThat(got.get(), is("ho"));
+		}
+		{
+			Optional<String> got = orm
+					.queryForString("SELECT y FROM x WHERE z=?",
+							Arrays.asList("Nothing"));
+			assertThat(got.isPresent(), is(false));
 		}
 	}
 
