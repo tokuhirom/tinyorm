@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.QueryBuilder;
 
 public abstract class AbstractSelectStatement<T, Impl> {
 	private final String tableName;
@@ -20,7 +21,8 @@ public abstract class AbstractSelectStatement<T, Impl> {
 	AbstractSelectStatement(Connection connection, String tableName) {
 		this.tableName = tableName;
 		try {
-			this.identifierQuoteString = connection.getMetaData().getIdentifierQuoteString();
+			this.identifierQuoteString = connection.getMetaData()
+					.getIdentifierQuoteString();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -54,29 +56,29 @@ public abstract class AbstractSelectStatement<T, Impl> {
 	}
 
 	protected Query buildQuery() {
-		List<Object> params = new ArrayList<>();
-		StringBuilder buf = new StringBuilder();
-		buf.append("SELECT * FROM ").append(
-				TinyORMUtils.quoteIdentifier(tableName, this.identifierQuoteString));
+		QueryBuilder builder = new QueryBuilder(identifierQuoteString)
+				.appendQuery("SELECT * FROM ")
+				.appendIdentifier(tableName);
 		if (whereQuery != null && !whereQuery.isEmpty()) {
-			buf.append(" WHERE ");
-			buf.append(whereQuery.stream()
+			builder.appendQuery(" WHERE ");
+			builder.appendQuery(whereQuery.stream()
 					.map(it -> "(" + it + ")")
 					.collect(Collectors.joining(" AND ")));
-			params.addAll(whereParams);
+			builder.addParameters(whereParams);
 		}
 		if (!orderBy.isEmpty()) {
-			buf.append(" ORDER BY ");
-			buf.append(orderBy.stream().collect(Collectors.joining(",")));
+			builder.appendQuery(" ORDER BY ")
+					.appendQuery(
+							orderBy.stream().collect(Collectors.joining(",")));
 		}
 		if (this.limit != null) {
-			buf.append(" LIMIT ");
-			buf.append(this.limit);
+			builder.appendQuery(" LIMIT ")
+					.appendQuery("" + this.limit);
 		}
 		if (this.offset != null) {
-			buf.append(" OFFSET ");
-			buf.append(this.offset);
+			builder.appendQuery(" OFFSET ")
+					.appendQuery("" + this.offset);
 		}
-		return new Query(buf.toString(), params);
+		return builder.build();
 	}
 }

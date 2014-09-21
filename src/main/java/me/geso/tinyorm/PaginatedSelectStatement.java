@@ -26,7 +26,7 @@ public class PaginatedSelectStatement<T> extends
 	}
 
 	public Paginated<T> execute() throws RichSQLException {
-		Query query = this.limit(entriesPerPage + 1).buildQuery();
+		final Query query = this.limit(entriesPerPage + 1).buildQuery();
 
 		return JDBCUtils.executeQuery(connection, query, (rs) -> {
 				List<T> rows = orm.mapRowListFromResultSet(klass, rs);

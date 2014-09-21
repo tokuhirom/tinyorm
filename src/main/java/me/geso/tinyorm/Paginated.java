@@ -76,7 +76,7 @@ public class Paginated<T> {
 	 * @return
 	 */
 	public <O> Paginated<O> mapRows(Function<T, O> f) {
-		List<O> mapped = this.rows.stream().map(f).collect(Collectors.toList());
+		final List<O> mapped = this.rows.stream().map(f).collect(Collectors.toList());
 		return new Paginated<>(mapped, entriesPerPage, hasNextPage);
 	}
 

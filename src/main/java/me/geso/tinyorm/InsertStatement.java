@@ -12,8 +12,6 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +19,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.QueryBuilder;
 import me.geso.jdbcutils.RichSQLException;
 
 /**
@@ -34,7 +34,8 @@ public class InsertStatement<T> {
 	private final Class<T> klass;
 	private final TinyORM orm;
 	private final TableMeta tableMeta;
-	private final Map<String, Object> onDuplicateKeyUpdate = new LinkedHashMap<>();
+	private String onDuplicateKeyUpdateQuery;
+	private List<Object> onDuplicateKeyUpdateValues;
 
 	InsertStatement(TinyORM orm, Class<T> klass, TableMeta tableMeta) {
 		if (orm == null) {
@@ -95,41 +96,39 @@ public class InsertStatement<T> {
 		}
 	}
 
-	private String buildSQL() {
-		StringBuilder buf = new StringBuilder();
-		buf.append("INSERT INTO ").append(tableMeta.getName()).append(" (");
-		buf.append(values.keySet().stream().collect(Collectors.joining(",")));
-		buf.append(") VALUES (");
-		buf.append(values.values().stream().map(e -> "?")
-				.collect(Collectors.joining(",")));
-		buf.append(")");
-		if (!onDuplicateKeyUpdate.isEmpty()) {
-			buf.append(" ON DUPLICATE KEY UPDATE ");
-			String piece = onDuplicateKeyUpdate.keySet().stream()
-					.map(column -> column + "=?")
-					.collect(Collectors.joining(",")); // TODO quote identifier
-			buf.append(piece);
+	private Query buildQuery() {
+		final String identifierQuoteString = orm.getIdentifierQuoteString();
+		final QueryBuilder builder = new QueryBuilder(orm.getConnection())
+				.appendQuery("INSERT INTO ")
+				.appendIdentifier(tableMeta.getName())
+				.appendQuery(" (")
+				.appendQuery(
+						values.keySet()
+								.stream()
+								.map(key -> JDBCUtils.quoteIdentifier(key,
+										identifierQuoteString))
+								.collect(Collectors.joining(",")))
+				.appendQuery(") VALUES (")
+				.appendQuery(values.values().stream().map(e -> "?")
+						.collect(Collectors.joining(",")))
+				.addParameters(values.values())
+				.appendQuery(")");
+		if (onDuplicateKeyUpdateQuery != null) {
+			builder.appendQuery(" ON DUPLICATE KEY UPDATE ")
+					.appendQuery(onDuplicateKeyUpdateQuery)
+					.addParameters(onDuplicateKeyUpdateValues);
 		}
-		String sql = buf.toString();
-		return sql;
-	}
-
-	private List<Object> buildValues() {
-		List<Object> params = new ArrayList<>(values.values());
-		params.addAll(onDuplicateKeyUpdate.values());
-		return Collections.unmodifiableList(params);
+		return builder.build();
 	}
 
 	public void execute() throws RichSQLException {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
-		final String sql = buildSQL();
-		final List<Object> params = this.buildValues();
+		final Query query = this.buildQuery();
 
-		final int inserted = JDBCUtils
-				.executeUpdate(orm.getConnection(), sql, params);
+		final int inserted = JDBCUtils.executeUpdate(orm.getConnection(), query);
 		if (inserted != 1) {
 			throw new RuntimeException("Cannot insert to database:"
-					+ sql);
+					+ query);
 		}
 	}
 
@@ -137,9 +136,9 @@ public class InsertStatement<T> {
 		try {
 			this.execute();
 
-			List<PropertyDescriptor> primaryKeyMetas = this.tableMeta
+			final List<PropertyDescriptor> primaryKeyMetas = this.tableMeta
 					.getPrimaryKeys();
-			String tableName = this.tableMeta.getName();
+			final String tableName = this.tableMeta.getName();
 			if (primaryKeyMetas.isEmpty()) {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table doesn't have a primary keys.");
@@ -148,16 +147,17 @@ public class InsertStatement<T> {
 				throw new RuntimeException(
 						"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
 			}
-			String pkName = primaryKeyMetas.get(0).getName();
+			final String pkName = primaryKeyMetas.get(0).getName();
 
-			Connection connection = this.orm.getConnection();
-			String sql = "SELECT * FROM "
-					+ TinyORMUtils.quoteIdentifier(tableName, connection)
-					+ " WHERE "
-					+ TinyORMUtils.quoteIdentifier(pkName, connection)
-					+ "=last_insert_id()";
-			final Optional<T> maybeRow = this.orm.singleBySQL(klass, sql,
-					Collections.emptyList());
+			final Connection connection = this.orm.getConnection();
+			final Query query = new QueryBuilder(connection)
+					.appendQuery("SELECT * FROM ")
+					.appendIdentifier(tableName)
+					.appendQuery(" WHERE ")
+					.appendIdentifier(pkName)
+					.appendQuery("=last_insert_id()")
+					.build();
+			final Optional<T> maybeRow = this.orm.singleBySQL(klass, query);
 			if (maybeRow.isPresent()) {
 				return maybeRow.get();
 			} else {

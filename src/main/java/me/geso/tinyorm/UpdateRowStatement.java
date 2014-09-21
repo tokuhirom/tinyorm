@@ -7,6 +7,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.QueryBuilder;
 import me.geso.jdbcutils.RichSQLException;
 
 /**
@@ -31,11 +33,14 @@ public class UpdateRowStatement {
 	private boolean executed = false;
 	private final Connection connection;
 	private final TableMeta tableMeta;
+	private final String identifierQuoteString;
 
-	UpdateRowStatement(Object row, Connection connection, TableMeta tableMeta) {
+	UpdateRowStatement(Object row, Connection connection, TableMeta tableMeta,
+			final String identifierQuoteString) {
 		this.row = row;
 		this.connection = connection;
 		this.tableMeta = tableMeta;
+		this.identifierQuoteString = identifierQuoteString;
 	}
 
 	public UpdateRowStatement set(String columnName, Object value) {
@@ -111,29 +116,30 @@ public class UpdateRowStatement {
 		this.tableMeta.invokeBeforeUpdateTriggers(this);
 		String tableName = tableMeta.getName();
 
-		Query where = tableMeta.createWhereClauseFromRow(row, connection);
-		String whereSQL = where.getSQL();
-		if (whereSQL.isEmpty()) {
+		final Query where = tableMeta.createWhereClauseFromRow(row,
+				this.identifierQuoteString);
+		if (where.getSQL().isEmpty()) {
 			throw new RuntimeException("Empty where clause");
 		}
-		StringBuilder buf = new StringBuilder();
-		buf.append("UPDATE ").append(tableName).append(" SET ");
-		set.keySet().stream()
-				.map(col -> col + "=?")
-				.collect(
-						Collectors.collectingAndThen(Collectors.joining(","),
-								it -> buf.append(it)));
-		buf.append(" WHERE ").append(where.getSQL());
-		String sql = buf.toString();
-		ArrayList<Object> values = new ArrayList<>();
-		values.addAll(set.values());
-		for (Object o : where.getParameters()) {
-			values.add(o);
-		}
+		Query query = new QueryBuilder(this.identifierQuoteString)
+				.appendQuery("UPDATE ")
+				.appendIdentifier(tableName)
+				.appendQuery(" SET ")
+				.appendQuery(
+						set.keySet()
+								.stream()
+								.map(col -> JDBCUtils.quoteIdentifier(col,
+										identifierQuoteString) + "=?")
+								.collect(
+										Collectors.joining(",")))
+				.addParameters(set.values())
+				.appendQuery(" WHERE ")
+				.append(where)
+				.build();
 
 		this.executed = true;
 
-		JDBCUtils.executeUpdate(connection, sql, values);
+		JDBCUtils.executeUpdate(connection, query);
 	}
 
 	/**

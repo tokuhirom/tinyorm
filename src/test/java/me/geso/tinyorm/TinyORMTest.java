@@ -3,7 +3,6 @@ package me.geso.tinyorm;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -253,12 +252,6 @@ public class TinyORMTest extends TestBase {
 		assertEquals(got.size(), 2);
 		assertEquals(got.get(0).getName(), "m2");
 		assertEquals(got.get(1).getName(), "m1");
-	}
-
-	@Test
-	public void testQuoteIdentifier() throws SQLException {
-		String got = TinyORMUtils.quoteIdentifier("hoge", connection);
-		assertEquals("`hoge`", got);
 	}
 
 	@Test

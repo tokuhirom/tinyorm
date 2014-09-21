@@ -19,6 +19,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.QueryBuilder;
 import me.geso.jdbcutils.RichSQLException;
 
 /**
@@ -72,6 +73,19 @@ public class TinyORM {
 				return Optional.empty();
 			}
 		});
+	}
+
+	/**
+	 * Select one row from the database.
+	 * 
+	 * @param klass
+	 * @param query
+	 * @return
+	 * @throws RichSQLException
+	 */
+	public <T> Optional<T> singleBySQL(Class<T> klass, Query query)
+			throws RichSQLException {
+		return this.singleBySQL(klass, query.getSQL(), query.getParameters());
 	}
 
 	/**
@@ -159,7 +173,7 @@ public class TinyORM {
 	UpdateRowStatement createUpdateStatement(Object row) {
 		TableMeta tableMeta = this.getTableMeta(row.getClass());
 		UpdateRowStatement stmt = new UpdateRowStatement(row,
-				this.getConnection(), tableMeta);
+				this.getConnection(), tableMeta, this.getIdentifierQuoteString());
 		return stmt;
 	}
 
@@ -294,21 +308,20 @@ public class TinyORM {
 		final Connection connection = this.getConnection();
 		final TableMeta tableMeta = this.getTableMeta(row.getClass());
 		final String tableName = tableMeta.getName();
-		final Query where = tableMeta.createWhereClauseFromRow(row, connection);
+		final String identifierQuoteString = this.getIdentifierQuoteString();
+		final Query where = tableMeta.createWhereClauseFromRow(row,
+				identifierQuoteString);
 
-		final StringBuilder buf = new StringBuilder();
-		buf.append("DELETE FROM ")
-				.append(TinyORMUtils.quoteIdentifier(tableName, connection))
-				.append(" WHERE ");
-		buf.append(where.getSQL());
-		final String sql = buf.toString();
+		final Query query = new QueryBuilder(identifierQuoteString)
+				.appendQuery("DELETE FROM ")
+				.appendIdentifier(tableName)
+				.appendQuery(" WHERE ")
+				.append(where)
+				.build();
 
-		final int updated = JDBCUtils.executeUpdate(connection, sql,
-				where.getParameters());
+		final int updated = JDBCUtils.executeUpdate(connection, query);
 		if (updated != 1) {
-			throw new RuntimeException("Cannot delete row: " + sql
-					+ " "
-					+ where.getParameters());
+			throw new RuntimeException("Cannot delete row: " + query);
 		}
 	}
 
@@ -316,16 +329,18 @@ public class TinyORM {
 	<T> Optional<T> refetch(final T row) throws RichSQLException {
 		final Connection connection = this.getConnection();
 		final TableMeta tableMeta = this.getTableMeta(row.getClass());
-		final Query where = tableMeta.createWhereClauseFromRow(row, connection);
+		final String identifierQuoteString = this.getIdentifierQuoteString();
+		final Query where = tableMeta.createWhereClauseFromRow(row,
+				identifierQuoteString);
 
-		final StringBuilder buf = new StringBuilder();
-		buf.append("SELECT * FROM ").append(
-				TinyORMUtils.quoteIdentifier(tableMeta.getName(), connection));
-		buf.append(" WHERE ").append(where.getSQL());
-		final String sql = buf.toString();
+		final Query query = new QueryBuilder(identifierQuoteString)
+				.appendQuery("SELECT * FROM ")
+				.appendIdentifier(tableMeta.getName())
+				.appendQuery(" WHERE ")
+				.append(where)
+				.build();
 
-		final List<Object> params = where.getParameters();
-		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+		return JDBCUtils.executeQuery(connection, query, (rs) -> {
 			if (rs.next()) {
 				final T refetched = this.mapRowFromResultSet(
 						(Class<T>) row.getClass(),
@@ -346,6 +361,15 @@ public class TinyORM {
 				throw new RuntimeException(e);
 			}
 		});
+	}
+
+	String getIdentifierQuoteString() {
+		try {
+			return this.getConnection().getMetaData()
+					.getIdentifierQuoteString();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

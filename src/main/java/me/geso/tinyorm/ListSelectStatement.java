@@ -26,7 +26,7 @@ public class ListSelectStatement<T> extends
 	}
 
 	public List<T> execute() throws RichSQLException {
-		Query query = this.buildQuery();
+		final Query query = this.buildQuery();
 		return JDBCUtils.executeQuery(connection, query, (rs) -> {
 			List<T> rows = new ArrayList<>();
 			while (rs.next()) {
@@ -38,7 +38,7 @@ public class ListSelectStatement<T> extends
 	}
 
 	public Paginated<T> executeWithPagination(long entriesPerPage) throws RichSQLException {
-		List<T> rows = this.limit(entriesPerPage + 1).execute();
+		final List<T> rows = this.limit(entriesPerPage + 1).execute();
 		return new Paginated<T>(rows, entriesPerPage);
 	}
 

@@ -11,7 +11,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,18 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
@@ -49,6 +40,15 @@ import me.geso.tinyorm.trigger.BeforeInsertHandler;
 import me.geso.tinyorm.trigger.BeforeUpdateHandler;
 import me.geso.tinyorm.trigger.Deflater;
 import me.geso.tinyorm.trigger.Inflater;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 
 @Slf4j
 class TableMeta {
@@ -369,7 +369,7 @@ class TableMeta {
 	 * Get a where clause that selects the row from table. This method throws
 	 * exception if the row doesn't have a primary key.
 	 */
-	Query createWhereClauseFromRow(Object row, Connection connection) {
+	Query createWhereClauseFromRow(Object row, String identifierQuoteString) {
 		Map<String, Object> pkmap = this.getPrimaryKeyValueMap(row);
 		if (pkmap.isEmpty()) {
 			throw new RuntimeException(
@@ -377,7 +377,7 @@ class TableMeta {
 		}
 
 		String sql = pkmap.keySet().stream().map(it
-				-> "(" + TinyORMUtils.quoteIdentifier(it, connection) + "=?)"
+				-> "(" + JDBCUtils.quoteIdentifier(it, identifierQuoteString) + "=?)"
 				).collect(Collectors.joining(" AND "));
 		List<Object> vars = new ArrayList<>(pkmap.values());
 		this.validatePrimaryKeysForSelect(vars);

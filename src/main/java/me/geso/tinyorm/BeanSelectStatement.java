@@ -29,7 +29,7 @@ public class BeanSelectStatement<T> extends
 
 		return JDBCUtils.executeQuery(connection, query, (rs) -> {
 				if (rs.next()) {
-					T row = this.orm.mapRowFromResultSet(klass, rs, tableMeta);
+					final T row = this.orm.mapRowFromResultSet(klass, rs, tableMeta);
 					rs.close();
 					return Optional.of(row);
 				} else {
