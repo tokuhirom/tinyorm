@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>tinyorm</artifactId>
-	<version>0.22.1-SNAPSHOT</version>
+	<version>0.24.0</version>
 	<name>tinyorm</name>
 	<description>tinyorm</description>
 
@@ -97,7 +97,7 @@
 		<dependency>
 			<groupId>me.geso</groupId>
 			<artifactId>jdbcutils</artifactId>
-			<version>0.5.0</version>
+			<version>0.6.1</version>
 		</dependency>
 	</dependencies>
 
@@ -110,7 +110,7 @@
 						<source>1.8</source>
 						<target>1.8</target>
 						<encoding>UTF-8</encoding>
-						<compilerArgument>-parameters</compilerArgument>
+						<compilerArgument>-Werror -parameters</compilerArgument>
 					</configuration>
 				</plugin>
 			</plugins>
