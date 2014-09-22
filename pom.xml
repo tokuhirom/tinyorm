@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>tinyorm</artifactId>
-	<version>0.24.0</version>
+	<version>0.24.1-SNAPSHOT</version>
 	<name>tinyorm</name>
 	<description>tinyorm</description>
 
@@ -110,7 +110,10 @@
 						<source>1.8</source>
 						<target>1.8</target>
 						<encoding>UTF-8</encoding>
-						<compilerArgument>-Werror -parameters</compilerArgument>
+            <compilerArguments>
+              <Werror />
+              <parameters />
+            </compilerArguments>
 					</configuration>
 				</plugin>
 			</plugins>
