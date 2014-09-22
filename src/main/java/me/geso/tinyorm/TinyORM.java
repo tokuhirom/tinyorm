@@ -59,7 +59,6 @@ public class TinyORM {
 	/**
 	 * Select one row from the database.
 	 * 
-	 * @throws SQLException
 	 * @throws RichSQLException
 	 */
 	public <T> Optional<T> singleBySQL(Class<T> klass, String sql,
@@ -244,7 +243,6 @@ public class TinyORM {
 	 * Select single long value
 	 * 
 	 * @return
-	 * @throws SQLException
 	 * @throws RichSQLException
 	 */
 	public OptionalLong queryForLong(final String sql,
@@ -263,7 +261,6 @@ public class TinyORM {
 	/**
 	 * Select single long value from database.
 	 * 
-	 * @param string
 	 * @return
 	 * @throws RichSQLException
 	 */
