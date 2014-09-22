@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
+import me.geso.jdbcutils.ResultSetCallback;
 import me.geso.jdbcutils.RichSQLException;
 
 /**
@@ -61,7 +63,8 @@ public class TinyORM {
 	 * 
 	 * @throws RichSQLException
 	 */
-	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass, String sql,
+	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
+			String sql,
 			List<Object> params) throws RichSQLException {
 		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
 			TableMeta tableMeta = this.getTableMeta(klass);
@@ -82,7 +85,8 @@ public class TinyORM {
 	 * @return
 	 * @throws RichSQLException
 	 */
-	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass, Query query)
+	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
+			Query query)
 			throws RichSQLException {
 		return this.singleBySQL(klass, query.getSQL(), query.getParameters());
 	}
@@ -147,7 +151,8 @@ public class TinyORM {
 	 * @throws RichSQLException
 	 * 
 	 */
-	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql)
+	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass,
+			final String sql)
 			throws RichSQLException {
 		return this.searchBySQL(klass, sql, Collections.emptyList());
 	}
@@ -194,6 +199,15 @@ public class TinyORM {
 	 */
 	public int updateBySQL(String sql) throws RichSQLException {
 		return JDBCUtils.executeUpdate(connection, sql);
+	}
+
+	/**
+	 * Execute an UPDATE, INSERT, and DELETE query.
+	 * 
+	 * @throws RichSQLException
+	 */
+	public int updateBySQL(Query query) throws RichSQLException {
+		return JDBCUtils.executeUpdate(connection, query);
 	}
 
 	<T extends Row<?>> List<T> mapRowListFromResultSet(Class<T> klass,
@@ -367,6 +381,59 @@ public class TinyORM {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Execute query builder.
+	 *
+	 * @return
+	 */
+	public QueryBuilder createQueryBuilder() {
+		return new QueryBuilder(this.getIdentifierQuoteString());
+	}
+
+	/**
+	 * Execute query.
+	 * 
+	 * @param query
+	 * @param callback
+	 * @return
+	 * @throws RichSQLException
+	 */
+	public <T> T executeQuery(final Query query,
+			final ResultSetCallback<T> callback)
+			throws RichSQLException {
+		return JDBCUtils.executeQuery(connection, query, callback);
+	}
+
+	/**
+	 * Execute query.
+	 * 
+	 * @param sql
+	 * @param params
+	 * @param callback
+	 * @return
+	 * @throws RichSQLException
+	 */
+	public <T> T executeQuery(final String sql, final List<Object> params,
+			final ResultSetCallback<T> callback)
+			throws RichSQLException {
+		return JDBCUtils.executeQuery(connection, sql, params, callback);
+	}
+
+	/**
+	 * Execute query.
+	 * 
+	 * @param sql
+	 * @param params
+	 * @param callback
+	 * @return
+	 * @throws RichSQLException
+	 */
+	public <T> T executeQuery(final String sql,
+			final ResultSetCallback<T> callback)
+			throws RichSQLException {
+		return JDBCUtils.executeQuery(connection, sql, Collections.emptyList(), callback);
 	}
 
 }
