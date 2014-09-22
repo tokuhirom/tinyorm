@@ -8,7 +8,7 @@ import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.RichSQLException;
 
-public class ListSelectStatement<T> extends
+public class ListSelectStatement<T extends Row<?>> extends
 		AbstractSelectStatement<T, ListSelectStatement<T>> {
 
 	private final TableMeta tableMeta;

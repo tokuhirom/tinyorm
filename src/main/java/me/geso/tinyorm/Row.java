@@ -6,8 +6,7 @@ import java.util.Optional;
 
 import me.geso.jdbcutils.RichSQLException;
 
-public abstract class Row<T extends Row<?>> implements
-		ORMInjectable, ExtraColumnSettable {
+public abstract class Row<T extends Row<?>> {
 	private TinyORM orm;
 	private Map<String, Object> extraColumns = new LinkedHashMap<>();
 
@@ -60,7 +59,6 @@ public abstract class Row<T extends Row<?>> implements
 	/**
 	 * Internal API.
 	 */
-	@Override
 	public void setExtraColumn(String columnName, Object value) {
 		this.extraColumns.put(columnName, value);
 	}

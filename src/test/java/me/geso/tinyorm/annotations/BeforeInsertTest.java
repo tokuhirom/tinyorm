@@ -1,13 +1,16 @@
 package me.geso.tinyorm.annotations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.sql.SQLException;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.InsertStatement;
+import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 
 import org.junit.Test;
@@ -31,9 +34,11 @@ public class BeforeInsertTest extends TestBase {
 	}
 
 	@Slf4j
-	@Data
+	@Getter
+	@Setter
+	@ToString
 	@Table("x")
-	public static class X {
+	public static class X extends Row<X> {
 		@PrimaryKey
 		private long id;
 
@@ -42,7 +47,7 @@ public class BeforeInsertTest extends TestBase {
 
 		@Column
 		private String y;
-		
+
 		@BeforeInsert
 		public static void beforeInsert(InsertStatement<X> stmt) {
 			log.info("BEFORE INSERT");

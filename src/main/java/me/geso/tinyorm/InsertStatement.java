@@ -28,7 +28,7 @@ import me.geso.jdbcutils.RichSQLException;
  * @author Tokuhiro Matsuno
  * @param <T>
  */
-public class InsertStatement<T> {
+public class InsertStatement<T extends Row<?>> {
 	// it should be ordered.
 	private final Map<String, Object> values = new LinkedHashMap<>();
 	private final Class<T> klass;

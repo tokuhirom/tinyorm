@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import org.junit.Test;
 
 import me.geso.jdbcutils.RichSQLException;
+import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -54,7 +55,7 @@ public class BooleanTest extends TestBase {
 	}
 
 	@Table("b")
-	public static class B {
+	public static class B extends Row<B> {
 		@PrimaryKey
 		private long id;
 

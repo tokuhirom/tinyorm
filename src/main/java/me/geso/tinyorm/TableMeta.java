@@ -278,7 +278,8 @@ class TableMeta {
 			PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
 					.get(columnName);
 			if (propertyDescriptor == null) {
-				throw new RuntimeException("Unknown column: " + columnName + " in " + this.getName());
+				throw new RuntimeException("Unknown column: " + columnName
+						+ " in " + this.getName());
 			}
 			Method readMethod = propertyDescriptor.getReadMethod();
 			Object value = readMethod.invoke(row);
@@ -325,7 +326,7 @@ class TableMeta {
 	}
 
 	// Internal use.
-	void setValue(Object row, String columnName, Object value) {
+	void setValue(Row<?> row, String columnName, Object value) {
 		PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
 				.get(columnName);
 		if (propertyDescriptor != null) {
@@ -353,15 +354,7 @@ class TableMeta {
 						propertyDescriptor.getName()));
 			}
 		} else {
-			if (row instanceof ExtraColumnSettable) {
-				((ExtraColumnSettable) row).setExtraColumn(columnName, value);
-			} else {
-				throw new RuntimeException(
-						String.format(
-								"setValue: %s doesn't have a %s column. You may forget to set @Column annotation for the field.",
-								row.getClass(), columnName
-								));
-			}
+			row.setExtraColumn(columnName, value);
 		}
 	}
 
@@ -376,8 +369,13 @@ class TableMeta {
 					"You can't delete row, doesn't have a primary keys.");
 		}
 
-		String sql = pkmap.keySet().stream().map(it
-				-> "(" + JDBCUtils.quoteIdentifier(it, identifierQuoteString) + "=?)"
+		String sql = pkmap
+				.keySet()
+				.stream()
+				.map(it
+						-> "("
+								+ JDBCUtils.quoteIdentifier(it,
+										identifierQuoteString) + "=?)"
 				).collect(Collectors.joining(" AND "));
 		List<Object> vars = new ArrayList<>(pkmap.values());
 		this.validatePrimaryKeysForSelect(vars);

@@ -7,7 +7,7 @@ import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.RichSQLException;
 
-public class PaginatedSelectStatement<T> extends
+public class PaginatedSelectStatement<T extends Row<?>> extends
 		AbstractSelectStatement<T, PaginatedSelectStatement<T>> {
 
 	private final TinyORM orm;
