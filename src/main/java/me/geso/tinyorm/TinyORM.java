@@ -276,7 +276,6 @@ public class TinyORM {
 	 * Select single String value from database.
 	 * 
 	 * @return
-	 * @throws SQLException
 	 * @throws RichSQLException
 	 */
 	public Optional<String> queryForString(final String sql,
@@ -296,7 +295,6 @@ public class TinyORM {
 	 * Select single String value from database without parameters.
 	 * 
 	 * @return
-	 * @throws SQLException
 	 * @throws RichSQLException
 	 */
 	public Optional<String> queryForString(@NonNull final String sql)
