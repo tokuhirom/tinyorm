@@ -169,7 +169,7 @@ public class InsertStatement<T extends Row<?>> {
 				throw new RuntimeException(
 						"Cannot get the row after insertion: " + tableName);
 			}
-		} catch (RichSQLException | SecurityException ex) {
+		} catch (SecurityException ex) {
 			throw new RuntimeException(ex);
 		}
 	}
