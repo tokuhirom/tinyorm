@@ -62,27 +62,31 @@ public class TinyORM {
 	/**
 	 * Select one row from the database.
 	 * 
-	 * @throws RichSQLException
 	 */
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
 			String sql,
-			List<Object> params) throws RichSQLException {
+			List<Object> params) {
 		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 
-		return JDBCUtils.executeQuery(
-				connection,
-				sql,
-				params,
-				(rs) -> {
-					if (rs.next()) {
-						final T row = tableMeta.createRowFromResultSet(klass,
-								rs, this);
-						return Optional.of(row);
-					} else {
-						return Optional.empty();
-					}
-				});
+		try {
+			return JDBCUtils.executeQuery(
+					connection,
+					sql,
+					params,
+					(rs) -> {
+						if (rs.next()) {
+							final T row = tableMeta.createRowFromResultSet(
+									klass,
+									rs, this);
+							return Optional.of(row);
+						} else {
+							return Optional.empty();
+						}
+					});
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -91,11 +95,9 @@ public class TinyORM {
 	 * @param klass
 	 * @param query
 	 * @return
-	 * @throws RichSQLException
 	 */
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
-			Query query)
-			throws RichSQLException {
+			Query query) {
 		return this.singleBySQL(klass, query.getSQL(), query.getParameters());
 	}
 
@@ -144,45 +146,48 @@ public class TinyORM {
 	/**
 	 * Search by SQL.
 	 * 
-	 * @throws RichSQLException
 	 * 
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(
-			final Class<T> klass, final String sql, final List<Object> params)
-			throws RichSQLException {
-		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
-			List<T> rows = this.mapRowListFromResultSet(klass, rs);
-			return rows;
-		});
+			final Class<T> klass, final String sql, final List<Object> params) {
+		try {
+			return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+				List<T> rows = this.mapRowListFromResultSet(klass, rs);
+				return rows;
+			});
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
 	 * Search by SQL.
 	 * 
-	 * @throws RichSQLException
-	 * 
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass,
-			final String sql)
-			throws RichSQLException {
+			final String sql) {
 		return this.searchBySQL(klass, sql, Collections.emptyList());
 	}
 
 	/**
 	 * Search by SQL with Pager.
 	 * 
-	 * @throws RichSQLException
 	 * 
 	 */
 	public <T extends Row<?>> Paginated<T> searchBySQLWithPager(
 			final Class<T> klass, final String sql, final List<Object> params,
-			final long entriesPerPage) throws RichSQLException {
+			final long entriesPerPage) {
 		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
 		Connection connection = this.getConnection();
-		return JDBCUtils.executeQuery(connection, limitedSql, params, (rs) -> {
-			List<T> rows = this.mapRowListFromResultSet(klass, rs);
-			return new Paginated<T>(rows, entriesPerPage);
-		});
+		try {
+			return JDBCUtils.executeQuery(connection, limitedSql, params,
+					(rs) -> {
+						List<T> rows = this.mapRowListFromResultSet(klass, rs);
+						return new Paginated<T>(rows, entriesPerPage);
+					});
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	<T extends Row<?>> UpdateRowStatement<T> createUpdateStatement(T row) {
@@ -198,34 +203,41 @@ public class TinyORM {
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
 	 * 
-	 * @throws RichSQLException
 	 */
-	public int updateBySQL(final String sql, final List<Object> params)
-			throws RichSQLException {
-		return JDBCUtils.executeUpdate(connection, sql, params);
+	public int updateBySQL(final String sql, final List<Object> params) {
+		try {
+			return JDBCUtils.executeUpdate(connection, sql, params);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
 	 * 
-	 * @throws RichSQLException
 	 */
-	public int updateBySQL(String sql) throws RichSQLException {
-		return JDBCUtils.executeUpdate(connection, sql);
+	public int updateBySQL(String sql) {
+		try {
+			return JDBCUtils.executeUpdate(connection, sql);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
 	 * 
-	 * @throws RichSQLException
 	 */
-	public int updateBySQL(Query query) throws RichSQLException {
-		return JDBCUtils.executeUpdate(connection, query);
+	public int updateBySQL(Query query) {
+		try {
+			return JDBCUtils.executeUpdate(connection, query);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	<T extends Row<?>> List<T> mapRowListFromResultSet(Class<T> klass,
-			ResultSet rs)
-			throws SQLException {
+			ResultSet rs) throws SQLException {
 		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 		ArrayList<T> rows = new ArrayList<>();
@@ -237,48 +249,32 @@ public class TinyORM {
 	}
 
 	/**
-	 * Shortcut method.
-	 * 
-	 * @param klass
-	 * @param rs
-	 * @return
-	 * @throws SQLException
-	 */
-	@Deprecated
-	<T extends Row<?>> T mapRowFromResultSet(Class<T> klass, ResultSet rs)
-			throws SQLException {
-		@SuppressWarnings("unchecked")
-		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
-		return tableMeta.createRowFromResultSet(klass, rs, this);
-	}
-
-	/**
 	 * Select single long value
 	 * 
 	 * @return
-	 * @throws RichSQLException
 	 */
 	public OptionalLong queryForLong(final String sql,
-			@NonNull final List<Object> params)
-			throws RichSQLException {
-		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
-			if (rs.next()) {
-				final long l = rs.getLong(1);
-				return OptionalLong.of(l);
-			} else {
-				return OptionalLong.empty();
-			}
-		});
+			@NonNull final List<Object> params) {
+		try {
+			return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+				if (rs.next()) {
+					final long l = rs.getLong(1);
+					return OptionalLong.of(l);
+				} else {
+					return OptionalLong.empty();
+				}
+			});
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
 	 * Select single long value from database.
 	 * 
 	 * @return
-	 * @throws RichSQLException
 	 */
-	public OptionalLong queryForLong(@NonNull final String sql)
-			throws RichSQLException {
+	public OptionalLong queryForLong(@NonNull final String sql) {
 		return this.queryForLong(sql, Collections.emptyList());
 	}
 
@@ -286,33 +282,33 @@ public class TinyORM {
 	 * Select single String value from database.
 	 * 
 	 * @return
-	 * @throws RichSQLException
 	 */
 	public Optional<String> queryForString(final String sql,
-			@NonNull final List<Object> params)
-			throws RichSQLException {
-		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
-			if (rs.next()) {
-				final String s = rs.getString(1);
-				return Optional.of(s);
-			} else {
-				return Optional.empty();
-			}
-		});
+			@NonNull final List<Object> params) {
+		try {
+			return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+				if (rs.next()) {
+					final String s = rs.getString(1);
+					return Optional.of(s);
+				} else {
+					return Optional.empty();
+				}
+			});
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
 	 * Select single String value from database without parameters.
 	 * 
 	 * @return
-	 * @throws RichSQLException
 	 */
-	public Optional<String> queryForString(@NonNull final String sql)
-			throws RichSQLException {
+	public Optional<String> queryForString(@NonNull final String sql) {
 		return this.queryForString(sql, Collections.emptyList());
 	}
 
-	public <T extends Row<?>> void delete(final T row) throws RichSQLException {
+	public <T extends Row<?>> void delete(final T row) {
 		final Connection connection = this.getConnection();
 		@SuppressWarnings("unchecked")
 		final TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(row
@@ -329,14 +325,18 @@ public class TinyORM {
 				.append(where)
 				.build();
 
-		final int updated = JDBCUtils.executeUpdate(connection, query);
-		if (updated != 1) {
-			throw new RuntimeException("Cannot delete row: " + query);
+		try {
+			final int updated = JDBCUtils.executeUpdate(connection, query);
+			if (updated != 1) {
+				throw new RuntimeException("Cannot delete row: " + query);
+			}
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
-	<T extends Row<?>> Optional<T> refetch(final T row) throws RichSQLException {
+	<T extends Row<?>> Optional<T> refetch(final T row) {
 		final Connection connection = this.getConnection();
 		final TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(row
 				.getClass());
@@ -351,18 +351,25 @@ public class TinyORM {
 				.append(where)
 				.build();
 
-		return JDBCUtils.executeQuery(
-				connection,
-				query,
-				(rs) -> {
-					if (rs.next()) {
-						final T refetched = tableMeta.createRowFromResultSet(
-								(Class<T>) row.getClass(), rs, this);
-						return Optional.of(refetched);
-					} else {
-						return Optional.empty();
-					}
-				});
+		try {
+			return JDBCUtils
+					.executeQuery(
+							connection,
+							query,
+							(rs) -> {
+								if (rs.next()) {
+									final T refetched = tableMeta
+											.createRowFromResultSet(
+													(Class<T>) row.getClass(),
+													rs, this);
+									return Optional.of(refetched);
+								} else {
+									return Optional.empty();
+								}
+							});
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	<T extends Row<?>> TableMeta<?> getTableMeta(final Class<T> klass) {
@@ -400,12 +407,14 @@ public class TinyORM {
 	 * @param query
 	 * @param callback
 	 * @return
-	 * @throws RichSQLException
 	 */
 	public <T> T executeQuery(final Query query,
-			final ResultSetCallback<T> callback)
-			throws RichSQLException {
-		return JDBCUtils.executeQuery(connection, query, callback);
+			final ResultSetCallback<T> callback) {
+		try {
+			return JDBCUtils.executeQuery(connection, query, callback);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -415,12 +424,14 @@ public class TinyORM {
 	 * @param params
 	 * @param callback
 	 * @return
-	 * @throws RichSQLException
 	 */
 	public <T> T executeQuery(final String sql, final List<Object> params,
-			final ResultSetCallback<T> callback)
-			throws RichSQLException {
-		return JDBCUtils.executeQuery(connection, sql, params, callback);
+			final ResultSetCallback<T> callback) {
+		try {
+			return JDBCUtils.executeQuery(connection, sql, params, callback);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -429,13 +440,16 @@ public class TinyORM {
 	 * @param sql
 	 * @param callback
 	 * @return
-	 * @throws RichSQLException
 	 */
 	public <T> T executeQuery(final String sql,
-			final ResultSetCallback<T> callback)
-			throws RichSQLException {
-		return JDBCUtils.executeQuery(connection, sql, Collections.emptyList(),
-				callback);
+			final ResultSetCallback<T> callback) {
+		try {
+			return JDBCUtils.executeQuery(connection, sql,
+					Collections.emptyList(),
+					callback);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }
