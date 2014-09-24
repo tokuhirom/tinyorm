@@ -25,25 +25,29 @@ public class ListSelectStatement<T extends Row<?>> extends
 		this.connection = connection;
 	}
 
-	public List<T> execute() throws RichSQLException {
+	public List<T> execute() {
 		final Query query = this.buildQuery();
-		return JDBCUtils.executeQuery(connection, query, (rs) -> {
-			List<T> rows = new ArrayList<>();
-			while (rs.next()) {
-				T row = tableMeta.createRowFromResultSet(klass, rs, this.orm);
-				rows.add(row);
-			}
-			return rows;
-		});
-	}
-
-	public Paginated<T> executeWithPagination(long entriesPerPage) {
 		try {
-			final List<T> rows = this.limit(entriesPerPage + 1).execute();
-			return new Paginated<T>(rows, entriesPerPage);
+			return JDBCUtils.executeQuery(
+					connection,
+					query,
+					(rs) -> {
+						List<T> rows = new ArrayList<>();
+						while (rs.next()) {
+							T row = tableMeta.createRowFromResultSet(klass, rs,
+									this.orm);
+							rows.add(row);
+						}
+						return rows;
+					});
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public Paginated<T> executeWithPagination(long entriesPerPage) {
+		final List<T> rows = this.limit(entriesPerPage + 1).execute();
+		return new Paginated<T>(rows, entriesPerPage);
 	}
 
 }

@@ -121,7 +121,7 @@ public class InsertStatement<T extends Row<?>> {
 		return builder.build();
 	}
 
-	public void execute() throws RichSQLException {
+	public void execute() {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
 		final Query query = this.buildQuery();
 
