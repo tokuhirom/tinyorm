@@ -33,7 +33,7 @@ public class TinyORM {
 
 	private final Connection connection;
 
-	private static ConcurrentHashMap<Class<?>, TableMeta> tableMetaRegistry = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<Class<?>, TableMeta<?>> tableMetaRegistry = new ConcurrentHashMap<>();
 
 	public TinyORM(Connection connection) {
 		this.connection = connection;
@@ -54,7 +54,9 @@ public class TinyORM {
 	 * @return
 	 */
 	public <T extends Row<?>> InsertStatement<T> insert(Class<T> klass) {
-		return new InsertStatement<>(this, klass, this.getTableMeta(klass));
+		@SuppressWarnings("unchecked")
+		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
+		return new InsertStatement<>(this, klass, tableMeta);
 	}
 
 	/**
@@ -65,15 +67,22 @@ public class TinyORM {
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
 			String sql,
 			List<Object> params) throws RichSQLException {
-		return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
-			TableMeta tableMeta = this.getTableMeta(klass);
-			if (rs.next()) {
-				T row = this.mapRowFromResultSet(klass, rs, tableMeta);
-				return Optional.of(row);
-			} else {
-				return Optional.empty();
-			}
-		});
+		@SuppressWarnings("unchecked")
+		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
+
+		return JDBCUtils.executeQuery(
+				connection,
+				sql,
+				params,
+				(rs) -> {
+					if (rs.next()) {
+						final T row = tableMeta.createRowFromResultSet(klass,
+								rs, this);
+						return Optional.of(row);
+					} else {
+						return Optional.empty();
+					}
+				});
 	}
 
 	/**
@@ -98,7 +107,8 @@ public class TinyORM {
 	 * @return
 	 */
 	public <T extends Row<?>> BeanSelectStatement<T> single(Class<T> klass) {
-		TableMeta tableMeta = this.getTableMeta(klass);
+		@SuppressWarnings("unchecked")
+		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 		return new BeanSelectStatement<>(this.getConnection(),
 				klass, tableMeta, this);
 	}
@@ -111,7 +121,8 @@ public class TinyORM {
 	 * @return
 	 */
 	public <T extends Row<?>> ListSelectStatement<T> search(Class<T> klass) {
-		TableMeta tableMeta = this.getTableMeta(klass);
+		@SuppressWarnings("unchecked")
+		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 		return new ListSelectStatement<>(this.getConnection(),
 				klass, tableMeta, this);
 	}
@@ -124,7 +135,8 @@ public class TinyORM {
 	 */
 	public <T extends Row<?>> PaginatedSelectStatement<T> searchWithPager(
 			final Class<T> klass, final long limit) {
-		TableMeta tableMeta = this.getTableMeta(klass);
+		@SuppressWarnings("unchecked")
+		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 		return new PaginatedSelectStatement<>(this.getConnection(),
 				klass, tableMeta, this, limit);
 	}
@@ -173,9 +185,11 @@ public class TinyORM {
 		});
 	}
 
-	UpdateRowStatement createUpdateStatement(Object row) {
-		TableMeta tableMeta = this.getTableMeta(row.getClass());
-		UpdateRowStatement stmt = new UpdateRowStatement(row,
+	<T extends Row<?>> UpdateRowStatement<T> createUpdateStatement(T row) {
+		@SuppressWarnings("unchecked")
+		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(row
+				.getClass());
+		UpdateRowStatement<T> stmt = new UpdateRowStatement<>(row,
 				this.getConnection(), tableMeta,
 				this.getIdentifierQuoteString());
 		return stmt;
@@ -212,10 +226,11 @@ public class TinyORM {
 	<T extends Row<?>> List<T> mapRowListFromResultSet(Class<T> klass,
 			ResultSet rs)
 			throws SQLException {
-		TableMeta tableMeta = this.getTableMeta(klass);
+		@SuppressWarnings("unchecked")
+		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 		ArrayList<T> rows = new ArrayList<>();
 		while (rs.next()) {
-			T row = this.mapRowFromResultSet(klass, rs, tableMeta);
+			T row = tableMeta.createRowFromResultSet(klass, rs, this);
 			rows.add(row);
 		}
 		return rows;
@@ -229,29 +244,12 @@ public class TinyORM {
 	 * @return
 	 * @throws SQLException
 	 */
+	@Deprecated
 	<T extends Row<?>> T mapRowFromResultSet(Class<T> klass, ResultSet rs)
 			throws SQLException {
-		TableMeta tableMeta = this.getTableMeta(klass);
-		return this.mapRowFromResultSet(klass, rs, tableMeta);
-	}
-
-	<T extends Row<?>> T mapRowFromResultSet(final Class<T> klass,
-			final ResultSet rs,
-			final TableMeta tableMeta) throws SQLException {
-		try {
-			int columnCount = rs.getMetaData().getColumnCount();
-			T row = klass.newInstance();
-			for (int i = 0; i < columnCount; ++i) {
-				String columnName = rs.getMetaData().getColumnName(i + 1);
-				Object value = rs.getObject(i + 1);
-				value = tableMeta.invokeInflater(columnName, value);
-				tableMeta.setValue(row, columnName, value);
-			}
-			row.setOrm(this);
-			return row;
-		} catch (InstantiationException | IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
+		@SuppressWarnings("unchecked")
+		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
+		return tableMeta.createRowFromResultSet(klass, rs, this);
 	}
 
 	/**
@@ -314,9 +312,11 @@ public class TinyORM {
 		return this.queryForString(sql, Collections.emptyList());
 	}
 
-	public void delete(final Object row) throws RichSQLException {
+	public <T extends Row<?>> void delete(final T row) throws RichSQLException {
 		final Connection connection = this.getConnection();
-		final TableMeta tableMeta = this.getTableMeta(row.getClass());
+		@SuppressWarnings("unchecked")
+		final TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(row
+				.getClass());
 		final String tableName = tableMeta.getName();
 		final String identifierQuoteString = this.getIdentifierQuoteString();
 		final Query where = tableMeta.createWhereClauseFromRow(row,
@@ -338,7 +338,8 @@ public class TinyORM {
 	@SuppressWarnings("unchecked")
 	<T extends Row<?>> Optional<T> refetch(final T row) throws RichSQLException {
 		final Connection connection = this.getConnection();
-		final TableMeta tableMeta = this.getTableMeta(row.getClass());
+		final TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(row
+				.getClass());
 		final String identifierQuoteString = this.getIdentifierQuoteString();
 		final Query where = tableMeta.createWhereClauseFromRow(row,
 				identifierQuoteString);
@@ -350,23 +351,25 @@ public class TinyORM {
 				.append(where)
 				.build();
 
-		return JDBCUtils.executeQuery(connection, query, (rs) -> {
-			if (rs.next()) {
-				final T refetched = this.mapRowFromResultSet(
-						(Class<T>) row.getClass(),
-						rs, tableMeta);
-				return Optional.of(refetched);
-			} else {
-				return Optional.empty();
-			}
-		});
+		return JDBCUtils.executeQuery(
+				connection,
+				query,
+				(rs) -> {
+					if (rs.next()) {
+						final T refetched = tableMeta.createRowFromResultSet(
+								(Class<T>) row.getClass(), rs, this);
+						return Optional.of(refetched);
+					} else {
+						return Optional.empty();
+					}
+				});
 	}
 
-	TableMeta getTableMeta(final Class<?> klass) {
+	<T extends Row<?>> TableMeta<?> getTableMeta(final Class<T> klass) {
 		return tableMetaRegistry.computeIfAbsent(klass, key -> {
 			log.info("Loading {}", klass);
 			try {
-				return TableMeta.build(klass);
+				return TableMeta.<T> build(klass);
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -431,7 +434,8 @@ public class TinyORM {
 	public <T> T executeQuery(final String sql,
 			final ResultSetCallback<T> callback)
 			throws RichSQLException {
-		return JDBCUtils.executeQuery(connection, sql, Collections.emptyList(), callback);
+		return JDBCUtils.executeQuery(connection, sql, Collections.emptyList(),
+				callback);
 	}
 
 }

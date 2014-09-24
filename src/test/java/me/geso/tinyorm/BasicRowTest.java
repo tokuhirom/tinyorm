@@ -126,7 +126,7 @@ public class BasicRowTest extends TestBase {
 		}
 
 		@BeforeUpdate
-		public static void fillYBeforeUpdate(UpdateRowStatement stmt) {
+		public static void fillYBeforeUpdate(UpdateRowStatement<X> stmt) {
 			stmt.set("y", "updated");
 		}
 	}

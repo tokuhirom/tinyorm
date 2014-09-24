@@ -42,9 +42,10 @@ public abstract class Row<T extends Row<?>> {
 	 * 
 	 * @return
 	 */
-	public UpdateRowStatement update() {
+	@SuppressWarnings("unchecked")
+	public UpdateRowStatement<T> update() {
 		checkORM();
-		return this.orm.createUpdateStatement(this);
+		return this.orm.createUpdateStatement((T)this);
 	}
 
 	/**

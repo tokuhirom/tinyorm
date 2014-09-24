@@ -16,7 +16,7 @@ public class PaginatedSelectStatement<T extends Row<?>> extends
 	private final Connection connection;
 
 	PaginatedSelectStatement(Connection connection,
-			Class<T> klass, TableMeta tableMeta, TinyORM orm,
+			Class<T> klass, TableMeta<T> tableMeta, TinyORM orm,
 			long entriesPerPage) {
 		super(connection, tableMeta.getName());
 		this.klass = klass;

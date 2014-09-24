@@ -1,23 +1,29 @@
 package me.geso.tinyorm;
 
 import java.beans.BeanInfo;
+import java.beans.ConstructorProperties;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import lombok.NonNull;
@@ -51,7 +57,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
 @Slf4j
-class TableMeta {
+class TableMeta<RowType extends Row<?>> {
 	private final String name;
 	private final List<PropertyDescriptor> primaryKeys;
 	// columnName -> propertyDescriptor
@@ -60,12 +66,14 @@ class TableMeta {
 	private final List<BeforeUpdateHandler> beforeUpdateHandlers;
 	private final Map<String, Inflater> inflaters;
 	private final Map<String, Deflater> deflaters;
+	private final RowBuilder rowBuilder;
 
 	TableMeta(String name, List<PropertyDescriptor> primaryKeyMetas,
 			Map<String, PropertyDescriptor> propertyDescriptorMap,
 			List<BeforeInsertHandler> beforeInsertTriggers,
 			List<BeforeUpdateHandler> beforeUpdateTriggers,
-			Map<String, Inflater> inflaters, Map<String, Deflater> deflaters) {
+			Map<String, Inflater> inflaters, Map<String, Deflater> deflaters,
+			RowBuilder rowBuilder) {
 		this.name = name;
 		this.primaryKeys = primaryKeyMetas;
 		this.propertyDescriptorMap = propertyDescriptorMap;
@@ -73,9 +81,11 @@ class TableMeta {
 		this.beforeUpdateHandlers = beforeUpdateTriggers;
 		this.inflaters = inflaters;
 		this.deflaters = deflaters;
+		this.rowBuilder = rowBuilder;
 	}
 
-	static TableMeta build(Class<?> rowClass)
+	static <RowType extends Row<?>> TableMeta<RowType> build(
+			Class<RowType> rowClass)
 			throws IntrospectionException {
 		BeanInfo beanInfo = Introspector.getBeanInfo(rowClass, Object.class);
 		PropertyDescriptor[] propertyDescriptors = beanInfo
@@ -187,6 +197,7 @@ class TableMeta {
 			}
 		}
 
+		// Scanning hooks.
 		for (Method method : rowClass.getMethods()) {
 			if (method.getAnnotation(BeforeInsert.class) != null) {
 				beforeInsertTriggers.add(new BeforeInsertMethodTrigger(
@@ -238,11 +249,28 @@ class TableMeta {
 			}
 		}
 
+		// Checking constructor
+		RowBuilder rowBuilder = buildRowBuilder(rowClass);
+
 		String tableName = TableMeta.getTableName(rowClass);
 
-		return new TableMeta(tableName, primaryKeys,
+		return new TableMeta<RowType>(tableName, primaryKeys,
 				propertyDescriptorMap, beforeInsertTriggers,
-				beforeUpdateTriggers, inflaters, deflaters);
+				beforeUpdateTriggers, inflaters, deflaters,
+				rowBuilder);
+	}
+
+	private static <T extends Row<?>> RowBuilder buildRowBuilder(
+			Class<?> rowClass) {
+		for (Constructor<?> constructor : rowClass.getConstructors()) {
+			ConstructorProperties annotation = constructor
+					.getAnnotation(java.beans.ConstructorProperties.class);
+			if (annotation != null) {
+				return new ConstructorRowBuilder<T>(constructor,
+						annotation.value());
+			}
+		}
+		return new SetterRowBuilder();
 	}
 
 	/**
@@ -325,39 +353,6 @@ class TableMeta {
 		return map;
 	}
 
-	// Internal use.
-	void setValue(Row<?> row, String columnName, Object value) {
-		PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
-				.get(columnName);
-		if (propertyDescriptor != null) {
-			Method writeMethod = propertyDescriptor.getWriteMethod();
-			if (writeMethod != null) {
-				try {
-					writeMethod.invoke(row, value);
-				} catch (NullPointerException | IllegalAccessException
-						| IllegalArgumentException | InvocationTargetException e) {
-					log.error(
-							"Error:{}: table: {}, column: {}, writeMethod:{}, valueClass:{}, value:{}, row:{}",
-							e.getClass(),
-							this.getName(),
-							columnName,
-							writeMethod.getName(),
-							value == null ? null : value.getClass(),
-							value,
-							row.toString()
-							);
-					throw new RuntimeException(e);
-				}
-			} else {
-				throw new RuntimeException(String.format(
-						"There is no writer method: %s.%s", this.getName(),
-						propertyDescriptor.getName()));
-			}
-		} else {
-			row.setExtraColumn(columnName, value);
-		}
-	}
-
 	/**
 	 * Get a where clause that selects the row from table. This method throws
 	 * exception if the row doesn't have a primary key.
@@ -419,7 +414,7 @@ class TableMeta {
 		}
 	}
 
-	void invokeBeforeUpdateTriggers(UpdateRowStatement stmt) {
+	void invokeBeforeUpdateTriggers(UpdateRowStatement<?> stmt) {
 		for (BeforeUpdateHandler trigger : this.beforeUpdateHandlers) {
 			trigger.callBeforeUpdateHandler(stmt);
 		}
@@ -486,7 +481,7 @@ class TableMeta {
 		}
 
 		@Override
-		public void callBeforeUpdateHandler(UpdateRowStatement stmt) {
+		public void callBeforeUpdateHandler(UpdateRowStatement<?> stmt) {
 			stmt.set(this.columnName, System.currentTimeMillis() / 1000);
 		}
 
@@ -526,7 +521,7 @@ class TableMeta {
 		}
 
 		@Override
-		public void callBeforeUpdateHandler(UpdateRowStatement stmt) {
+		public void callBeforeUpdateHandler(UpdateRowStatement<?> stmt) {
 			try {
 				method.invoke(rowClass, stmt);
 			} catch (IllegalAccessException | IllegalArgumentException
@@ -713,5 +708,138 @@ class TableMeta {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	RowType createRowFromResultSet(final Class<RowType> klass,
+			final ResultSet rs,
+			final TinyORM orm) throws SQLException {
+		return this.rowBuilder.<RowType> build((Class<RowType>) klass, this,
+				rs, orm);
+	}
+
+	private static interface RowBuilder {
+		public <RowType extends Row<?>> RowType build(
+				final Class<RowType> klass,
+				final TableMeta<RowType> tableMeta,
+				final ResultSet rs, final TinyORM orm)
+				throws SQLException;
+	}
+
+	private static class ConstructorRowBuilder<T extends Row<?>> implements
+			RowBuilder {
+		private final Constructor<?> constructor;
+		private final String[] parameterNames;
+		private final Map<String, Integer> parameterPositionFor;
+
+		public ConstructorRowBuilder(Constructor<?> constructor,
+				String[] parameterNames) {
+			this.constructor = constructor;
+			this.parameterNames = parameterNames;
+			this.parameterPositionFor = new HashMap<>();
+			for (int i = 0; i < parameterNames.length; ++i) {
+				this.parameterPositionFor.put(parameterNames[i], i);
+			}
+		}
+
+		@Override
+		public <RowType extends Row<?>> RowType build(
+				final Class<RowType> klass,
+				final TableMeta<RowType> tableMeta,
+				final ResultSet rs, final TinyORM orm)
+				throws SQLException {
+			Object[] initargs = new Object[parameterNames.length];
+			int columnCount = rs.getMetaData().getColumnCount();
+			Map<String, Object> extraColumns = new HashMap<>();
+			for (int i = 0; i < columnCount; ++i) {
+				String columnName = rs.getMetaData().getColumnName(i + 1);
+				Object value = rs.getObject(i + 1);
+				value = tableMeta.invokeInflater(columnName, value);
+				Integer idx = parameterPositionFor.get(columnName);
+				if (idx != null) {
+					initargs[idx] = value;
+				} else {
+					extraColumns.put(columnName, value);
+				}
+			}
+			try {
+				@SuppressWarnings("unchecked")
+				RowType row = (RowType) constructor.newInstance(initargs);
+				for (Entry<String, Object> entry : extraColumns.entrySet()) {
+					row.setExtraColumn(entry.getKey(), entry.getValue());
+				}
+				row.setOrm(orm);
+				return row;
+			} catch (InstantiationException | IllegalAccessException
+					| IllegalArgumentException | InvocationTargetException e) {
+				log.error(
+						"{}: {}, {}, extraColumns:{}, parameterPositionFor:{}, {}",
+						e.getClass(), klass,
+						Arrays.toString(initargs), extraColumns,
+						parameterPositionFor, e.getMessage());
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	private static class SetterRowBuilder implements
+			RowBuilder {
+		@Override
+		public <T extends Row<?>> T build(Class<T> klass,
+				TableMeta<T> tableMeta,
+				ResultSet rs,
+				TinyORM orm) throws SQLException {
+			try {
+				int columnCount = rs.getMetaData().getColumnCount();
+				T row = klass.newInstance();
+				for (int i = 0; i < columnCount; ++i) {
+					String columnName = rs.getMetaData().getColumnName(i + 1);
+					Object value = rs.getObject(i + 1);
+					value = tableMeta.invokeInflater(columnName, value);
+					this.setValue(tableMeta, row, columnName, value);
+				}
+				row.setOrm(orm);
+				return row;
+			} catch (InstantiationException | IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+		// Internal use.
+		private <T extends Row<?>> void setValue(TableMeta<T> tableMeta,
+				Row<?> row,
+				String columnName, Object value) {
+			PropertyDescriptor propertyDescriptor = tableMeta.propertyDescriptorMap
+					.get(columnName);
+			if (propertyDescriptor != null) {
+				Method writeMethod = propertyDescriptor.getWriteMethod();
+				if (writeMethod != null) {
+					try {
+						writeMethod.invoke(row, value);
+					} catch (NullPointerException | IllegalAccessException
+							| IllegalArgumentException
+							| InvocationTargetException e) {
+						log.error(
+								"Error:{}: table: {}, column: {}, writeMethod:{}, valueClass:{}, value:{}, row:{}",
+								e.getClass(),
+								tableMeta.getName(),
+								columnName,
+								writeMethod.getName(),
+								value == null ? null : value.getClass(),
+								value,
+								row.toString()
+								);
+						throw new RuntimeException(e);
+					}
+				} else {
+					throw new RuntimeException(String.format(
+							"There is no writer method: %s.%s",
+							tableMeta.getName(),
+							propertyDescriptor.getName()));
+				}
+			} else {
+				row.setExtraColumn(columnName, value);
+			}
+		}
+
 	}
 }

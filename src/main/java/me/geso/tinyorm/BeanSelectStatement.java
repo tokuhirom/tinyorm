@@ -10,13 +10,13 @@ import me.geso.jdbcutils.RichSQLException;
 public class BeanSelectStatement<T extends Row<?>> extends
 		AbstractSelectStatement<T, BeanSelectStatement<T>> {
 
-	private final TableMeta tableMeta;
+	private final TableMeta<T> tableMeta;
 	private final TinyORM orm;
 	private final Class<T> klass;
 	private final Connection connection;
 
 	BeanSelectStatement(Connection connection,
-			Class<T> klass, TableMeta tableMeta, TinyORM orm) {
+			Class<T> klass, TableMeta<T> tableMeta, TinyORM orm) {
 		super(connection, tableMeta.getName());
 		this.tableMeta = tableMeta;
 		this.orm = orm;
@@ -27,14 +27,18 @@ public class BeanSelectStatement<T extends Row<?>> extends
 	public Optional<T> execute() throws RichSQLException {
 		Query query = this.buildQuery();
 
-		return JDBCUtils.executeQuery(connection, query, (rs) -> {
-				if (rs.next()) {
-					final T row = this.orm.mapRowFromResultSet(klass, rs, tableMeta);
-					rs.close();
-					return Optional.of(row);
-				} else {
-					return Optional.empty();
-				}
-		});
+		return JDBCUtils.executeQuery(
+				connection,
+				query,
+				(rs) -> {
+					if (rs.next()) {
+						final T row = tableMeta.createRowFromResultSet(klass,
+								rs, this.orm);
+						rs.close();
+						return Optional.of(row);
+					} else {
+						return Optional.empty();
+					}
+				});
 	}
 }

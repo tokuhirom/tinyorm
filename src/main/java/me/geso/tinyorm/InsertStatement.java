@@ -33,11 +33,11 @@ public class InsertStatement<T extends Row<?>> {
 	private final Map<String, Object> values = new LinkedHashMap<>();
 	private final Class<T> klass;
 	private final TinyORM orm;
-	private final TableMeta tableMeta;
+	private final TableMeta<T> tableMeta;
 	private String onDuplicateKeyUpdateQuery;
 	private List<Object> onDuplicateKeyUpdateValues;
 
-	InsertStatement(TinyORM orm, Class<T> klass, TableMeta tableMeta) {
+	InsertStatement(TinyORM orm, Class<T> klass, TableMeta<T> tableMeta) {
 		if (orm == null) {
 			throw new RuntimeException("orm should not be null");
 		}

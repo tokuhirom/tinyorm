@@ -7,5 +7,5 @@ import me.geso.tinyorm.UpdateRowStatement;
  */
 public interface BeforeUpdateHandler {
 
-	public void callBeforeUpdateHandler(UpdateRowStatement stmt);
+	public void callBeforeUpdateHandler(UpdateRowStatement<?> stmt);
 }

@@ -62,7 +62,7 @@ public class BeforeUpdateTest extends TestBase {
 		private String y;
 
 		@BeforeUpdate
-		public static void beforeInsert(UpdateRowStatement stmt) {
+		public static void beforeInsert(UpdateRowStatement<X> stmt) {
 			log.info("BEFORE UPDATE");
 			stmt.set("y", "fuga");
 		}

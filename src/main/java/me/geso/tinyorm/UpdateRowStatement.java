@@ -24,16 +24,16 @@ import me.geso.jdbcutils.RichSQLException;
  */
 @ToString
 @Slf4j
-public class UpdateRowStatement {
+public class UpdateRowStatement<T extends Row<?>> {
 
 	private final Object row;
 	private final Map<String, Object> set = new TreeMap<>();
 	private boolean executed = false;
 	private final Connection connection;
-	private final TableMeta tableMeta;
+	private final TableMeta<T> tableMeta;
 	private final String identifierQuoteString;
 
-	UpdateRowStatement(Object row, Connection connection, TableMeta tableMeta,
+	UpdateRowStatement(T row, Connection connection, TableMeta<T> tableMeta,
 			final String identifierQuoteString) {
 		this.row = row;
 		this.connection = connection;
@@ -41,7 +41,7 @@ public class UpdateRowStatement {
 		this.identifierQuoteString = identifierQuoteString;
 	}
 
-	public UpdateRowStatement set(String columnName, Object value) {
+	public UpdateRowStatement<T> set(String columnName, Object value) {
 		if (columnName == null) {
 			throw new IllegalArgumentException("Column name must not be null");
 		}
@@ -62,7 +62,7 @@ public class UpdateRowStatement {
 		return this;
 	}
 
-	public UpdateRowStatement setBean(Object bean) {
+	public UpdateRowStatement<T> setBean(Object bean) {
 		if (!this.set.isEmpty()) {
 			throw new RuntimeException(
 					"You can't call setBean() method the UpdateRowStatement has SET clause information.");

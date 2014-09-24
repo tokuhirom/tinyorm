@@ -11,13 +11,13 @@ import me.geso.jdbcutils.RichSQLException;
 public class ListSelectStatement<T extends Row<?>> extends
 		AbstractSelectStatement<T, ListSelectStatement<T>> {
 
-	private final TableMeta tableMeta;
+	private final TableMeta<T> tableMeta;
 	private final TinyORM orm;
 	private final Class<T> klass;
 	private final Connection connection;
 
 	ListSelectStatement(Connection connection,
-			Class<T> klass, TableMeta tableMeta, TinyORM orm) {
+			Class<T> klass, TableMeta<T> tableMeta, TinyORM orm) {
 		super(connection, tableMeta.getName());
 		this.tableMeta = tableMeta;
 		this.orm = orm;
@@ -30,14 +30,15 @@ public class ListSelectStatement<T extends Row<?>> extends
 		return JDBCUtils.executeQuery(connection, query, (rs) -> {
 			List<T> rows = new ArrayList<>();
 			while (rs.next()) {
-				T row = orm.mapRowFromResultSet(klass, rs, tableMeta);
+				T row = tableMeta.createRowFromResultSet(klass, rs, this.orm);
 				rows.add(row);
 			}
 			return rows;
 		});
 	}
 
-	public Paginated<T> executeWithPagination(long entriesPerPage) throws RichSQLException {
+	public Paginated<T> executeWithPagination(long entriesPerPage)
+			throws RichSQLException {
 		final List<T> rows = this.limit(entriesPerPage + 1).execute();
 		return new Paginated<T>(rows, entriesPerPage);
 	}
