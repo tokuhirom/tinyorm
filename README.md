@@ -29,59 +29,59 @@ main/java/myapp/rows/Member.java
 
 Create new database object.
 
-  DB db = new DB();
+    DB db = new DB();
 
 ### Selecting one row.
 
-  Optional<Member> member = db.single(Member.class)
+    Optional<Member> member = db.single(Member.class)
       .where("id=?", 1)
       .execute();
 
 ### Selecting rows.
 
-  List<Member> member = db.single(Member.class)
-    .where("name LIKE CONCAT(?, "%")", "John")
-    .execute();
+    List<Member> member = db.single(Member.class)
+      .where("name LIKE CONCAT(?, '%')", "John")
+      .execute();
 
 ### Insert row
 
-  db.insert(Member.class)
-    .value("name", "John")
-    .execute();
+    db.insert(Member.class)
+      .value("name", "John")
+      .execute();
 
 ### Insert row with form class.
 
-  @Data // lombok
-  class MemberInsertForm {
-    private String name;
-  }
-
-  MemberInsertForm form = new MemberInsertForm();
-  form.name = name;
-  db.insert(Member.class).valueByBean(form).execute();
+    @Data // lombok
+    class MemberInsertForm {
+      private String name;
+    }
+    
+    MemberInsertForm form = new MemberInsertForm();
+    form.name = name;
+    db.insert(Member.class).valueByBean(form).execute();
 
 ### Update row with form class.
 
-  @Data // lombok
-  class MemberUpdateForm {
-    private String name;
-  }
-
-  MemberUpdateForm form = new MemberUpdateForm();
-  form.name = name;
-  Member member = db.single(Member.class)
-    .where("id=?", 1)
-    .execute()
-    .get();
-  member.updateByBean(form);
+    @Data // lombok
+    class MemberUpdateForm {
+      private String name;
+    }
+    
+    MemberUpdateForm form = new MemberUpdateForm();
+    form.name = name;
+    Member member = db.single(Member.class)
+      .where("id=?", 1)
+      .execute()
+      .get();
+    member.updateByBean(form);
 
 ### Delete row
 
-  Member member = db.single(Member.class)
-    .where("id=?", 1)
-    .execute()
-    .get();
-  member.delete();
+    Member member = db.single(Member.class)
+      .where("id=?", 1)
+      .execute()
+      .get();
+    member.delete();
 
 ## HOOKS
 
