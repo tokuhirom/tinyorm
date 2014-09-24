@@ -25,15 +25,19 @@ public class PaginatedSelectStatement<T extends Row<?>> extends
 		this.connection = connection;
 	}
 
-	public Paginated<T> execute() throws RichSQLException {
-		final Query query = this.limit(entriesPerPage + 1).buildQuery();
+	public Paginated<T> execute() {
+		try {
+			final Query query = this.limit(entriesPerPage + 1).buildQuery();
 
-		return JDBCUtils.executeQuery(connection, query, (rs) -> {
+			return JDBCUtils.executeQuery(connection, query, (rs) -> {
 				List<T> rows = orm.mapRowListFromResultSet(klass, rs);
 
 				final Paginated<T> paginated = new Paginated<T>(
 						rows, entriesPerPage);
 				return paginated;
-		});
+			});
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

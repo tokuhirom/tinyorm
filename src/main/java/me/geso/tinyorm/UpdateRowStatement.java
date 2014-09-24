@@ -103,7 +103,7 @@ public class UpdateRowStatement<T extends Row<?>> {
 		return !this.set.isEmpty();
 	}
 
-	public void execute() throws RichSQLException {
+	public void execute() {
 		if (!this.hasSetClause()) {
 			if (log.isDebugEnabled()) {
 				log.debug("There is no modification");
@@ -137,7 +137,11 @@ public class UpdateRowStatement<T extends Row<?>> {
 
 		this.executed = true;
 
-		JDBCUtils.executeUpdate(connection, query);
+		try {
+			JDBCUtils.executeUpdate(connection, query);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**

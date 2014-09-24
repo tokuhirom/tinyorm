@@ -37,10 +37,13 @@ public class ListSelectStatement<T extends Row<?>> extends
 		});
 	}
 
-	public Paginated<T> executeWithPagination(long entriesPerPage)
-			throws RichSQLException {
-		final List<T> rows = this.limit(entriesPerPage + 1).execute();
-		return new Paginated<T>(rows, entriesPerPage);
+	public Paginated<T> executeWithPagination(long entriesPerPage) {
+		try {
+			final List<T> rows = this.limit(entriesPerPage + 1).execute();
+			return new Paginated<T>(rows, entriesPerPage);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

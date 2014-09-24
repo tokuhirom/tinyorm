@@ -24,21 +24,26 @@ public class BeanSelectStatement<T extends Row<?>> extends
 		this.connection = connection;
 	}
 
-	public Optional<T> execute() throws RichSQLException {
+	public Optional<T> execute() {
 		Query query = this.buildQuery();
 
-		return JDBCUtils.executeQuery(
-				connection,
-				query,
-				(rs) -> {
-					if (rs.next()) {
-						final T row = tableMeta.createRowFromResultSet(klass,
-								rs, this.orm);
-						rs.close();
-						return Optional.of(row);
-					} else {
-						return Optional.empty();
-					}
-				});
+		try {
+			return JDBCUtils.executeQuery(
+					connection,
+					query,
+					(rs) -> {
+						if (rs.next()) {
+							final T row = tableMeta.createRowFromResultSet(
+									klass,
+									rs, this.orm);
+							rs.close();
+							return Optional.of(row);
+						} else {
+							return Optional.empty();
+						}
+					});
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

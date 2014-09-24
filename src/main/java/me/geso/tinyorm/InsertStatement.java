@@ -125,14 +125,15 @@ public class InsertStatement<T extends Row<?>> {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
 		final Query query = this.buildQuery();
 
-		final int inserted = JDBCUtils.executeUpdate(orm.getConnection(), query);
+		final int inserted = JDBCUtils
+				.executeUpdate(orm.getConnection(), query);
 		if (inserted != 1) {
 			throw new RuntimeException("Cannot insert to database:"
 					+ query);
 		}
 	}
 
-	public T executeSelect() throws RichSQLException {
+	public T executeSelect() {
 		try {
 			this.execute();
 
@@ -164,7 +165,7 @@ public class InsertStatement<T extends Row<?>> {
 				throw new RuntimeException(
 						"Cannot get the row after insertion: " + tableName);
 			}
-		} catch (SecurityException ex) {
+		} catch (RichSQLException | SecurityException ex) {
 			throw new RuntimeException(ex);
 		}
 	}
