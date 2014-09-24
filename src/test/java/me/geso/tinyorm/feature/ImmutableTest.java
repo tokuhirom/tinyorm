@@ -5,7 +5,9 @@ import static org.junit.Assert.assertThat;
 
 import java.sql.SQLException;
 
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.ToString;
 import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
@@ -32,7 +34,9 @@ public class ImmutableTest extends TestBase {
 	}
 
 	@Table("foo")
-	@Value
+	@ToString
+	@AllArgsConstructor
+	@Getter
 	public static class Foo extends Row<Foo> {
 		@PrimaryKey
 		private long id;
