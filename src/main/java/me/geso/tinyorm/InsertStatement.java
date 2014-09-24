@@ -125,11 +125,15 @@ public class InsertStatement<T extends Row<?>> {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
 		final Query query = this.buildQuery();
 
-		final int inserted = JDBCUtils
-				.executeUpdate(orm.getConnection(), query);
-		if (inserted != 1) {
-			throw new RuntimeException("Cannot insert to database:"
-					+ query);
+		try {
+			final int inserted = JDBCUtils
+					.executeUpdate(orm.getConnection(), query);
+			if (inserted != 1) {
+				throw new RuntimeException("Cannot insert to database:"
+						+ query);
+			}
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
