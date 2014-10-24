@@ -12,6 +12,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +95,18 @@ public class InsertStatement<T extends Row<?>> {
 				| IllegalArgumentException | InvocationTargetException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * [EXPERIMENTAL]
+	 * @param query
+	 * @param params
+	 */
+	public InsertStatement<T> onDuplicateKeyUpdate(String query,
+			Object... params) {
+		this.onDuplicateKeyUpdateQuery = query;
+		this.onDuplicateKeyUpdateValues = Arrays.asList(params);
+		return this;
 	}
 
 	private Query buildQuery() {
