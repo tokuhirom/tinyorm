@@ -98,7 +98,7 @@ public class InsertStatement<T extends Row<?>> {
 	}
 
 	/**
-	 * [EXPERIMENTAL]
+	 * [EXPERIMENTAL] Add "ON DUPLICATE KEY UPDATE " clause.
 	 * @param query
 	 * @param params
 	 */
