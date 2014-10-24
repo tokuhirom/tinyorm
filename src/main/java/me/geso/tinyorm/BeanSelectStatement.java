@@ -39,7 +39,7 @@ public class BeanSelectStatement<T extends Row<?>> extends
 							rs.close();
 							return Optional.of(row);
 						} else {
-							return Optional.empty();
+							return Optional.<T>empty();
 						}
 					});
 		} catch (RichSQLException e) {
