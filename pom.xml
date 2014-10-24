@@ -87,7 +87,8 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.14.6</version>
+			<version>1.14.8</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>me.geso</groupId>
@@ -106,13 +107,14 @@
 			<plugins>
 				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.1</version>
 					<configuration>
 						<source>1.8</source>
 						<target>1.8</target>
 						<encoding>UTF-8</encoding>
             <compilerArguments>
-              <Werror />
               <parameters />
+							<Werror />
             </compilerArguments>
 					</configuration>
 				</plugin>
