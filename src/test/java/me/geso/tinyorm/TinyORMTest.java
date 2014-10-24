@@ -44,9 +44,9 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void singleSimple() throws SQLException, RichSQLException {
-		orm.updateBySQL("INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)");
+		this.orm.updateBySQL("INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)");
 
-		Member got = orm.singleBySQL(Member.class,
+		Member got = this.orm.singleBySQL(Member.class,
 				"SELECT * FROM member WHERE name=?", Arrays.asList("m1"))
 				.get();
 		assertEquals(1, got.getId());
@@ -56,7 +56,7 @@ public class TinyORMTest extends TestBase {
 	@Test
 	public void testInsert() throws SQLException, InstantiationException,
 			IllegalAccessException, RichSQLException {
-		Member member = orm.insert(Member.class)
+		Member member = this.orm.insert(Member.class)
 				.value("name", "John")
 				.executeSelect();
 		assertEquals(member.getName(), "John");
@@ -68,7 +68,7 @@ public class TinyORMTest extends TestBase {
 	public void insertByBean() throws SQLException, RichSQLException {
 		MemberForm form = new MemberForm();
 		form.setName("Nick");
-		Member member = orm.insert(Member.class)
+		Member member = this.orm.insert(Member.class)
 				.valueByBean(form)
 				.executeSelect();
 		assertEquals(member.getName(), "Nick");
@@ -78,14 +78,14 @@ public class TinyORMTest extends TestBase {
 	@SuppressWarnings("unused")
 	@Test
 	public void single() throws SQLException, RichSQLException {
-		Member member1 = orm.insert(Member.class).value("name", "m1")
+		Member member1 = this.orm.insert(Member.class).value("name", "m1")
 				.executeSelect();
-		Member member2 = orm.insert(Member.class).value("name", "m2")
+		Member member2 = this.orm.insert(Member.class).value("name", "m2")
 				.executeSelect();
-		Member member3 = orm.insert(Member.class).value("name", "m3")
+		Member member3 = this.orm.insert(Member.class).value("name", "m3")
 				.executeSelect();
 
-		Member got = orm.singleBySQL(Member.class,
+		Member got = this.orm.singleBySQL(Member.class,
 				"SELECT * FROM member WHERE name=?", Arrays.asList("m2"))
 				.get();
 		assertEquals(got.getId(), member2.getId());
@@ -95,14 +95,14 @@ public class TinyORMTest extends TestBase {
 	@SuppressWarnings("unused")
 	@Test
 	public void singleWithStmt() throws SQLException, RichSQLException {
-		Member member1 = orm.insert(Member.class).value("name", "m1")
+		Member member1 = this.orm.insert(Member.class).value("name", "m1")
 				.executeSelect();
-		Member member2 = orm.insert(Member.class).value("name", "m2")
+		Member member2 = this.orm.insert(Member.class).value("name", "m2")
 				.executeSelect();
-		Member member3 = orm.insert(Member.class).value("name", "m3")
+		Member member3 = this.orm.insert(Member.class).value("name", "m3")
 				.executeSelect();
 
-		Member got = orm.single(Member.class)
+		Member got = this.orm.single(Member.class)
 				.where("name=?", "m2")
 				.execute().get();
 		assertEquals(got.getId(), member2.getId());
@@ -113,7 +113,7 @@ public class TinyORMTest extends TestBase {
 	public void searchWithPager() throws SQLException, RichSQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
 			try {
-				orm.insert(Member.class).value("name", "m" + i)
+				this.orm.insert(Member.class).value("name", "m" + i)
 						.executeSelect();
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -121,7 +121,7 @@ public class TinyORMTest extends TestBase {
 		});
 
 		{
-			Paginated<Member> paginated = orm.searchWithPager(
+			Paginated<Member> paginated = this.orm.searchWithPager(
 					Member.class, 4)
 					.offset(0)
 					.execute();
@@ -130,7 +130,7 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getHasNextPage(), true);
 		}
 		{
-			Paginated<Member> paginated = orm.searchWithPager(
+			Paginated<Member> paginated = this.orm.searchWithPager(
 					Member.class, 4)
 					.offset(4)
 					.execute();
@@ -139,7 +139,7 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getHasNextPage(), true);
 		}
 		{
-			Paginated<Member> paginated = orm.searchWithPager(
+			Paginated<Member> paginated = this.orm.searchWithPager(
 					Member.class, 4)
 					.offset(8)
 					.execute();
@@ -148,7 +148,7 @@ public class TinyORMTest extends TestBase {
 			assertEquals(paginated.getHasNextPage(), false);
 		}
 		{
-			Paginated<Member> paginated = orm.searchWithPager(
+			Paginated<Member> paginated = this.orm.searchWithPager(
 					Member.class, 4)
 					.offset(12)
 					.execute();
@@ -162,7 +162,7 @@ public class TinyORMTest extends TestBase {
 	public void testSearchBySQL() throws RichSQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
 			try {
-				orm.insert(Member.class).value("name", "m" + i)
+				this.orm.insert(Member.class).value("name", "m" + i)
 						.execute();
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -170,7 +170,7 @@ public class TinyORMTest extends TestBase {
 		});
 
 		{
-			List<Member> members = orm
+			List<Member> members = this.orm
 					.searchBySQL(
 							Member.class,
 							"SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC",
@@ -191,7 +191,7 @@ public class TinyORMTest extends TestBase {
 			RichSQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
 			try {
-				orm.insert(Member.class).value("name", "m" + i)
+				this.orm.insert(Member.class).value("name", "m" + i)
 						.executeSelect();
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -199,7 +199,7 @@ public class TinyORMTest extends TestBase {
 		});
 
 		{
-			Paginated<Member> paginated = orm.searchBySQLWithPager(
+			Paginated<Member> paginated = this.orm.searchBySQLWithPager(
 					Member.class, "SELECT * FROM member ORDER BY id DESC",
 					Collections.emptyList(), 4);
 			assertEquals(paginated.getRows().size(), 4);
@@ -210,7 +210,7 @@ public class TinyORMTest extends TestBase {
 					.collect(Collectors.joining(",")));
 		}
 		{
-			Paginated<Member> paginated = orm.searchBySQLWithPager(
+			Paginated<Member> paginated = this.orm.searchBySQLWithPager(
 					Member.class,
 					"SELECT * FROM member WHERE id<7 ORDER BY id DESC",
 					Collections.emptyList(), 4);
@@ -222,7 +222,7 @@ public class TinyORMTest extends TestBase {
 					.collect(Collectors.joining(",")));
 		}
 		{
-			Paginated<Member> paginated = orm.searchBySQLWithPager(
+			Paginated<Member> paginated = this.orm.searchBySQLWithPager(
 					Member.class,
 					"SELECT * FROM member WHERE id<? ORDER BY id DESC",
 					Arrays.asList(3), 4);
@@ -238,14 +238,14 @@ public class TinyORMTest extends TestBase {
 	@SuppressWarnings("unused")
 	@Test
 	public void searchWithStmt() throws SQLException, RichSQLException {
-		Member member1 = orm.insert(Member.class).value("name", "m1")
+		Member member1 = this.orm.insert(Member.class).value("name", "m1")
 				.executeSelect();
-		Member member2 = orm.insert(Member.class).value("name", "m2")
+		Member member2 = this.orm.insert(Member.class).value("name", "m2")
 				.executeSelect();
-		Member member3 = orm.insert(Member.class).value("name", "b1")
+		Member member3 = this.orm.insert(Member.class).value("name", "b1")
 				.executeSelect();
 
-		List<Member> got = orm.search(Member.class)
+		List<Member> got = this.orm.search(Member.class)
 				.where("name LIKE ?", "m%")
 				.orderBy("id DESC")
 				.execute();
@@ -256,47 +256,47 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void testMapRowsFromResultSet() throws SQLException {
-		orm.getConnection()
+		this.orm.getConnection()
 				.prepareStatement(
 						"INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
 				.executeUpdate();
-		try (PreparedStatement ps = orm.getConnection().prepareStatement(
+		try (PreparedStatement ps = this.orm.getConnection().prepareStatement(
 				"SELECT * FROM member")) {
 			try (ResultSet rs = ps.executeQuery()) {
-				orm.mapRowListFromResultSet(Member.class, rs);
+				this.orm.mapRowListFromResultSet(Member.class, rs);
 			}
 		}
 	}
 
 	@Test
 	public void testQueryForLong() throws SQLException, RichSQLException {
-		orm.updateBySQL(
+		this.orm.updateBySQL(
 				"CREATE TEMPORARY TABLE x (y integer, z varchar(255));"
 				);
-		orm.updateBySQL(
+		this.orm.updateBySQL(
 				"INSERT INTO x (y,z) values (5963, 'hey')"
 				);
 		{
-			OptionalLong got = orm
+			OptionalLong got = this.orm
 					.queryForLong("SELECT y FROM x WHERE z='hey'");
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.getAsLong(), is(5963L));
 		}
 		{
-			OptionalLong got = orm
+			OptionalLong got = this.orm
 					.queryForLong("SELECT y FROM x WHERE z='nothing'");
 			assertThat(got.isPresent(), is(false));
 		}
 		// with placeholders
 		{
-			OptionalLong got = orm
+			OptionalLong got = this.orm
 					.queryForLong("SELECT y FROM x WHERE z=?",
 							Arrays.asList("hey"));
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.getAsLong(), is(5963L));
 		}
 		{
-			OptionalLong got = orm
+			OptionalLong got = this.orm
 					.queryForLong("SELECT y FROM x WHERE z=?",
 							Arrays.asList("Nothing"));
 			assertThat(got.isPresent(), is(false));
@@ -305,33 +305,33 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void testQueryForString() throws SQLException, RichSQLException {
-		orm.updateBySQL(
+		this.orm.updateBySQL(
 				"CREATE TEMPORARY TABLE x (y varchar(255), z varchar(255));"
 				);
-		orm.updateBySQL(
+		this.orm.updateBySQL(
 				"INSERT INTO x (y,z) values ('ho', 'hey')"
 				);
 		{
-			Optional<String> got = orm
+			Optional<String> got = this.orm
 					.queryForString("SELECT y FROM x WHERE z='hey'");
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.get(), is("ho"));
 		}
 		{
-			Optional<String> got = orm
+			Optional<String> got = this.orm
 					.queryForString("SELECT y FROM x WHERE z='nothing'");
 			assertThat(got.isPresent(), is(false));
 		}
 		// with placeholders
 		{
-			Optional<String> got = orm
+			Optional<String> got = this.orm
 					.queryForString("SELECT y FROM x WHERE z=?",
 							Arrays.asList("hey"));
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.get(), is("ho"));
 		}
 		{
-			Optional<String> got = orm
+			Optional<String> got = this.orm
 					.queryForString("SELECT y FROM x WHERE z=?",
 							Arrays.asList("Nothing"));
 			assertThat(got.isPresent(), is(false));

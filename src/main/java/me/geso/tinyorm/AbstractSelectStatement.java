@@ -17,6 +17,7 @@ public abstract class AbstractSelectStatement<T, Impl> {
 	private final List<String> orderBy = new ArrayList<>();
 	private Long limit;
 	private Long offset;
+	private boolean forUpdate = false;
 
 	AbstractSelectStatement(Connection connection, String tableName) {
 		this.tableName = tableName;
@@ -55,21 +56,27 @@ public abstract class AbstractSelectStatement<T, Impl> {
 		return (Impl) this;
 	}
 
+	@SuppressWarnings("unchecked")
+	public Impl forUpdate() {
+		this.forUpdate = true;
+		return (Impl) this;
+	}
+
 	protected Query buildQuery() {
-		QueryBuilder builder = new QueryBuilder(identifierQuoteString)
+		QueryBuilder builder = new QueryBuilder(this.identifierQuoteString)
 				.appendQuery("SELECT * FROM ")
-				.appendIdentifier(tableName);
-		if (whereQuery != null && !whereQuery.isEmpty()) {
+				.appendIdentifier(this.tableName);
+		if (this.whereQuery != null && !this.whereQuery.isEmpty()) {
 			builder.appendQuery(" WHERE ");
-			builder.appendQuery(whereQuery.stream()
+			builder.appendQuery(this.whereQuery.stream()
 					.map(it -> "(" + it + ")")
 					.collect(Collectors.joining(" AND ")));
-			builder.addParameters(whereParams);
+			builder.addParameters(this.whereParams);
 		}
-		if (!orderBy.isEmpty()) {
+		if (!this.orderBy.isEmpty()) {
 			builder.appendQuery(" ORDER BY ")
 					.appendQuery(
-							orderBy.stream().collect(Collectors.joining(",")));
+							this.orderBy.stream().collect(Collectors.joining(",")));
 		}
 		if (this.limit != null) {
 			builder.appendQuery(" LIMIT ")
@@ -78,6 +85,9 @@ public abstract class AbstractSelectStatement<T, Impl> {
 		if (this.offset != null) {
 			builder.appendQuery(" OFFSET ")
 					.appendQuery("" + this.offset);
+		}
+		if (this.forUpdate) {
+			builder.appendQuery(" FOR UPDATE");
 		}
 		return builder.build();
 	}

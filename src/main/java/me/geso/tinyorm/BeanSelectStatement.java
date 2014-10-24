@@ -29,12 +29,12 @@ public class BeanSelectStatement<T extends Row<?>> extends
 
 		try {
 			return JDBCUtils.executeQuery(
-					connection,
+					this.connection,
 					query,
 					(rs) -> {
 						if (rs.next()) {
-							final T row = tableMeta.createRowFromResultSet(
-									klass,
+							final T row = this.tableMeta.createRowFromResultSet(
+									this.klass,
 									rs, this.orm);
 							rs.close();
 							return Optional.of(row);
