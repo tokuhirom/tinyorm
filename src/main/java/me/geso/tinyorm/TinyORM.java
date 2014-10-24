@@ -81,7 +81,7 @@ public class TinyORM {
 									rs, this);
 							return Optional.of(row);
 						} else {
-							return Optional.empty();
+							return Optional.<T>empty();
 						}
 					});
 		} catch (RichSQLException e) {
@@ -291,7 +291,7 @@ public class TinyORM {
 					final String s = rs.getString(1);
 					return Optional.of(s);
 				} else {
-					return Optional.empty();
+					return Optional.<String>empty();
 				}
 			});
 		} catch (RichSQLException e) {
@@ -364,7 +364,7 @@ public class TinyORM {
 													rs, this);
 									return Optional.of(refetched);
 								} else {
-									return Optional.empty();
+									return Optional.<T>empty();
 								}
 							});
 		} catch (RichSQLException e) {
