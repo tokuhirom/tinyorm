@@ -71,7 +71,7 @@ public class TinyORM {
 
 		try {
 			return JDBCUtils.executeQuery(
-					connection,
+					this.connection,
 					sql,
 					params,
 					(rs) -> {
@@ -151,7 +151,7 @@ public class TinyORM {
 	public <T extends Row<?>> List<T> searchBySQL(
 			final Class<T> klass, final String sql, final List<Object> params) {
 		try {
-			return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+			return JDBCUtils.executeQuery(this.connection, sql, params, (rs) -> {
 				List<T> rows = this.mapRowListFromResultSet(klass, rs);
 				return rows;
 			});
@@ -206,7 +206,7 @@ public class TinyORM {
 	 */
 	public int updateBySQL(final String sql, final List<Object> params) {
 		try {
-			return JDBCUtils.executeUpdate(connection, sql, params);
+			return JDBCUtils.executeUpdate(this.connection, sql, params);
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -218,7 +218,7 @@ public class TinyORM {
 	 */
 	public int updateBySQL(String sql) {
 		try {
-			return JDBCUtils.executeUpdate(connection, sql);
+			return JDBCUtils.executeUpdate(this.connection, sql);
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -230,7 +230,7 @@ public class TinyORM {
 	 */
 	public int updateBySQL(Query query) {
 		try {
-			return JDBCUtils.executeUpdate(connection, query);
+			return JDBCUtils.executeUpdate(this.connection, query);
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -256,7 +256,7 @@ public class TinyORM {
 	public OptionalLong queryForLong(final String sql,
 			@NonNull final List<Object> params) {
 		try {
-			return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+			return JDBCUtils.executeQuery(this.connection, sql, params, (rs) -> {
 				if (rs.next()) {
 					final long l = rs.getLong(1);
 					return OptionalLong.of(l);
@@ -286,7 +286,7 @@ public class TinyORM {
 	public Optional<String> queryForString(final String sql,
 			@NonNull final List<Object> params) {
 		try {
-			return JDBCUtils.executeQuery(connection, sql, params, (rs) -> {
+			return JDBCUtils.executeQuery(this.connection, sql, params, (rs) -> {
 				if (rs.next()) {
 					final String s = rs.getString(1);
 					return Optional.of(s);
@@ -411,7 +411,7 @@ public class TinyORM {
 	public <T> T executeQuery(final Query query,
 			final ResultSetCallback<T> callback) {
 		try {
-			return JDBCUtils.executeQuery(connection, query, callback);
+			return JDBCUtils.executeQuery(this.connection, query, callback);
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -428,7 +428,7 @@ public class TinyORM {
 	public <T> T executeQuery(final String sql, final List<Object> params,
 			final ResultSetCallback<T> callback) {
 		try {
-			return JDBCUtils.executeQuery(connection, sql, params, callback);
+			return JDBCUtils.executeQuery(this.connection, sql, params, callback);
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -444,7 +444,7 @@ public class TinyORM {
 	public <T> T executeQuery(final String sql,
 			final ResultSetCallback<T> callback) {
 		try {
-			return JDBCUtils.executeQuery(connection, sql,
+			return JDBCUtils.executeQuery(this.connection, sql,
 					Collections.emptyList(),
 					callback);
 		} catch (RichSQLException e) {
