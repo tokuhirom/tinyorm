@@ -134,17 +134,23 @@ public class InsertStatement<T extends Row<?>> {
 		return builder.build();
 	}
 
-	public void execute() {
+	/**
+	 * Execute query.
+	 * 
+	 * @return The number of affected rows.
+	 */
+	public int execute() {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
 		final Query query = this.buildQuery();
 
 		try {
 			final int inserted = JDBCUtils
 					.executeUpdate(orm.getConnection(), query);
-			if (inserted != 1) {
+			if (inserted != 1 && this.onDuplicateKeyUpdateQuery == null) {
 				throw new RuntimeException("Cannot insert to database:"
 						+ query);
 			}
+			return inserted;
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
