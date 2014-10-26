@@ -1,0 +1,57 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'findbugs'
+
+group = 'me.geso'
+version = '0.28.7'
+
+description = """tinyorm"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      def homedir = System.getProperty("user.home")
+      repository(url: "file://localhost/${homedir}/.mvnrel/tokuhirom-maven/releases/")
+    }
+  }
+}
+
+// hack for 'provided' function: https://issues.gradle.org/browse/GRADLE-784
+configurations { provided }
+sourceSets {
+  main { compileClasspath += configurations.provided }
+}
+
+task sourcesJar(type: Jar, dependsOn:classes) {
+     classifier = 'sources'
+     from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn:javadoc) {
+     classifier = 'javadoc'
+     from javadoc.destinationDir
+}
+
+repositories {
+  maven { url "https://tokuhirom.github.io/maven/releases/" }
+  maven { url "http://repo.maven.apache.org/maven2" }
+}
+
+dependencies {
+  compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.7'
+  compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version:'2.4.2'
+  compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version:'2.3.3'
+  compile group: 'org.apache.commons', name: 'commons-csv', version:'1.0'
+  compile group: 'me.geso', name: 'tinyvalidator', version:'0.5.0'
+  compile group: 'me.geso', name: 'jdbcutils', version:'0.6.1'
+  testCompile group: 'junit', name: 'junit', version:'4.11'
+  testCompile group: 'mysql', name: 'mysql-connector-java', version:'5.1.33'
+  testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.7'
+  testCompile group: 'com.googlecode.log4jdbc', name: 'log4jdbc', version:'1.2'
+  provided("org.projectlombok:lombok:1.14.8")
+}
+
+
