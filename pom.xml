@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>tinyorm</artifactId>
-	<version>0.28.8-SNAPSHOT</version>
+	<version>0.28.8</version>
 	<name>tinyorm</name>
 	<description>tinyorm</description>
 	<url>http://github.com/tokuhirom/tinyorm</url>
@@ -19,7 +18,8 @@
 		<url>https://github.com/tokuhirom/tinyorm/</url>
 		<connection>scm:git:git://github.com/tokuhirom/tinyorm.git</connection>
 		<developerConnection>scm:git:git@github.com:tokuhirom/tinyorm.git</developerConnection>
-	</scm>
+	  <tag>tinyorm-0.28.8</tag>
+  </scm>
 
     <developers>
         <developer>
