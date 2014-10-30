@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class TestBase {
+public abstract class TestBase {
 
 	protected final Connection connection;
 	protected final TinyORM orm;
