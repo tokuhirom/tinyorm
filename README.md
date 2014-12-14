@@ -7,20 +7,12 @@ This is a tiny o/r mapper for Java 8.
 
 ## Setup
 
-main/java/myapp/DB.java
-
-    public DB extends TinyORM {
-      public void getConnection() {
-        return Context.getContext().getConnection();
-      }
-    }
-
 main/java/myapp/rows/Member.java
 
     @Table("member")
     @Data // lombok
     @EqualsAndHashCode(callSuper = false)
-    public Member extends ActiveRecord<Member> {
+    public Member extends Row<Member> {
       private long id;
       private String name;
     }
@@ -29,7 +21,7 @@ main/java/myapp/rows/Member.java
 
 Create new database object.
 
-    DB db = new DB();
+    TinyORM db = new TinyORM(connection);
 
 ### Selecting one row.
 
