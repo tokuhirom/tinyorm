@@ -435,6 +435,36 @@ public class TinyORM {
 	}
 
 	/**
+	 * Execute query without callback.
+	 * 
+	 * @param sql
+	 * @return
+	 */
+	public void executeQuery(final String sql) {
+		try {
+			JDBCUtils.executeQuery(this.connection, sql,
+					Collections.emptyList());
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Execute query without callback.
+	 * 
+	 * @param sql
+	 * @param params
+	 * @return
+	 */
+	public void executeQuery(final String sql, final List<Object> params) {
+		try {
+			JDBCUtils.executeQuery(this.connection, sql, params);
+		} catch (RichSQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
 	 * Execute query.
 	 * 
 	 * @param sql

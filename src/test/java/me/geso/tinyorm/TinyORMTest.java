@@ -269,6 +269,17 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
+	public void testExecuteQuery() throws SQLException, RichSQLException {
+		this.orm.executeQuery("SELECT 1");
+	}
+
+	@Test
+	public void testExecuteQueryWithList() throws SQLException,
+			RichSQLException {
+		this.orm.executeQuery("SELECT 1+?", Arrays.asList(3));
+	}
+
+	@Test
 	public void testQueryForLong() throws SQLException, RichSQLException {
 		this.orm.updateBySQL(
 				"CREATE TEMPORARY TABLE x (y integer, z varchar(255));"
