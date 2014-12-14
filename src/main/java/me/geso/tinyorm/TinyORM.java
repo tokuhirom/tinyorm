@@ -438,7 +438,6 @@ public class TinyORM {
 	 * Execute query without callback.
 	 * 
 	 * @param sql
-	 * @return
 	 */
 	public void executeQuery(final String sql) {
 		try {
@@ -454,7 +453,6 @@ public class TinyORM {
 	 * 
 	 * @param sql
 	 * @param params
-	 * @return
 	 */
 	public void executeQuery(final String sql, final List<Object> params) {
 		try {
