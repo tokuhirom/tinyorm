@@ -480,4 +480,21 @@ public class TinyORM {
 		}
 	}
 
+	/**
+     * Count rows.
+     *
+	 * <pre><code>
+	 * 	long count = db.count(MemberRow.class)
+	 * 		.where("status=?", 1)
+	 * 		.execute();
+	 * </code></pre>
+	 * 
+	 * @param klass row class.
+	 * @return Instance of {@link me.geso.tinyorm.SelectCountStatement}.
+	 */
+	public <T extends Row<?>> SelectCountStatement count(final Class<T> klass) {
+        TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
+        return new SelectCountStatement(tableMeta, this.getConnection());
+	}
+
 }
