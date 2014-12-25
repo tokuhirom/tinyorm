@@ -2,6 +2,7 @@ tinyorm
 =======
 
 [![Build Status](https://travis-ci.org/tokuhirom/tinyorm.svg?branch=master)](https://travis-ci.org/tokuhirom/tinyorm)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/me.geso/tinyorm/badge.svg)](https://maven-badges.herokuapp.com/maven-central/me.geso/tinyorm)
 
 This is a tiny o/r mapper for Java 8.
 
