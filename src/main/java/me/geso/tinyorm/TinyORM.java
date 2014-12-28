@@ -189,7 +189,7 @@ public class TinyORM {
 	}
 
 	<T extends Row<?>> UpdateRowStatement<T> createUpdateStatement(T row) {
-		TableMeta<T> tableMeta = this.getTableMeta(row.getClass());
+		TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		UpdateRowStatement<T> stmt = new UpdateRowStatement<>(row,
 				this.getConnection(), tableMeta,
 				this.getIdentifierQuoteString());
@@ -308,8 +308,7 @@ public class TinyORM {
 	public <T extends Row<?>> void delete(final T row) {
 		final Connection connection = this.getConnection();
 		@SuppressWarnings("unchecked")
-		final TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(row
-				.getClass());
+		final TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		final String tableName = tableMeta.getName();
 		final String identifierQuoteString = this.getIdentifierQuoteString();
 		final Query where = tableMeta.createWhereClauseFromRow(row,
@@ -332,11 +331,10 @@ public class TinyORM {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	<T extends Row<?>> Optional<T> refetch(final T row) {
 		final Connection connection = this.getConnection();
-		final TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(row
-				.getClass());
+        @SuppressWarnings("unchecked")
+		final TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		final String identifierQuoteString = this.getIdentifierQuoteString();
 		final Query where = tableMeta.createWhereClauseFromRow(row,
 				identifierQuoteString);
