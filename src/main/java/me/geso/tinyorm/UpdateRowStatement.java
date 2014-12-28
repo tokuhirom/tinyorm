@@ -7,6 +7,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -54,7 +55,7 @@ public class UpdateRowStatement<T extends Row<?>> {
 					+ " column list.");
 		}
 		Object current = tableMeta.getValue(this.row, columnName);
-		if (ObjectUtils._equals(current, value)) {
+		if (Objects.equals(current, value)) {
 			// We don't need to update database. do nothing.
 		} else {
 			this.set.put(columnName, value);
