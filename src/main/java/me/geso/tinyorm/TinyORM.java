@@ -81,7 +81,7 @@ public class TinyORM {
 									rs, this);
 							return Optional.of(row);
 						} else {
-							return Optional.<T>empty();
+							return Optional.<T> empty();
 						}
 					});
 		} catch (RichSQLException e) {
@@ -109,8 +109,7 @@ public class TinyORM {
 	 * @return
 	 */
 	public <T extends Row<?>> BeanSelectStatement<T> single(Class<T> klass) {
-		@SuppressWarnings("unchecked")
-		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
+		TableMeta<T> tableMeta = this.getTableMeta(klass);
 		return new BeanSelectStatement<>(this.getConnection(),
 				klass, tableMeta, this);
 	}
@@ -123,8 +122,7 @@ public class TinyORM {
 	 * @return
 	 */
 	public <T extends Row<?>> ListSelectStatement<T> search(Class<T> klass) {
-		@SuppressWarnings("unchecked")
-		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
+		TableMeta<T> tableMeta = this.getTableMeta(klass);
 		return new ListSelectStatement<>(this.getConnection(),
 				klass, tableMeta, this);
 	}
@@ -137,8 +135,7 @@ public class TinyORM {
 	 */
 	public <T extends Row<?>> PaginatedSelectStatement<T> searchWithPager(
 			final Class<T> klass, final long limit) {
-		@SuppressWarnings("unchecked")
-		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
+		TableMeta<T> tableMeta = this.getTableMeta(klass);
 		return new PaginatedSelectStatement<>(this.getConnection(),
 				klass, tableMeta, this, limit);
 	}
@@ -151,10 +148,11 @@ public class TinyORM {
 	public <T extends Row<?>> List<T> searchBySQL(
 			final Class<T> klass, final String sql, final List<Object> params) {
 		try {
-			return JDBCUtils.executeQuery(this.connection, sql, params, (rs) -> {
-				List<T> rows = this.mapRowListFromResultSet(klass, rs);
-				return rows;
-			});
+			return JDBCUtils.executeQuery(this.connection, sql, params,
+					(rs) -> {
+						List<T> rows = this.mapRowListFromResultSet(klass, rs);
+						return rows;
+					});
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -191,9 +189,7 @@ public class TinyORM {
 	}
 
 	<T extends Row<?>> UpdateRowStatement<T> createUpdateStatement(T row) {
-		@SuppressWarnings("unchecked")
-		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(row
-				.getClass());
+		TableMeta<T> tableMeta = this.getTableMeta(row.getClass());
 		UpdateRowStatement<T> stmt = new UpdateRowStatement<>(row,
 				this.getConnection(), tableMeta,
 				this.getIdentifierQuoteString());
@@ -238,7 +234,6 @@ public class TinyORM {
 
 	<T extends Row<?>> List<T> mapRowListFromResultSet(Class<T> klass,
 			ResultSet rs) throws SQLException {
-		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 		ArrayList<T> rows = new ArrayList<>();
 		while (rs.next()) {
@@ -256,14 +251,15 @@ public class TinyORM {
 	public OptionalLong queryForLong(final String sql,
 			@NonNull final List<Object> params) {
 		try {
-			return JDBCUtils.executeQuery(this.connection, sql, params, (rs) -> {
-				if (rs.next()) {
-					final long l = rs.getLong(1);
-					return OptionalLong.of(l);
-				} else {
-					return OptionalLong.empty();
-				}
-			});
+			return JDBCUtils.executeQuery(this.connection, sql, params,
+					(rs) -> {
+						if (rs.next()) {
+							final long l = rs.getLong(1);
+							return OptionalLong.of(l);
+						} else {
+							return OptionalLong.empty();
+						}
+					});
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -286,14 +282,15 @@ public class TinyORM {
 	public Optional<String> queryForString(final String sql,
 			@NonNull final List<Object> params) {
 		try {
-			return JDBCUtils.executeQuery(this.connection, sql, params, (rs) -> {
-				if (rs.next()) {
-					final String s = rs.getString(1);
-					return Optional.of(s);
-				} else {
-					return Optional.<String>empty();
-				}
-			});
+			return JDBCUtils.executeQuery(this.connection, sql, params,
+					(rs) -> {
+						if (rs.next()) {
+							final String s = rs.getString(1);
+							return Optional.of(s);
+						} else {
+							return Optional.<String> empty();
+						}
+					});
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -364,7 +361,7 @@ public class TinyORM {
 													rs, this);
 									return Optional.of(refetched);
 								} else {
-									return Optional.<T>empty();
+									return Optional.<T> empty();
 								}
 							});
 		} catch (RichSQLException e) {
@@ -372,8 +369,9 @@ public class TinyORM {
 		}
 	}
 
-	<T extends Row<?>> TableMeta<?> getTableMeta(final Class<T> klass) {
-		return tableMetaRegistry.computeIfAbsent(klass, key -> {
+	@SuppressWarnings("unchecked")
+	<T extends Row<?>> TableMeta<T> getTableMeta(final Class<T> klass) {
+		return (TableMeta<T>) tableMetaRegistry.computeIfAbsent(klass, key -> {
 			log.info("Loading {}", klass);
 			try {
 				return TableMeta.<T> build(klass);
@@ -428,7 +426,8 @@ public class TinyORM {
 	public <T> T executeQuery(final String sql, final List<Object> params,
 			final ResultSetCallback<T> callback) {
 		try {
-			return JDBCUtils.executeQuery(this.connection, sql, params, callback);
+			return JDBCUtils.executeQuery(this.connection, sql, params,
+					callback);
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -481,8 +480,8 @@ public class TinyORM {
 	}
 
 	/**
-     * Count rows.
-     *
+	 * Count rows.
+	 *
 	 * <pre><code>
 	 * 	long count = db.count(MemberRow.class)
 	 * 		.where("status=?", 1)
@@ -492,9 +491,9 @@ public class TinyORM {
 	 * @param klass row class.
 	 * @return Instance of {@link me.geso.tinyorm.SelectCountStatement}.
 	 */
-	public <T extends Row<?>> SelectCountStatement count(final Class<T> klass) {
-        TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
-        return new SelectCountStatement(tableMeta, this.getConnection());
+	public <T extends Row<?>> SelectCountStatement<T> count(final Class<T> klass) {
+		TableMeta<T> tableMeta = this.getTableMeta(klass);
+		return new SelectCountStatement<>(tableMeta, this.getConnection());
 	}
 
 }
