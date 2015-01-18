@@ -57,6 +57,13 @@ public abstract class AbstractSelectStatement<T, Impl> {
 	}
 
 	@SuppressWarnings("unchecked")
+	public Impl orderBy(String key, Order order) {
+		this.orderBy.add(new StringBuilder(key).append(" ")
+				.append(order.toString()).toString());
+		return (Impl) this;
+	}
+
+	@SuppressWarnings("unchecked")
 	public Impl forUpdate() {
 		this.forUpdate = true;
 		return (Impl) this;

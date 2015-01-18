@@ -246,6 +246,44 @@ public class TinyORMTest extends TestBase {
 		assertEquals(got.get(1).getName(), "m1");
 	}
 
+	@SuppressWarnings("unused")
+	@Test
+	public void searchWithStmtAndDescOrder() {
+		Member member1 = this.orm.insert(Member.class).value("name", "m1")
+			.executeSelect();
+		Member member2 = this.orm.insert(Member.class).value("name", "m2")
+			.executeSelect();
+		Member member3 = this.orm.insert(Member.class).value("name", "b1")
+			.executeSelect();
+
+		List<Member> got = this.orm.search(Member.class)
+			.where("name LIKE ?", "m%")
+			.orderBy("id", Order.DESC)
+			.execute();
+		assertEquals(got.size(), 2);
+		assertEquals(got.get(0).getName(), "m2");
+		assertEquals(got.get(1).getName(), "m1");
+	}
+
+	@SuppressWarnings("unused")
+	@Test
+	public void searchWithStmtAndAscOrder() {
+		Member member1 = this.orm.insert(Member.class).value("name", "m1")
+			.executeSelect();
+		Member member2 = this.orm.insert(Member.class).value("name", "m2")
+			.executeSelect();
+		Member member3 = this.orm.insert(Member.class).value("name", "b1")
+			.executeSelect();
+
+		List<Member> got = this.orm.search(Member.class)
+			.where("name LIKE ?", "m%")
+			.orderBy("id", Order.ASC)
+			.execute();
+		assertEquals(got.size(), 2);
+		assertEquals(got.get(0).getName(), "m1");
+		assertEquals(got.get(1).getName(), "m2");
+	}
+
 	@Test
 	public void testMapRowsFromResultSet() throws SQLException {
 		this.orm.getConnection()
