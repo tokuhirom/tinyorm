@@ -97,7 +97,13 @@ class TableMeta<RowType extends Row<?>> {
 		// It should be stable... I want to use LinkedHashMap here.
 		final Map<String, Inflater> inflaters = new LinkedHashMap<>();
 		final Map<String, Deflater> deflaters = new LinkedHashMap<>();
-		Field[] fields = rowClass.getDeclaredFields();
+		List<Field> fields = new ArrayList<>();
+		Collections.addAll(fields, rowClass.getDeclaredFields());
+		Class<?> superClass = rowClass.getSuperclass();
+		while (!superClass.isAssignableFrom(Row.class)) {
+			Collections.addAll(fields, superClass.getDeclaredFields());
+			superClass = superClass.getSuperclass();
+		}
 		Map<String, Field> fieldMap = new HashMap<>();
 		for (Field field : fields) {
 			fieldMap.put(field.getName(), field);
