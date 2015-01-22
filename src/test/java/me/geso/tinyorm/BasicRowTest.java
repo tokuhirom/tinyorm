@@ -67,7 +67,6 @@ public class BasicRowTest extends TestBase {
 	@Test
 	public void testCreateUpdateStatementWithInheritance() throws SQLException,
 			RichSQLException {
-		try {
 		Y y = orm.insert(Y.class)
 				.value("name", "John")
 				.executeSelect();
@@ -83,10 +82,6 @@ public class BasicRowTest extends TestBase {
 		assertEquals("Jiro", refetched.getName());
 		assertEquals(1, refetched.getId());
 		assertEquals("updated", refetched.getY());
-		} catch(Exception e) {
-			e.printStackTrace();
-			throw e;
-		}
 	}
 
 
