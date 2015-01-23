@@ -33,6 +33,14 @@ public class BasicRowTest extends TestBase {
 				.prepareStatement(
 						"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, y VARCHAR(255) NOT NULL)")
 				.executeUpdate();
+		orm.getConnection()
+				.prepareStatement(
+						"DROP TABLE IF EXISTS y")
+				.executeUpdate();
+		orm.getConnection()
+				.prepareStatement(
+						"CREATE TABLE y LIKE x")
+				.executeUpdate();
 
 	}
 
@@ -55,6 +63,27 @@ public class BasicRowTest extends TestBase {
 		assertEquals(1, refetched.getId());
 		assertEquals("updated", refetched.getY());
 	}
+
+	@Test
+	public void testCreateUpdateStatementWithInheritance() throws SQLException,
+			RichSQLException {
+		Y y = orm.insert(Y.class)
+				.value("name", "John")
+				.executeSelect();
+		assertEquals(y.getName(), "John");
+		assertEquals(y.getId(), 1);
+		assertEquals("inserted", y.getY());
+
+		orm.createUpdateStatement(y)
+				.set("name", "Jiro")
+				.execute();
+		;
+		Y refetched = orm.refetch(y).get();
+		assertEquals("Jiro", refetched.getName());
+		assertEquals(1, refetched.getId());
+		assertEquals("updated", refetched.getY());
+	}
+
 
 	// @Test
 	// public void testWhere() {
@@ -134,6 +163,10 @@ public class BasicRowTest extends TestBase {
 	@Data
 	public static class XForm {
 		String name;
+	}
+
+	@Table("y")
+	public static class Y extends X {
 	}
 
 }
