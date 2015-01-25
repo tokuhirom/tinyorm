@@ -17,6 +17,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+
+import net.moznion.db.transaction.manager.TransactionManager;
+import net.moznion.db.transaction.manager.TransactionScope;
+
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
@@ -33,14 +37,21 @@ public class TinyORM {
 
 	private final Connection connection;
 
+	private final TransactionManager transactionManager;
+
 	private static ConcurrentHashMap<Class<?>, TableMeta<?>> tableMetaRegistry = new ConcurrentHashMap<>();
 
 	public TinyORM(Connection connection) {
 		this.connection = connection;
+		this.transactionManager = new TransactionManager(this.connection);
 	}
 
 	public Connection getConnection() {
 		return this.connection;
+	}
+
+	public TransactionManager getTransactionManager() {
+		return this.transactionManager;
 	}
 
 	/**
@@ -54,7 +65,6 @@ public class TinyORM {
 	 * @return
 	 */
 	public <T extends Row<?>> InsertStatement<T> insert(Class<T> klass) {
-		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 		return new InsertStatement<>(this, klass, tableMeta);
 	}
@@ -66,7 +76,6 @@ public class TinyORM {
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
 			String sql,
 			List<Object> params) {
-		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 
 		try {
@@ -189,6 +198,7 @@ public class TinyORM {
 	}
 
 	<T extends Row<?>> UpdateRowStatement<T> createUpdateStatement(T row) {
+		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		UpdateRowStatement<T> stmt = new UpdateRowStatement<>(row,
 				this.getConnection(), tableMeta,
@@ -333,7 +343,7 @@ public class TinyORM {
 
 	<T extends Row<?>> Optional<T> refetch(final T row) {
 		final Connection connection = this.getConnection();
-        @SuppressWarnings("unchecked")
+		@SuppressWarnings("unchecked")
 		final TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		final String identifierQuoteString = this.getIdentifierQuoteString();
 		final Query where = tableMeta.createWhereClauseFromRow(row,
@@ -494,4 +504,81 @@ public class TinyORM {
 		return new SelectCountStatement<>(tableMeta, this.getConnection());
 	}
 
+	/**
+	 * Sets auto-commit mode (means do with transaction or not) to connection
+	 * which is held by this.
+	 * 
+	 * @param isAutoCommit
+	 * @throws SQLException
+	 */
+	public void setAutoCommit(boolean isAutoCommit) throws SQLException {
+		connection.setAutoCommit(isAutoCommit);
+	}
+
+	/**
+	 * Begins transaction.
+	 * 
+	 * @throws SQLException
+	 */
+	public void transactionBegin() throws SQLException {
+		transactionManager.txnBegin();
+	}
+
+	/**
+	 * Runnable interface for statement which is throwable SQLException.
+	 */
+	@FunctionalInterface
+	public interface RunnableStatement {
+		public void run() throws SQLException;
+	}
+
+	/**
+	 * Executes statements within a transaction.
+	 * 
+	 * <p>
+	 * For example;
+	 * 
+	 * <pre>
+	 * <code>
+	 * db.transactionScope(() -> {
+	 *     db.insert(Member.class)
+	 * 	       .value("name", "John")
+	 * 	       .execute();
+	 *     db.transactionCommit();
+	 * });
+	 * </code>
+	 * </pre>
+	 * 
+	 * If it escapes from try-with-resource statement without any action
+	 * ({@code transactionCommit()} or {@code transactionRollback()}),
+	 * transaction will rollback automatically.
+	 * </p>
+	 * 
+	 * @param statements
+	 * @throws SQLException
+	 */
+	public void transactionScope(RunnableStatement statements)
+			throws SQLException {
+		try (TransactionScope txn = new TransactionScope(transactionManager)) {
+			statements.run();
+		}
+	}
+
+	/**
+	 * Commits the current transaction.
+	 * 
+	 * @throws SQLException
+	 */
+	public void transactionCommit() throws SQLException {
+		transactionManager.txnCommit();
+	}
+
+	/**
+	 * Rollbacks the current transaction.
+	 * 
+	 * @throws SQLException
+	 */
+	public void transactionRollback() throws SQLException {
+		transactionManager.txnRollback();
+	}
 }
