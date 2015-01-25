@@ -112,6 +112,11 @@
 			<artifactId>jdbcutils</artifactId>
 			<version>1.0.0</version>
 		</dependency>
+		<dependency>
+			<groupId>net.moznion</groupId>
+			<artifactId>db-transaction-manager</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
