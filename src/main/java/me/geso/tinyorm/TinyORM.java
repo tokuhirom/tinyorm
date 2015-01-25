@@ -518,6 +518,11 @@ public class TinyORM {
 	/**
 	 * Begins transaction.
 	 * 
+	 * <p>
+	 * This method backups automatically the status of auto commit mode when
+	 * this is called. The status will be turned back when transaction is end.
+	 * </p>
+	 * 
 	 * @throws SQLException
 	 */
 	public void transactionBegin() throws SQLException {
@@ -535,20 +540,18 @@ public class TinyORM {
 	/**
 	 * Executes statements within a transaction.
 	 * 
-	 * <p>
-	 * For example;
-	 * 
 	 * <pre>
-	 * <code>
+	 * {@code
 	 * db.transactionScope(() -> {
 	 *     db.insert(Member.class)
 	 * 	       .value("name", "John")
 	 * 	       .execute();
 	 *     db.transactionCommit();
 	 * });
-	 * </code>
+	 * }
 	 * </pre>
 	 * 
+	 * <p>
 	 * If it escapes from try-with-resource statement without any action
 	 * ({@code transactionCommit()} or {@code transactionRollback()}),
 	 * transaction will rollback automatically.
