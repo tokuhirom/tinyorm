@@ -530,24 +530,16 @@ public class TinyORM {
 	}
 
 	/**
-	 * Runnable interface for statement which is throwable SQLException.
-	 */
-	@FunctionalInterface
-	public interface RunnableStatement {
-		public void run() throws SQLException;
-	}
-
-	/**
-	 * Executes statements within a transaction.
+	 * Dispense a new transaction scope.
 	 * 
 	 * <pre>
 	 * {@code
-	 * db.transactionScope(() -> {
+	 * try (TransactionScope txn = db.createTransactionScope()) {
 	 *     db.insert(Member.class)
 	 * 	       .value("name", "John")
 	 * 	       .execute();
 	 *     db.transactionCommit();
-	 * });
+	 * }
 	 * }
 	 * </pre>
 	 * 
@@ -557,14 +549,10 @@ public class TinyORM {
 	 * transaction will rollback automatically.
 	 * </p>
 	 * 
-	 * @param statements
 	 * @throws SQLException
 	 */
-	public void transactionScope(RunnableStatement statements)
-			throws SQLException {
-		try (TransactionScope txn = new TransactionScope(transactionManager)) {
-			statements.run();
-		}
+	public TransactionScope createTransactionScope() throws SQLException {
+		return new TransactionScope(transactionManager);
 	}
 
 	/**

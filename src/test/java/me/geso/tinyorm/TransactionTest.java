@@ -2,9 +2,10 @@ package me.geso.tinyorm;
 
 import static org.junit.Assert.assertEquals;
 
+import net.moznion.db.transaction.manager.TransactionScope;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 
@@ -52,20 +53,20 @@ public class TransactionTest extends TestBase {
 
 	@Test
 	public void transactionCommitWithScopeSuccessfully() throws SQLException {
-		orm.transactionScope(() -> {
+		try (TransactionScope txn = orm.createTransactionScope()) {
 			orm.insert(X.class).value("a", "hoge").execute();
 			orm.transactionCommit();
-		});
+		}
 		Optional<X> row = orm.single(X.class).where("a=?", "hoge").execute();
 		assertEquals(row.get().getA(), "hoge");
 	}
 
 	@Test
 	public void transactionRollbackWithScopeSuccessfully() throws SQLException {
-		orm.transactionScope(() -> {
+		try (TransactionScope txn = orm.createTransactionScope()) {
 			orm.insert(X.class).value("a", "hoge").execute();
 			orm.transactionRollback();
-		});
+		}
 		Optional<X> row = orm.single(X.class).where("a=?", "hoge").execute();
 		assertEquals(row.isPresent(), false);
 	}
@@ -73,9 +74,9 @@ public class TransactionTest extends TestBase {
 	@Test
 	public void transactionImplicitRollbackWithScopeSuccessfully()
 			throws SQLException {
-		orm.transactionScope(() -> {
+		try (TransactionScope txn = orm.createTransactionScope()) {
 			orm.insert(X.class).value("a", "hoge").execute();
-		});
+		}
 		Optional<X> row = orm.single(X.class).where("a=?", "hoge").execute();
 		assertEquals(row.isPresent(), false);
 	}
