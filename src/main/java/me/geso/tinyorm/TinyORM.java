@@ -54,7 +54,6 @@ public class TinyORM {
 	 * @return
 	 */
 	public <T extends Row<?>> InsertStatement<T> insert(Class<T> klass) {
-		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 		return new InsertStatement<>(this, klass, tableMeta);
 	}
@@ -66,7 +65,6 @@ public class TinyORM {
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
 			String sql,
 			List<Object> params) {
-		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = (TableMeta<T>) this.getTableMeta(klass);
 
 		try {
@@ -189,6 +187,7 @@ public class TinyORM {
 	}
 
 	<T extends Row<?>> UpdateRowStatement<T> createUpdateStatement(T row) {
+		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		UpdateRowStatement<T> stmt = new UpdateRowStatement<>(row,
 				this.getConnection(), tableMeta,
@@ -331,9 +330,9 @@ public class TinyORM {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	<T extends Row<?>> Optional<T> refetch(final T row) {
 		final Connection connection = this.getConnection();
-        @SuppressWarnings("unchecked")
 		final TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		final String identifierQuoteString = this.getIdentifierQuoteString();
 		final Query where = tableMeta.createWhereClauseFromRow(row,
