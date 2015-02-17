@@ -74,7 +74,6 @@ public abstract class Row<T extends Row<?>> {
 	/**
 	 * Get extra columns.
 	 *
-	 * @param columnName
 	 * @return
 	 */
 	public Map<String, Object> getExtraColumns() {
