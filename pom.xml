@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>tinyorm</artifactId>
-	<version>0.32.1-SNAPSHOT</version>
+	<version>0.33.0</version>
 	<name>tinyorm</name>
 	<description>tinyorm</description>
 	<url>http://github.com/tokuhirom/tinyorm</url>
@@ -18,7 +18,7 @@
 		<url>https://github.com/tokuhirom/tinyorm/</url>
 		<connection>scm:git:git://github.com/tokuhirom/tinyorm.git</connection>
 		<developerConnection>scm:git:git@github.com:tokuhirom/tinyorm.git</developerConnection>
-	  <tag>HEAD</tag>
+	  <tag>tinyorm-0.33.0</tag>
   </scm>
 
     <developers>
