@@ -1,5 +1,6 @@
 package me.geso.tinyorm;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -18,31 +19,31 @@ public abstract class Row<T extends Row<?>> {
 	private void checkORM() {
 		if (this.orm == null) {
 			throw new IllegalStateException(
-					"This object doesn't have a ORM information");
+				"This object doesn't have a ORM information");
 		}
 	}
 
 	/**
 	 * Fetch the latest row data from database.
-	 * 
+	 *
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
 	public Optional<T> refetch() {
 		checkORM();
-		return this.orm.refetch((T) this);
+		return this.orm.refetch((T)this);
 	}
 
 	/**
 	 * Create {@code UpdateRowStatement} with where clause that selects this
 	 * row.
-	 * 
+	 *
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
 	public UpdateRowStatement<T> update() {
 		checkORM();
-		return this.orm.createUpdateStatement((T) this);
+		return this.orm.createUpdateStatement((T)this);
 	}
 
 	/**
@@ -61,7 +62,7 @@ public abstract class Row<T extends Row<?>> {
 	}
 
 	/**
-	 * Get extra columns.
+	 * Get extra column value.
 	 *
 	 * @param columnName
 	 * @return
@@ -69,4 +70,15 @@ public abstract class Row<T extends Row<?>> {
 	public Object getExtraColumn(String columnName) {
 		return this.extraColumns.get(columnName);
 	}
+
+	/**
+	 * Get extra columns.
+	 *
+	 * @param columnName
+	 * @return
+	 */
+	public Map<String, Object> getExtraColumns() {
+		return Collections.unmodifiableMap(this.extraColumns);
+	}
+
 }

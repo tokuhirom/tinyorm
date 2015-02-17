@@ -7,7 +7,11 @@ import static org.junit.Assert.assertThat;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -17,7 +21,11 @@ import org.junit.Test;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import me.geso.jdbcutils.RichSQLException;
-import me.geso.tinyorm.annotations.*;
+import me.geso.tinyorm.annotations.Column;
+import me.geso.tinyorm.annotations.CreatedTimestampColumn;
+import me.geso.tinyorm.annotations.PrimaryKey;
+import me.geso.tinyorm.annotations.Table;
+import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 
 public class TinyORMTest extends TestBase {
 
@@ -164,9 +172,9 @@ public class TinyORMTest extends TestBase {
 		{
 			List<Member> members = this.orm
 				.searchBySQL(
-                        Member.class,
-                        "SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC",
-                        Collections.emptyList());
+					Member.class,
+					"SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC",
+					Collections.emptyList());
 			System.out.println(members);
 			assertEquals(10, members.size());
 			assertEquals("10,9,8,7,6,5,4,3,2,1", members.stream()
@@ -174,6 +182,9 @@ public class TinyORMTest extends TestBase {
 				.collect(Collectors.joining(",")));
 			assertEquals("11,10,9,8,7,6,5,4,3,2", members.stream()
 				.map(row -> "" + row.getExtraColumn("idPlusOne"))
+				.collect(Collectors.joining(",")));
+			assertEquals("11,10,9,8,7,6,5,4,3,2", members.stream()
+				.map(row -> "" + row.getExtraColumns().get("idPlusOne"))
 				.collect(Collectors.joining(",")));
 		}
 	}
@@ -250,7 +261,7 @@ public class TinyORMTest extends TestBase {
 	public void testMapRowsFromResultSet() throws SQLException {
 		this.orm.getConnection()
 			.prepareStatement(
-                    "INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
+				"INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
 			.executeUpdate();
 		try (PreparedStatement ps = this.orm.getConnection().prepareStatement(
 			"SELECT * FROM member")) {
@@ -294,14 +305,14 @@ public class TinyORMTest extends TestBase {
 		{
 			OptionalLong got = this.orm
 				.queryForLong("SELECT y FROM x WHERE z=?",
-                        Arrays.asList("hey"));
+					Arrays.asList("hey"));
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.getAsLong(), is(5963L));
 		}
 		{
 			OptionalLong got = this.orm
 				.queryForLong("SELECT y FROM x WHERE z=?",
-                        Arrays.asList("Nothing"));
+					Arrays.asList("Nothing"));
 			assertThat(got.isPresent(), is(false));
 		}
 	}
@@ -329,14 +340,14 @@ public class TinyORMTest extends TestBase {
 		{
 			Optional<String> got = this.orm
 				.queryForString("SELECT y FROM x WHERE z=?",
-                        Arrays.asList("hey"));
+					Arrays.asList("hey"));
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.get(), is("ho"));
 		}
 		{
 			Optional<String> got = this.orm
 				.queryForString("SELECT y FROM x WHERE z=?",
-                        Arrays.asList("Nothing"));
+					Arrays.asList("Nothing"));
 			assertThat(got.isPresent(), is(false));
 		}
 	}
@@ -381,23 +392,23 @@ public class TinyORMTest extends TestBase {
 		this.orm.insert(Member.class).value("name", "b1")
 			.execute();
 
-        {
-            long count = this.orm.count(Member.class)
-                    .execute();
-            assertEquals(3, count);
-        }
-        {
-            long count = this.orm.count(Member.class)
-                    .where("name LIKE 'm%'")
-                    .execute();
-            assertEquals(2, count);
-        }
-        {
-            long count = this.orm.count(Member.class)
-                    .where("name LIKE CONCAT(?, '%')", "b")
-                    .execute();
-            assertEquals(1, count);
-        }
+		{
+			long count = this.orm.count(Member.class)
+				.execute();
+			assertEquals(3, count);
+		}
+		{
+			long count = this.orm.count(Member.class)
+				.where("name LIKE 'm%'")
+				.execute();
+			assertEquals(2, count);
+		}
+		{
+			long count = this.orm.count(Member.class)
+				.where("name LIKE CONCAT(?, '%')", "b")
+				.execute();
+			assertEquals(1, count);
+		}
 	}
 
 }
