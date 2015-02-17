@@ -40,6 +40,16 @@ public class TinyORMTest extends TestBase {
 				+ "updatedOn INT UNSIGNED DEFAULT NULL"
 				+ ")"
 			);
+		this.orm.updateBySQL("DROP TABLE IF EXISTS blog");
+		this.orm.updateBySQL(
+			"CREATE TABLE blog ("
+				+ "id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,"
+				+ "memberId INT UNSIGNED NOT NULL,"
+				+ "title VARCHAR(255),"
+				+ "createdOn INT UNSIGNED DEFAULT NULL,"
+				+ "updatedOn INT UNSIGNED DEFAULT NULL"
+				+ ")"
+			);
 	}
 
 	@Test
@@ -160,14 +170,16 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void testSearchBySQL() throws RichSQLException {
-		IntStream.rangeClosed(1, 10).forEach(i -> {
-			try {
-				this.orm.insert(Member.class).value("name", "m" + i)
-					.execute();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		});
+		for (int i = 1; i <= 10; ++i) {
+			this.orm.insert(Member.class).value("name", "m" + i)
+				.execute();
+		}
+		for (int i = 1; i <= 10; ++i) {
+			this.orm.insert(Blog.class)
+				.value("memberId", i)
+				.value("title", "t" + i)
+				.execute();
+		}
 
 		{
 			List<Member> members = this.orm
@@ -186,6 +198,17 @@ public class TinyORMTest extends TestBase {
 			assertEquals("11,10,9,8,7,6,5,4,3,2", members.stream()
 				.map(row -> "" + row.getExtraColumns().get("idPlusOne"))
 				.collect(Collectors.joining(",")));
+		}
+		// respect "AS" label.
+		{
+			List<Blog> members = this.orm
+				.searchBySQL(
+					Blog.class,
+					"SELECT blog.*, member.name AS memberName FROM member INNER JOIN blog ON (blog.memberId=member.id) ORDER BY id DESC LIMIT 1",
+					Collections.emptyList());
+			assertEquals(1, members.size());
+			System.out.println(members.get(0).getExtraColumns());
+			assertEquals("m10", members.get(0).getExtraColumn("memberName"));
 		}
 	}
 
@@ -360,6 +383,21 @@ public class TinyORMTest extends TestBase {
 		private long id;
 		@Column
 		private String name;
+
+		@CreatedTimestampColumn
+		private long createdOn;
+		@UpdatedTimestampColumn
+		private long updatedOn;
+	}
+
+	@Table("blog")
+	@Data
+	@EqualsAndHashCode(callSuper = false)
+	public static class Blog extends Row<Blog> {
+		@PrimaryKey
+		private long id;
+		@Column
+		private String title;
 
 		@CreatedTimestampColumn
 		private long createdOn;

@@ -14,6 +14,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,9 +27,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
@@ -47,14 +50,13 @@ import me.geso.tinyorm.trigger.BeforeUpdateHandler;
 import me.geso.tinyorm.trigger.Deflater;
 import me.geso.tinyorm.trigger.Inflater;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class TableMeta<RowType extends Row<?>> {
@@ -89,7 +91,7 @@ class TableMeta<RowType extends Row<?>> {
 			throws IntrospectionException {
 		BeanInfo beanInfo = Introspector.getBeanInfo(rowClass, Object.class);
 		PropertyDescriptor[] propertyDescriptors = beanInfo
-				.getPropertyDescriptors();
+			.getPropertyDescriptors();
 		List<PropertyDescriptor> primaryKeys = new ArrayList<>();
 		List<BeforeInsertHandler> beforeInsertTriggers = new ArrayList<>();
 		List<BeforeUpdateHandler> beforeUpdateTriggers = new ArrayList<>();
@@ -128,27 +130,27 @@ class TableMeta<RowType extends Row<?>> {
 			}
 			if (field.getAnnotation(CreatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new CreatedEpochTimestampColumnHook(
-						field.getName()));
+					field.getName()));
 				isColumn = true;
 			}
 			if (field.getAnnotation(UpdatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new UpdatedEpochTimestampColumnHook(
-						field.getName()));
+					field.getName()));
 				beforeUpdateTriggers.add(new UpdatedEpochTimestampColumnHook(
-						field.getName()));
+					field.getName()));
 				isColumn = true;
 			}
 			if (field.getAnnotation(JsonColumn.class) != null) {
 				// deserialize json
 				Type type = field.getGenericType();
 				JavaType javaType = TypeFactory.defaultInstance()
-						.constructType(type);
+					.constructType(type);
 				JsonInflater inflater = new JsonInflater(
-						rowClass, propertyDescriptor, javaType);
+					rowClass, propertyDescriptor, javaType);
 				inflaters.put(propertyDescriptor.getName(), inflater);
 				// serialize json
 				JsonDeflater deflater = new JsonDeflater(
-						rowClass, propertyDescriptor, javaType);
+					rowClass, propertyDescriptor, javaType);
 				deflaters.put(propertyDescriptor.getName(), deflater);
 				isColumn = true;
 			}
@@ -156,31 +158,31 @@ class TableMeta<RowType extends Row<?>> {
 				// deserialize json
 				if (!Collection.class.isAssignableFrom(field.getType())) {
 					throw new RuntimeException(
-							"You can't add @CsvColumn annotation for non-Collection field.");
+						"You can't add @CsvColumn annotation for non-Collection field.");
 				}
 				Type type = field.getGenericType();
 				if (type instanceof ParameterizedType) {
-					Type[] actualTypeArguments = ((ParameterizedType) type)
-							.getActualTypeArguments();
+					Type[] actualTypeArguments = ((ParameterizedType)type)
+						.getActualTypeArguments();
 					if (actualTypeArguments.length != 1) {
 						throw new RuntimeException(
-								"You can only use List<String>, List<Integer> for @CsvColumn.");
+							"You can only use List<String>, List<Integer> for @CsvColumn.");
 					}
 					Type actualTypeArgument = actualTypeArguments[0];
 					Class<?> klass = null;
 					if (actualTypeArgument instanceof Class) {
 						if (Integer.class
-								.isAssignableFrom((Class<?>) actualTypeArgument)) {
+							.isAssignableFrom((Class<?>)actualTypeArgument)) {
 							klass = Integer.class;
 						} else if (String.class
-								.isAssignableFrom((Class<?>) actualTypeArgument)) {
+							.isAssignableFrom((Class<?>)actualTypeArgument)) {
 							klass = String.class;
 						} else {
 							throw new RuntimeException(
-									"You can only use List<String>, List<Integer> for @CsvColumn.");
+								"You can only use List<String>, List<Integer> for @CsvColumn.");
 						}
 						CsvInflater inflater = new CsvInflater(
-								klass);
+							klass);
 						inflaters.put(propertyDescriptor.getName(), inflater);
 						// serialize json
 						CsvDeflater deflater = new CsvDeflater();
@@ -188,18 +190,18 @@ class TableMeta<RowType extends Row<?>> {
 						isColumn = true;
 					} else {
 						throw new RuntimeException(
-								"@CsvColumn should be List<String> or List<Integer>.");
+							"@CsvColumn should be List<String> or List<Integer>.");
 					}
 
 				} else {
 					throw new RuntimeException(field.getName()
-							+ " field isn't generic type.");
+						+ " field isn't generic type.");
 				}
 			}
 
 			if (isColumn) {
 				propertyDescriptorMap.put(propertyDescriptor.getName(),
-						propertyDescriptor);
+					propertyDescriptor);
 			}
 		}
 
@@ -207,11 +209,11 @@ class TableMeta<RowType extends Row<?>> {
 		for (Method method : rowClass.getMethods()) {
 			if (method.getAnnotation(BeforeInsert.class) != null) {
 				beforeInsertTriggers.add(new BeforeInsertMethodTrigger(
-						rowClass, method));
+					rowClass, method));
 			}
 			if (method.getAnnotation(BeforeUpdate.class) != null) {
 				beforeUpdateTriggers.add(new BeforeUpdateMethodTrigger(
-						rowClass, method));
+					rowClass, method));
 			}
 			{
 				Inflate inflate = method.getAnnotation(Inflate.class);
@@ -219,17 +221,17 @@ class TableMeta<RowType extends Row<?>> {
 					String columnName = inflate.value();
 					if (inflaters.containsKey(columnName)) {
 						throw new RuntimeException(String.format(
-								"Duplicated @Inflate in %s(%s).",
-								rowClass.getName(), columnName));
+							"Duplicated @Inflate in %s(%s).",
+							rowClass.getName(), columnName));
 					}
 					if (Modifier.isStatic(method.getModifiers())) {
 						inflaters.put(columnName, new MethodInflater(rowClass,
-								method));
+							method));
 					} else {
 						throw new RuntimeException(
-								String.format(
-										"%s.%s has a @Inflate annotation. But it's not a 'static' method. You should add 'static' modifier.",
-										rowClass.getName(), method.getName()));
+							String.format(
+								"%s.%s has a @Inflate annotation. But it's not a 'static' method. You should add 'static' modifier.",
+								rowClass.getName(), method.getName()));
 					}
 				}
 			}
@@ -239,17 +241,17 @@ class TableMeta<RowType extends Row<?>> {
 					String columnName = deflate.value();
 					if (deflaters.containsKey(columnName)) {
 						throw new RuntimeException(String.format(
-								"Duplicated @Deflate in %s(%s).",
-								rowClass.getName(), columnName));
+							"Duplicated @Deflate in %s(%s).",
+							rowClass.getName(), columnName));
 					}
 					if (Modifier.isStatic(method.getModifiers())) {
 						deflaters.put(columnName, new MethodDeflater(rowClass,
-								method));
+							method));
 					} else {
 						throw new RuntimeException(
-								String.format(
-										"%s.%s has a @Deflate annotation. But it's not a 'static' method. You should add 'static' modifier.",
-										rowClass.getName(), method.getName()));
+							String.format(
+								"%s.%s has a @Deflate annotation. But it's not a 'static' method. You should add 'static' modifier.",
+								rowClass.getName(), method.getName()));
 					}
 				}
 			}
@@ -261,19 +263,19 @@ class TableMeta<RowType extends Row<?>> {
 		String tableName = TableMeta.getTableName(rowClass);
 
 		return new TableMeta<RowType>(tableName, primaryKeys,
-				propertyDescriptorMap, beforeInsertTriggers,
-				beforeUpdateTriggers, inflaters, deflaters,
-				rowBuilder);
+			propertyDescriptorMap, beforeInsertTriggers,
+			beforeUpdateTriggers, inflaters, deflaters,
+			rowBuilder);
 	}
 
 	private static <T extends Row<?>> RowBuilder buildRowBuilder(
 			Class<?> rowClass) {
 		for (Constructor<?> constructor : rowClass.getConstructors()) {
 			ConstructorProperties annotation = constructor
-					.getAnnotation(java.beans.ConstructorProperties.class);
+				.getAnnotation(java.beans.ConstructorProperties.class);
 			if (annotation != null) {
 				return new ConstructorRowBuilder<T>(constructor,
-						annotation.value());
+					annotation.value());
 			}
 		}
 		return new SetterRowBuilder();
@@ -290,7 +292,7 @@ class TableMeta<RowType extends Row<?>> {
 	/**
 	 * Add before update handler<br>
 	 * This method may not thread safe.
-	 * 
+	 *
 	 * @param handler
 	 */
 	void addBeforeUpdateHandler(BeforeUpdateHandler handler) {
@@ -310,10 +312,10 @@ class TableMeta<RowType extends Row<?>> {
 	Object getValue(Object row, String columnName) {
 		try {
 			PropertyDescriptor propertyDescriptor = this.propertyDescriptorMap
-					.get(columnName);
+				.get(columnName);
 			if (propertyDescriptor == null) {
 				throw new RuntimeException("Unknown column: " + columnName
-						+ " in " + this.getName());
+					+ " in " + this.getName());
 			}
 			Method readMethod = propertyDescriptor.getReadMethod();
 			Object value = readMethod.invoke(row);
@@ -330,7 +332,7 @@ class TableMeta<RowType extends Row<?>> {
 															// ordered.
 		try {
 			for (PropertyDescriptor propertyDescriptor : this.propertyDescriptorMap
-					.values()) {
+				.values()) {
 				Method readMethod = propertyDescriptor.getReadMethod();
 				Object value = readMethod.invoke(row);
 				map.put(propertyDescriptor.getName(), value);
@@ -367,17 +369,17 @@ class TableMeta<RowType extends Row<?>> {
 		Map<String, Object> pkmap = this.getPrimaryKeyValueMap(row);
 		if (pkmap.isEmpty()) {
 			throw new RuntimeException(
-					"You can't delete row, doesn't have a primary keys.");
+				"You can't delete row, doesn't have a primary keys.");
 		}
 
 		String sql = pkmap
-				.keySet()
-				.stream()
-				.map(it
-						-> "("
-								+ JDBCUtils.quoteIdentifier(it,
-										identifierQuoteString) + "=?)"
-				).collect(Collectors.joining(" AND "));
+			.keySet()
+			.stream()
+			.map(it
+				-> "("
+					+ JDBCUtils.quoteIdentifier(it,
+						identifierQuoteString) + "=?)"
+			).collect(Collectors.joining(" AND "));
 		List<Object> vars = new ArrayList<>(pkmap.values());
 		this.validatePrimaryKeysForSelect(vars);
 		return new Query(sql, vars);
@@ -386,7 +388,7 @@ class TableMeta<RowType extends Row<?>> {
 	/**
 	 * This method validates primary keys for SELECT row from the table. You can
 	 * override this method.
-	 * 
+	 *
 	 * If you detected primary key constraints violation, you can throw the
 	 * RuntimeException.
 	 */
@@ -394,7 +396,7 @@ class TableMeta<RowType extends Row<?>> {
 		for (Object value : values) {
 			if (value == null) {
 				throw new RuntimeException("Primary key should not be null: "
-						+ this);
+					+ this);
 			}
 		}
 
@@ -405,11 +407,11 @@ class TableMeta<RowType extends Row<?>> {
 		 */
 		if (values.size() == 1) {
 			Object value = values.get(0);
-			if ((value instanceof Integer && (((Integer) value) == 0))
-					|| (value instanceof Long && (((Long) value) == 0))
-					|| (value instanceof Short && (((Short) value) == 0))) {
+			if ((value instanceof Integer && (((Integer)value) == 0))
+				|| (value instanceof Long && (((Long)value) == 0))
+				|| (value instanceof Short && (((Short)value) == 0))) {
 				throw new RuntimeException("Primary key should not be zero: "
-						+ value);
+					+ value);
 			}
 		}
 	}
@@ -555,7 +557,7 @@ class TableMeta<RowType extends Row<?>> {
 			} catch (IllegalAccessException | IllegalArgumentException
 					| InvocationTargetException e) {
 				log.info("Can't invoke inflation method: {}",
-						method.toGenericString());
+					method.toGenericString());
 				throw new RuntimeException(e);
 			}
 		}
@@ -580,7 +582,7 @@ class TableMeta<RowType extends Row<?>> {
 			} catch (IllegalAccessException | IllegalArgumentException
 					| InvocationTargetException e) {
 				log.info("Can't invoke deflation method: {} with {}",
-						method.toGenericString(), value.getClass());
+					method.toGenericString(), value.getClass());
 				throw new RuntimeException(e);
 			}
 		}
@@ -604,13 +606,13 @@ class TableMeta<RowType extends Row<?>> {
 		public Object inflate(Object value) {
 			if (value instanceof byte[]) {
 				try {
-					return mapper.readValue((byte[]) value, javaType);
+					return mapper.readValue((byte[])value, javaType);
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
 			} else {
 				throw new RuntimeException(
-						"You shouldn't apply @JsonColumn for non byte[].");
+					"You shouldn't apply @JsonColumn for non byte[].");
 			}
 		}
 	}
@@ -656,8 +658,8 @@ class TableMeta<RowType extends Row<?>> {
 
 			if (value instanceof String) {
 				try {
-					try (CSVParser parse = CSVParser.parse((String) value,
-							CSVFormat.RFC4180)) {
+					try (CSVParser parse = CSVParser.parse((String)value,
+						CSVFormat.RFC4180)) {
 						for (CSVRecord record : parse.getRecords()) {
 							if (this.klass == String.class) {
 								List<String> list = new ArrayList<>();
@@ -673,7 +675,7 @@ class TableMeta<RowType extends Row<?>> {
 								return Collections.unmodifiableList(list);
 							} else {
 								throw new RuntimeException(
-										"Should not reache here.");
+									"Should not reache here.");
 							}
 						}
 						return null;
@@ -683,7 +685,7 @@ class TableMeta<RowType extends Row<?>> {
 				}
 			} else {
 				throw new RuntimeException(
-						"You shouldn't apply @CsvColumn for non String.");
+					"You shouldn't apply @CsvColumn for non String.");
 			}
 		}
 	}
@@ -696,8 +698,8 @@ class TableMeta<RowType extends Row<?>> {
 				if (value instanceof Iterable) {
 					StringBuilder builder = new StringBuilder();
 					try (final CSVPrinter printer = new CSVPrinter(builder,
-							CSVFormat.RFC4180)) {
-						printer.printRecord((Iterable<?>) value);
+						CSVFormat.RFC4180)) {
+						printer.printRecord((Iterable<?>)value);
 						String csv = builder.toString();
 						if (csv.endsWith("\n")) {
 							return csv.substring(0, csv.length() - 2);
@@ -707,8 +709,8 @@ class TableMeta<RowType extends Row<?>> {
 					}
 				} else {
 					throw new RuntimeException(
-							"@CsvColumn must be Iterable but "
-									+ value.getClass());
+						"@CsvColumn must be Iterable but "
+							+ value.getClass());
 				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
@@ -719,8 +721,8 @@ class TableMeta<RowType extends Row<?>> {
 	RowType createRowFromResultSet(final Class<RowType> klass,
 			final ResultSet rs,
 			final TinyORM orm) throws SQLException {
-		return this.rowBuilder.<RowType> build((Class<RowType>) klass, this,
-				rs, orm);
+		return this.rowBuilder.<RowType>build((Class<RowType>)klass, this,
+			rs, orm);
 	}
 
 	private static interface RowBuilder {
@@ -756,8 +758,9 @@ class TableMeta<RowType extends Row<?>> {
 			Object[] initargs = new Object[parameterNames.length];
 			int columnCount = rs.getMetaData().getColumnCount();
 			Map<String, Object> extraColumns = new HashMap<>();
+			ResultSetMetaData metaData = rs.getMetaData();
 			for (int i = 0; i < columnCount; ++i) {
-				String columnName = rs.getMetaData().getColumnName(i + 1);
+				String columnName = metaData.getColumnLabel(i + 1);
 				Object value = rs.getObject(i + 1);
 				value = tableMeta.invokeInflater(columnName, value);
 				Integer idx = parameterPositionFor.get(columnName);
@@ -769,7 +772,7 @@ class TableMeta<RowType extends Row<?>> {
 			}
 			try {
 				@SuppressWarnings("unchecked")
-				RowType row = (RowType) constructor.newInstance(initargs);
+				RowType row = (RowType)constructor.newInstance(initargs);
 				for (Entry<String, Object> entry : extraColumns.entrySet()) {
 					row.setExtraColumn(entry.getKey(), entry.getValue());
 				}
@@ -778,10 +781,10 @@ class TableMeta<RowType extends Row<?>> {
 			} catch (InstantiationException | IllegalAccessException
 					| IllegalArgumentException | InvocationTargetException e) {
 				log.error(
-						"{}: {}, {}, extraColumns:{}, parameterPositionFor:{}, {}",
-						e.getClass(), klass,
-						Arrays.toString(initargs), extraColumns,
-						parameterPositionFor, e.getMessage());
+					"{}: {}, {}, extraColumns:{}, parameterPositionFor:{}, {}",
+					e.getClass(), klass,
+					Arrays.toString(initargs), extraColumns,
+					parameterPositionFor, e.getMessage());
 				throw new RuntimeException(e);
 			}
 		}
@@ -798,7 +801,7 @@ class TableMeta<RowType extends Row<?>> {
 				int columnCount = rs.getMetaData().getColumnCount();
 				T row = klass.newInstance();
 				for (int i = 0; i < columnCount; ++i) {
-					String columnName = rs.getMetaData().getColumnName(i + 1);
+					String columnName = rs.getMetaData().getColumnLabel(i + 1);
 					Object value = rs.getObject(i + 1);
 					value = tableMeta.invokeInflater(columnName, value);
 					this.setValue(tableMeta, row, columnName, value);
@@ -815,7 +818,7 @@ class TableMeta<RowType extends Row<?>> {
 				Row<?> row,
 				String columnName, Object value) {
 			PropertyDescriptor propertyDescriptor = tableMeta.propertyDescriptorMap
-					.get(columnName);
+				.get(columnName);
 			if (propertyDescriptor != null) {
 				Method writeMethod = propertyDescriptor.getWriteMethod();
 				if (writeMethod != null) {
@@ -825,24 +828,25 @@ class TableMeta<RowType extends Row<?>> {
 							| IllegalArgumentException
 							| InvocationTargetException e) {
 						log.error(
-								"Error:{}: table: {}, column: {}, writeMethod:{}, valueClass:{}, value:{}, row:{}",
-								e.getClass(),
-								tableMeta.getName(),
-								columnName,
-								writeMethod.getName(),
-								value == null ? null : value.getClass(),
-								value,
-								row.toString()
-								);
+							"Error:{}: table: {}, column: {}, writeMethod:{}, valueClass:{}, value:{}, row:{}",
+							e.getClass(),
+							tableMeta.getName(),
+							columnName,
+							writeMethod.getName(),
+							value == null ? null : value.getClass(),
+							value,
+							row.toString()
+							);
 						throw new RuntimeException(e);
 					}
 				} else {
 					throw new RuntimeException(String.format(
-							"There is no writer method: %s.%s",
-							tableMeta.getName(),
-							propertyDescriptor.getName()));
+						"There is no writer method: %s.%s",
+						tableMeta.getName(),
+						propertyDescriptor.getName()));
 				}
 			} else {
+				System.out.println("HAHAHA");
 				row.setExtraColumn(columnName, value);
 			}
 		}
