@@ -19,7 +19,6 @@ public class TableMetaTest extends TestBase {
 
 	@Test
 	public void testPrimaryKeyMetas() {
-		@SuppressWarnings("unchecked")
 		TableMeta<?> tableMeta = (TableMeta<Member>) orm
 				.getTableMeta(Member.class);
 		List<PropertyDescriptor> primaryKeyMetas = tableMeta.getPrimaryKeys();

@@ -11,6 +11,10 @@ import me.geso.tinyvalidator.Valid;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * This is a pager class for {@code SELECT * FROM member WHERE id < ? LIMIT 1000} style pagination.
+ * @param <T>
+ */
 public class Paginated<T> {
 	private final List<T> rows;
 

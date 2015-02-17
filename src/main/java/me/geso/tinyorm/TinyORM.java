@@ -341,9 +341,9 @@ public class TinyORM {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	<T extends Row<?>> Optional<T> refetch(final T row) {
 		final Connection connection = this.getConnection();
-		@SuppressWarnings("unchecked")
 		final TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		final String identifierQuoteString = this.getIdentifierQuoteString();
 		final Query where = tableMeta.createWhereClauseFromRow(row,
