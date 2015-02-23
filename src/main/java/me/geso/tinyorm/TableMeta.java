@@ -846,7 +846,6 @@ class TableMeta<RowType extends Row<?>> {
 						propertyDescriptor.getName()));
 				}
 			} else {
-				System.out.println("HAHAHA");
 				row.setExtraColumn(columnName, value);
 			}
 		}
