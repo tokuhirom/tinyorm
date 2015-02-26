@@ -17,6 +17,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+
+import net.moznion.db.transaction.manager.TransactionManager;
+import net.moznion.db.transaction.manager.TransactionScope;
+
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
@@ -33,14 +37,21 @@ public class TinyORM {
 
 	private final Connection connection;
 
+	private final TransactionManager transactionManager;
+
 	private static ConcurrentHashMap<Class<?>, TableMeta<?>> tableMetaRegistry = new ConcurrentHashMap<>();
 
 	public TinyORM(Connection connection) {
 		this.connection = connection;
+		this.transactionManager = new TransactionManager(this.connection);
 	}
 
 	public Connection getConnection() {
 		return this.connection;
+	}
+
+	public TransactionManager getTransactionManager() {
+		return this.transactionManager;
 	}
 
 	/**
@@ -493,4 +504,72 @@ public class TinyORM {
 		return new SelectCountStatement<>(tableMeta, this.getConnection());
 	}
 
+	/**
+	 * Sets auto-commit mode (means do with transaction or not) to connection
+	 * which is held by this.
+	 * 
+	 * @param isAutoCommit
+	 * @throws SQLException
+	 */
+	public void setAutoCommit(boolean isAutoCommit) throws SQLException {
+		connection.setAutoCommit(isAutoCommit);
+	}
+
+	/**
+	 * Begins transaction.
+	 * 
+	 * <p>
+	 * This method backups automatically the status of auto commit mode when
+	 * this is called. The status will be turned back when transaction is end.
+	 * </p>
+	 * 
+	 * @throws SQLException
+	 */
+	public void transactionBegin() throws SQLException {
+		transactionManager.txnBegin();
+	}
+
+	/**
+	 * Dispense a new transaction scope.
+	 * 
+	 * <pre>
+	 * {@code
+	 * try (TransactionScope txn = db.createTransactionScope()) {
+	 *     db.insert(Member.class)
+	 * 	       .value("name", "John")
+	 * 	       .execute();
+	 *     db.transactionCommit();
+	 * }
+	 * }
+	 * </pre>
+	 * 
+	 * <p>
+	 * If it escapes from try-with-resource statement without any action
+	 * ({@code transactionCommit()} or {@code transactionRollback()}),
+	 * transaction will rollback automatically.
+	 * </p>
+	 * 
+	 * @throws SQLException
+	 */
+	public TransactionScope createTransactionScope() throws SQLException {
+		return new TransactionScope(transactionManager);
+	}
+
+	/**
+	 * Commits the current transaction.
+	 * 
+	 * @throws SQLException
+	 */
+	public void transactionCommit() throws SQLException {
+		transactionManager.txnCommit();
+	}
+
+	/**
+	 * Rollbacks the current transaction.
+	 * 
+	 * @throws SQLException
+	 */
+	public void transactionRollback() throws SQLException {
+		transactionManager.txnRollback();
+	}
 }
