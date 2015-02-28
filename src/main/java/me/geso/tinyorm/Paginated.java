@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import me.geso.tinyvalidator.Valid;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import me.geso.tinyvalidator.Valid;
 
 /**
  * This is a pager class for {@code SELECT * FROM member WHERE id < ? LIMIT 1000} style pagination.

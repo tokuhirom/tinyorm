@@ -27,34 +27,36 @@ public class PaginatedTest {
 		});
 		assertEquals(got.getRows().get(0).getN(), "hoge");
 	}
-	
+
 	public static class Source {
 		private String n;
 
 		// dummy constructor
 		public Source() {
 		}
-	
+
 		public Source(String n) {
 			this.n = n;
 		}
 
-		public void setN(String n) {
-			this.n = n;
-		}
 		public String getN() {
 			return this.n;
+		}
+
+		public void setN(String n) {
+			this.n = n;
 		}
 	}
 
 	public static class Dest {
 		private String n;
 
-		public void setN(String n) {
-			this.n = n;
-		}
 		public String getN() {
 			return this.n;
+		}
+
+		public void setN(String n) {
+			this.n = n;
 		}
 	}
 

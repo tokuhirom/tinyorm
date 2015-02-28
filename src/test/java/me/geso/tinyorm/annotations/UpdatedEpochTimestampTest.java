@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 import java.sql.SQLException;
 import java.util.Optional;
 
+import org.junit.Test;
+
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,37 +16,35 @@ import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
 
-import org.junit.Test;
-
 public class UpdatedEpochTimestampTest extends TestBase {
 
 	@Test
 	public void test() throws SQLException, RichSQLException {
 		orm.getConnection()
-				.prepareStatement(
-						"DROP TABLE IF EXISTS x")
-				.executeUpdate();
+			.prepareStatement(
+				"DROP TABLE IF EXISTS x")
+			.executeUpdate();
 		orm.getConnection()
-				.prepareStatement(
-						"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, updatedOn INT UNSIGNED)")
-				.executeUpdate();
+			.prepareStatement(
+				"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, updatedOn INT UNSIGNED)")
+			.executeUpdate();
 		X created = orm.insert(X.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		// filled updatedOn column
 		assertTrue((created.getUpdatedOn() - System.currentTimeMillis() / 1000) < 3);
 		// clear updatedOn column
 		orm.getConnection()
-				.prepareStatement(
-						"UPDATE x SET updatedOn=NULL")
-				.executeUpdate();
+			.prepareStatement(
+				"UPDATE x SET updatedOn=NULL")
+			.executeUpdate();
 		created = created.refetch().get(); // we need to refresh the data.
 		// updated updatedOn column
 		XForm form = new XForm();
 		form.setName("Taro");
 		created.update()
-				.setBean(form)
-				.execute();
+			.setBean(form)
+			.execute();
 		Optional<X> maybeUpdated = created.refetch();
 		assertTrue(maybeUpdated.isPresent());
 		X updated = maybeUpdated.get();

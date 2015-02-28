@@ -41,10 +41,6 @@ public abstract class TestBase {
 		}
 	}
 
-	public static interface Callback {
-		void run();
-	}
-
 	public void thrownLike(Callback code, String pattern) {
 		RuntimeException gotEx = null;
 		try {
@@ -62,5 +58,8 @@ public abstract class TestBase {
 		assertTrue(msg.startsWith(pattern));
 	}
 
+	public static interface Callback {
+		void run();
+	}
 
 }

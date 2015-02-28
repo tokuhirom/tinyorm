@@ -1,6 +1,7 @@
 package me.geso.tinyorm.feature;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.SQLException;
 
@@ -22,11 +23,11 @@ public class BooleanTest extends TestBase {
 	@Test
 	public void test() throws SQLException, RichSQLException {
 		this.connection.prepareStatement("DROP TABLE IF EXISTS b")
-				.executeUpdate();
+			.executeUpdate();
 		this.connection
-				.prepareStatement(
-						"CREATE TABLE b (id int unsigned not null auto_increment primary key, c boolean)")
-				.executeUpdate();
+			.prepareStatement(
+				"CREATE TABLE b (id int unsigned not null auto_increment primary key, c boolean)")
+			.executeUpdate();
 
 		{
 			BForm bform = new BForm();

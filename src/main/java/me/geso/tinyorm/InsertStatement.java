@@ -66,9 +66,9 @@ public class InsertStatement<T extends Row<?>> {
 
 	public InsertStatement<T> value(Map<String, Object> values) {
 		values.keySet().stream()
-				.forEach(it -> {
-					this.value(it, values.get(it));
-				});
+			.forEach(it -> {
+				this.value(it, values.get(it));
+			});
 		return this;
 	}
 
@@ -81,9 +81,9 @@ public class InsertStatement<T extends Row<?>> {
 	public InsertStatement<T> valueByBean(Object valueBean) {
 		try {
 			BeanInfo beanInfo = Introspector.getBeanInfo(valueBean.getClass(),
-					Object.class);
+				Object.class);
 			for (PropertyDescriptor propertyDescriptor : beanInfo
-					.getPropertyDescriptors()) {
+				.getPropertyDescriptors()) {
 				Method readMethod = propertyDescriptor.getReadMethod();
 				if (readMethod != null) {
 					Object value = readMethod.invoke(valueBean);
@@ -112,24 +112,24 @@ public class InsertStatement<T extends Row<?>> {
 	private Query buildQuery() {
 		final String identifierQuoteString = orm.getIdentifierQuoteString();
 		final QueryBuilder builder = new QueryBuilder(orm.getConnection())
-				.appendQuery("INSERT INTO ")
-				.appendIdentifier(tableMeta.getName())
-				.appendQuery(" (")
-				.appendQuery(
-						values.keySet()
-								.stream()
-								.map(key -> JDBCUtils.quoteIdentifier(key,
-										identifierQuoteString))
-								.collect(Collectors.joining(",")))
-				.appendQuery(") VALUES (")
-				.appendQuery(values.values().stream().map(e -> "?")
-						.collect(Collectors.joining(",")))
-				.addParameters(values.values())
-				.appendQuery(")");
+			.appendQuery("INSERT INTO ")
+			.appendIdentifier(tableMeta.getName())
+			.appendQuery(" (")
+			.appendQuery(
+				values.keySet()
+					.stream()
+					.map(key -> JDBCUtils.quoteIdentifier(key,
+							identifierQuoteString))
+					.collect(Collectors.joining(",")))
+			.appendQuery(") VALUES (")
+			.appendQuery(values.values().stream().map(e -> "?")
+				.collect(Collectors.joining(",")))
+			.addParameters(values.values())
+			.appendQuery(")");
 		if (onDuplicateKeyUpdateQuery != null) {
 			builder.appendQuery(" ON DUPLICATE KEY UPDATE ")
-					.appendQuery(onDuplicateKeyUpdateQuery)
-					.addParameters(onDuplicateKeyUpdateValues);
+				.appendQuery(onDuplicateKeyUpdateQuery)
+				.addParameters(onDuplicateKeyUpdateValues);
 		}
 		return builder.build();
 	}
@@ -145,10 +145,10 @@ public class InsertStatement<T extends Row<?>> {
 
 		try {
 			final int inserted = JDBCUtils
-					.executeUpdate(orm.getConnection(), query);
+				.executeUpdate(orm.getConnection(), query);
 			if (inserted != 1 && this.onDuplicateKeyUpdateQuery == null) {
 				throw new RuntimeException("Cannot insert to database:"
-						+ query);
+					+ query);
 			}
 			return inserted;
 		} catch (RichSQLException e) {
@@ -161,32 +161,32 @@ public class InsertStatement<T extends Row<?>> {
 			this.execute();
 
 			final List<PropertyDescriptor> primaryKeyMetas = this.tableMeta
-					.getPrimaryKeys();
+				.getPrimaryKeys();
 			final String tableName = this.tableMeta.getName();
 			if (primaryKeyMetas.isEmpty()) {
 				throw new RuntimeException(
-						"You can't call InsertStatement#executeSelect() on the table doesn't have a primary keys.");
+					"You can't call InsertStatement#executeSelect() on the table doesn't have a primary keys.");
 			}
 			if (primaryKeyMetas.size() > 1) {
 				throw new RuntimeException(
-						"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
+					"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
 			}
 			final String pkName = primaryKeyMetas.get(0).getName();
 
 			final Connection connection = this.orm.getConnection();
 			final Query query = new QueryBuilder(connection)
-					.appendQuery("SELECT * FROM ")
-					.appendIdentifier(tableName)
-					.appendQuery(" WHERE ")
-					.appendIdentifier(pkName)
-					.appendQuery("=last_insert_id()")
-					.build();
+				.appendQuery("SELECT * FROM ")
+				.appendIdentifier(tableName)
+				.appendQuery(" WHERE ")
+				.appendIdentifier(pkName)
+				.appendQuery("=last_insert_id()")
+				.build();
 			final Optional<T> maybeRow = this.orm.singleBySQL(klass, query);
 			if (maybeRow.isPresent()) {
 				return maybeRow.get();
 			} else {
 				throw new RuntimeException(
-						"Cannot get the row after insertion: " + tableName);
+					"Cannot get the row after insertion: " + tableName);
 			}
 		} catch (SecurityException ex) {
 			throw new RuntimeException(ex);

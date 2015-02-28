@@ -5,6 +5,9 @@ import static org.junit.Assert.assertThat;
 
 import java.sql.SQLException;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
@@ -14,9 +17,6 @@ import me.geso.tinyorm.TestBase;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
-
-import org.junit.Before;
-import org.junit.Test;
 
 public class ImmutableTest extends TestBase {
 	@Before
@@ -28,8 +28,8 @@ public class ImmutableTest extends TestBase {
 	@Test
 	public void testFoo() throws SQLException, RichSQLException {
 		Foo foo = this.orm.insert(Foo.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		assertThat(foo.getName(), is("John"));
 	}
 

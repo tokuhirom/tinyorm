@@ -29,10 +29,10 @@ public class UpdateRowStatement<T extends Row<?>> {
 
 	private final Object row;
 	private final Map<String, Object> set = new TreeMap<>();
-	private boolean executed = false;
 	private final Connection connection;
 	private final TableMeta<T> tableMeta;
 	private final String identifierQuoteString;
+	private boolean executed = false;
 
 	UpdateRowStatement(T row, Connection connection, TableMeta<T> tableMeta,
 			final String identifierQuoteString) {
@@ -51,8 +51,8 @@ public class UpdateRowStatement<T extends Row<?>> {
 		}
 		if (!tableMeta.hasColumn(columnName)) {
 			throw new IllegalArgumentException(columnName
-					+ " is not listed in " + tableMeta.getName()
-					+ " column list.");
+				+ " is not listed in " + tableMeta.getName()
+				+ " column list.");
 		}
 		Object current = tableMeta.getValue(this.row, columnName);
 		if (Objects.equals(current, value)) {
@@ -66,14 +66,14 @@ public class UpdateRowStatement<T extends Row<?>> {
 	public UpdateRowStatement<T> setBean(Object bean) {
 		if (!this.set.isEmpty()) {
 			throw new RuntimeException(
-					"You can't call setBean() method the UpdateRowStatement has SET clause information.");
+				"You can't call setBean() method the UpdateRowStatement has SET clause information.");
 		}
 
 		try {
 			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(),
-					Object.class);
+				Object.class);
 			PropertyDescriptor[] propertyDescriptors = beanInfo
-					.getPropertyDescriptors();
+				.getPropertyDescriptors();
 			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 				String name = propertyDescriptor.getName();
 				if (!tableMeta.hasColumn(name)) {
@@ -116,25 +116,25 @@ public class UpdateRowStatement<T extends Row<?>> {
 		String tableName = tableMeta.getName();
 
 		final Query where = tableMeta.createWhereClauseFromRow(row,
-				this.identifierQuoteString);
+			this.identifierQuoteString);
 		if (where.getSQL().isEmpty()) {
 			throw new RuntimeException("Empty where clause");
 		}
 		Query query = new QueryBuilder(this.identifierQuoteString)
-				.appendQuery("UPDATE ")
-				.appendIdentifier(tableName)
-				.appendQuery(" SET ")
-				.appendQuery(
-						set.keySet()
-								.stream()
-								.map(col -> JDBCUtils.quoteIdentifier(col,
-										identifierQuoteString) + "=?")
-								.collect(
-										Collectors.joining(",")))
-				.addParameters(set.values())
-				.appendQuery(" WHERE ")
-				.append(where)
-				.build();
+			.appendQuery("UPDATE ")
+			.appendIdentifier(tableName)
+			.appendQuery(" SET ")
+			.appendQuery(
+				set.keySet()
+					.stream()
+					.map(col -> JDBCUtils.quoteIdentifier(col,
+						identifierQuoteString) + "=?")
+					.collect(
+						Collectors.joining(",")))
+			.addParameters(set.values())
+			.appendQuery(" WHERE ")
+			.append(where)
+			.build();
 
 		this.executed = true;
 
@@ -155,7 +155,7 @@ public class UpdateRowStatement<T extends Row<?>> {
 	protected void finalize() throws Throwable {
 		if (!this.executed && this.hasSetClause()) {
 			throw new RuntimeException(
-					"You may forgot to call 'execute' method on UpdateRowStatement.");
+				"You may forgot to call 'execute' method on UpdateRowStatement.");
 		}
 	}
 }

@@ -8,6 +8,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
@@ -17,9 +20,6 @@ import me.geso.tinyorm.annotations.Inflate;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 
-import org.junit.Before;
-import org.junit.Test;
-
 public class ListTest extends TestBase {
 
 	@Before
@@ -27,9 +27,9 @@ public class ListTest extends TestBase {
 		Connection connection = this.connection;
 		connection.prepareStatement("DROP TABLE IF EXISTS foo").executeUpdate();
 		connection
-				.prepareStatement(
-						"CREATE TABLE foo (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, csvInt TEXT NOT NULL, csvString TEXT NOT NULL)")
-				.executeUpdate();
+			.prepareStatement(
+				"CREATE TABLE foo (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, csvInt TEXT NOT NULL, csvString TEXT NOT NULL)")
+			.executeUpdate();
 	}
 
 	@Test
@@ -37,10 +37,10 @@ public class ListTest extends TestBase {
 		List<Integer> ints = Arrays.asList(5963, 4649);
 		List<String> strings = Arrays.asList("John", "Manjiro");
 		Foo foo = this.orm.insert(Foo.class).value("csvInt", ints)
-				.value("csvString", strings).executeSelect();
+			.value("csvString", strings).executeSelect();
 		assertEquals(foo.getCsvInt().size(), 2);
-		assertEquals(foo.getCsvInt().get(0), (Integer) 5963);
-		assertEquals(foo.getCsvInt().get(1), (Integer) 4649);
+		assertEquals(foo.getCsvInt().get(0), (Integer)5963);
+		assertEquals(foo.getCsvInt().get(1), (Integer)4649);
 		assertEquals(foo.getCsvString().size(), 2);
 		assertEquals(foo.getCsvString().get(0), "John");
 		assertEquals(foo.getCsvString().get(1), "Manjiro");
@@ -51,10 +51,10 @@ public class ListTest extends TestBase {
 			List<Integer> ints2 = Arrays.asList(123, 456);
 			fooUpdateForm.setCsvInt(ints2);
 			foo.update()
-					.setBean(fooUpdateForm)
-					.execute();
+				.setBean(fooUpdateForm)
+				.execute();
 			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(),
-					123);
+				123);
 		}
 
 		// updateByBean(no UPDATE query required. Because the data set is same)
@@ -63,10 +63,10 @@ public class ListTest extends TestBase {
 			List<Integer> ints2 = Arrays.asList(123, 456); // same as previous
 			fooUpdateForm.setCsvInt(ints2);
 			foo.update()
-					.setBean(fooUpdateForm)
-					.execute();
+				.setBean(fooUpdateForm)
+				.execute();
 			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(),
-					123);
+				123);
 		}
 	}
 
@@ -75,10 +75,10 @@ public class ListTest extends TestBase {
 		List<Integer> ints = Arrays.asList(5963, 4649);
 		List<String> strings = Arrays.asList("John", "Manjiro");
 		Foo foo = this.orm.insert(Foo.class).value("csvInt", ints)
-				.value("csvString", strings).executeSelect();
+			.value("csvString", strings).executeSelect();
 		assertEquals(foo.getCsvInt().size(), 2);
-		assertEquals(foo.getCsvInt().get(0), (Integer) 5963);
-		assertEquals(foo.getCsvInt().get(1), (Integer) 4649);
+		assertEquals(foo.getCsvInt().get(0), (Integer)5963);
+		assertEquals(foo.getCsvInt().get(1), (Integer)4649);
 		assertEquals(foo.getCsvString().size(), 2);
 		assertEquals(foo.getCsvString().get(0), "John");
 		assertEquals(foo.getCsvString().get(1), "Manjiro");
@@ -87,12 +87,12 @@ public class ListTest extends TestBase {
 		{
 			List<Integer> ints2 = Arrays.asList(123, 456);
 			foo.update()
-					.set("csvInt", ints2)
-					.execute();
+				.set("csvInt", ints2)
+				.execute();
 			assertEquals(foo.refetch().get().getCsvInt().get(0).intValue(),
-					123);
+				123);
 			assertEquals(foo.refetch().get().getCsvInt().get(1).intValue(),
-					456);
+				456);
 		}
 	}
 
@@ -117,6 +117,32 @@ public class ListTest extends TestBase {
 		@Column
 		private List<String> csvString;
 
+		@Inflate("csvString")
+		public static Object inflateCsvString(String value) {
+			return Arrays.asList((value).split(","));
+		}
+
+		@Inflate("csvInt")
+		public static Object inflateCsvInt(String value) {
+			String[] split = value.split(",");
+			return Arrays.stream(split).map(it -> Integer.parseInt(it))
+				.collect(Collectors.toList());
+		}
+
+		@Deflate("csvInt")
+		public static Object deflateCsvInt(List<Integer> value) {
+			List<Integer> list = value;
+			String string = list.stream().map(it -> it.toString())
+				.collect(Collectors.joining(","));
+			return string;
+		}
+
+		@Deflate("csvString")
+		public static Object deflateCsvString(List<String> value) {
+			List<String> list = value;
+			return list.stream().collect(Collectors.joining(","));
+		}
+
 		public long getId() {
 			return id;
 		}
@@ -139,32 +165,6 @@ public class ListTest extends TestBase {
 
 		public void setCsvString(List<String> csvString) {
 			this.csvString = csvString;
-		}
-
-		@Inflate("csvString")
-		public static Object inflateCsvString(String value) {
-			return Arrays.asList((value).split(","));
-		}
-
-		@Inflate("csvInt")
-		public static Object inflateCsvInt(String value) {
-			String[] split = value.split(",");
-			return Arrays.stream(split).map(it -> Integer.parseInt(it))
-					.collect(Collectors.toList());
-		}
-
-		@Deflate("csvInt")
-		public static Object deflateCsvInt(List<Integer> value) {
-			List<Integer> list = (List<Integer>) value;
-			String string = list.stream().map(it -> it.toString())
-					.collect(Collectors.joining(","));
-			return string;
-		}
-
-		@Deflate("csvString")
-		public static Object deflateCsvString(List<String> value) {
-			List<String> list = (List<String>) value;
-			return list.stream().collect(Collectors.joining(","));
 		}
 	}
 }

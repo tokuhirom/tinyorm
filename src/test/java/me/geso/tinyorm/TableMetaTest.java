@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import java.beans.PropertyDescriptor;
 import java.util.List;
 
+import org.junit.Test;
+
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import me.geso.tinyorm.annotations.Column;
@@ -13,14 +15,12 @@ import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 
-import org.junit.Test;
-
 public class TableMetaTest extends TestBase {
 
 	@Test
 	public void testPrimaryKeyMetas() {
-		TableMeta<?> tableMeta = (TableMeta<Member>) orm
-				.getTableMeta(Member.class);
+		TableMeta<?> tableMeta = orm
+			.getTableMeta(Member.class);
 		List<PropertyDescriptor> primaryKeyMetas = tableMeta.getPrimaryKeys();
 		assertEquals(1, primaryKeyMetas.size());
 		assertEquals("id", primaryKeyMetas.get(0).getName());
@@ -28,7 +28,7 @@ public class TableMetaTest extends TestBase {
 
 	@Table("member")
 	@Value
-	@EqualsAndHashCode(callSuper=false)
+	@EqualsAndHashCode(callSuper = false)
 	public class Member extends Row<Member> {
 		@PrimaryKey
 		private long id;

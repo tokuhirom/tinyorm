@@ -32,6 +32,13 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
@@ -49,14 +56,6 @@ import me.geso.tinyorm.trigger.BeforeInsertHandler;
 import me.geso.tinyorm.trigger.BeforeUpdateHandler;
 import me.geso.tinyorm.trigger.Deflater;
 import me.geso.tinyorm.trigger.Inflater;
-
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class TableMeta<RowType extends Row<?>> {
@@ -281,6 +280,16 @@ class TableMeta<RowType extends Row<?>> {
 		return new SetterRowBuilder();
 	}
 
+	// Internal use.
+	private static String getTableName(Class<?> rowClass) {
+		Table table = rowClass.getAnnotation(Table.class);
+		if (table == null) {
+			throw new RuntimeException("Missing @Table annotation");
+		}
+		String tableName = table.value();
+		return tableName;
+	}
+
 	/**
 	 * Add before insert handler<br>
 	 * This method may not thread safe.
@@ -297,16 +306,6 @@ class TableMeta<RowType extends Row<?>> {
 	 */
 	void addBeforeUpdateHandler(BeforeUpdateHandler handler) {
 		this.beforeUpdateHandlers.add(handler);
-	}
-
-	// Internal use.
-	private static String getTableName(Class<?> rowClass) {
-		Table table = rowClass.getAnnotation(Table.class);
-		if (table == null) {
-			throw new RuntimeException("Missing @Table annotation");
-		}
-		String tableName = table.value();
-		return tableName;
 	}
 
 	Object getValue(Object row, String columnName) {
@@ -456,6 +455,21 @@ class TableMeta<RowType extends Row<?>> {
 
 	public boolean hasColumn(String columnName) {
 		return propertyDescriptorMap.containsKey(columnName);
+	}
+
+	RowType createRowFromResultSet(final Class<RowType> klass,
+			final ResultSet rs,
+			final TinyORM orm) throws SQLException {
+		return this.rowBuilder.build(klass, this,
+			rs, orm);
+	}
+
+	private static interface RowBuilder {
+		public <RowType extends Row<?>> RowType build(
+				final Class<RowType> klass,
+				final TableMeta<RowType> tableMeta,
+				final ResultSet rs, final TinyORM orm)
+				throws SQLException;
 	}
 
 	@ToString
@@ -716,21 +730,6 @@ class TableMeta<RowType extends Row<?>> {
 				throw new RuntimeException(e);
 			}
 		}
-	}
-
-	RowType createRowFromResultSet(final Class<RowType> klass,
-			final ResultSet rs,
-			final TinyORM orm) throws SQLException {
-		return this.rowBuilder.<RowType>build((Class<RowType>)klass, this,
-			rs, orm);
-	}
-
-	private static interface RowBuilder {
-		public <RowType extends Row<?>> RowType build(
-				final Class<RowType> klass,
-				final TableMeta<RowType> tableMeta,
-				final ResultSet rs, final TinyORM orm)
-				throws SQLException;
 	}
 
 	private static class ConstructorRowBuilder<T extends Row<?>> implements

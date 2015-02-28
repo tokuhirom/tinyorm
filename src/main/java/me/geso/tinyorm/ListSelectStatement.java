@@ -29,17 +29,17 @@ public class ListSelectStatement<T extends Row<?>> extends
 		final Query query = this.buildQuery();
 		try {
 			return JDBCUtils.executeQuery(
-					connection,
-					query,
-					(rs) -> {
-						List<T> rows = new ArrayList<>();
-						while (rs.next()) {
-							T row = tableMeta.createRowFromResultSet(klass, rs,
-									this.orm);
-							rows.add(row);
-						}
-						return rows;
-					});
+				connection,
+				query,
+				(rs) -> {
+					List<T> rows = new ArrayList<>();
+					while (rs.next()) {
+						T row = tableMeta.createRowFromResultSet(klass, rs,
+							this.orm);
+						rows.add(row);
+					}
+					return rows;
+				});
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}

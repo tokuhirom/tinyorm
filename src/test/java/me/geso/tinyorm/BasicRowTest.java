@@ -8,6 +8,9 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Optional;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,29 +21,26 @@ import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 
-import org.junit.Before;
-import org.junit.Test;
-
 public class BasicRowTest extends TestBase {
 
 	@Before
 	public void beforeeee() throws SQLException {
 		orm.getConnection()
-				.prepareStatement(
-						"DROP TABLE IF EXISTS x")
-				.executeUpdate();
+			.prepareStatement(
+				"DROP TABLE IF EXISTS x")
+			.executeUpdate();
 		orm.getConnection()
-				.prepareStatement(
-						"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, y VARCHAR(255) NOT NULL)")
-				.executeUpdate();
+			.prepareStatement(
+				"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, y VARCHAR(255) NOT NULL)")
+			.executeUpdate();
 		orm.getConnection()
-				.prepareStatement(
-						"DROP TABLE IF EXISTS y")
-				.executeUpdate();
+			.prepareStatement(
+				"DROP TABLE IF EXISTS y")
+			.executeUpdate();
 		orm.getConnection()
-				.prepareStatement(
-						"CREATE TABLE y LIKE x")
-				.executeUpdate();
+			.prepareStatement(
+				"CREATE TABLE y LIKE x")
+			.executeUpdate();
 
 	}
 
@@ -48,16 +48,15 @@ public class BasicRowTest extends TestBase {
 	public void testCreateUpdateStatement() throws SQLException,
 			RichSQLException {
 		X x = orm.insert(X.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		assertEquals(x.getName(), "John");
 		assertEquals(x.getId(), 1);
 		assertEquals("inserted", x.getY());
 
 		orm.createUpdateStatement(x)
-				.set("name", "Taro")
-				.execute();
-		;
+			.set("name", "Taro")
+			.execute();
 		X refetched = orm.refetch(x).get();
 		assertEquals("Taro", refetched.getName());
 		assertEquals(1, refetched.getId());
@@ -68,22 +67,20 @@ public class BasicRowTest extends TestBase {
 	public void testCreateUpdateStatementWithInheritance() throws SQLException,
 			RichSQLException {
 		Y y = orm.insert(Y.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		assertEquals(y.getName(), "John");
 		assertEquals(y.getId(), 1);
 		assertEquals("inserted", y.getY());
 
 		orm.createUpdateStatement(y)
-				.set("name", "Jiro")
-				.execute();
-		;
+			.set("name", "Jiro")
+			.execute();
 		Y refetched = orm.refetch(y).get();
 		assertEquals("Jiro", refetched.getName());
 		assertEquals(1, refetched.getId());
 		assertEquals("updated", refetched.getY());
 	}
-
 
 	// @Test
 	// public void testWhere() {
@@ -99,8 +96,8 @@ public class BasicRowTest extends TestBase {
 	@Test
 	public void testRefetch() throws SQLException, RichSQLException {
 		X x = orm.insert(X.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		Optional<X> refetched = orm.refetch(x);
 		assertEquals(refetched.get().getName(), "John");
 	}
@@ -108,10 +105,10 @@ public class BasicRowTest extends TestBase {
 	@Test
 	public void testDelete() throws SQLException, RichSQLException {
 		X taro = orm.insert(X.class).value("name", "Taro")
-				.executeSelect();
+			.executeSelect();
 
 		X john = orm.insert(X.class).value("name", "John")
-				.executeSelect();
+			.executeSelect();
 		orm.delete(john);
 		long count = orm.queryForLong("SELECT COUNT(*) FROM x", Collections.emptyList()).getAsLong();
 		assertEquals(1, count);
@@ -122,17 +119,16 @@ public class BasicRowTest extends TestBase {
 	@Test
 	public void testUpdateByBean() throws RichSQLException {
 		X taro = orm.insert(X.class)
-				.value("name", "Taro")
-				.executeSelect();
+			.value("name", "Taro")
+			.executeSelect();
 		X member = orm.insert(X.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		XForm xform = new XForm();
 		xform.setName("Nick");
 		member.update()
-				.setBean(xform)
-				.execute();
-		;
+			.setBean(xform)
+			.execute();
 		assertEquals("Taro", orm.refetch(taro).get().getName()); // not
 																	// modified.
 		assertEquals("Nick", orm.refetch(member).get().getName());

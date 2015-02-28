@@ -375,6 +375,34 @@ public class TinyORMTest extends TestBase {
 		}
 	}
 
+	@Test
+	public void testCount() throws SQLException, RichSQLException {
+		this.orm.insert(Member.class).value("name", "m1")
+			.execute();
+		this.orm.insert(Member.class).value("name", "m2")
+			.execute();
+		this.orm.insert(Member.class).value("name", "b1")
+			.execute();
+
+		{
+			long count = this.orm.count(Member.class)
+				.execute();
+			assertEquals(3, count);
+		}
+		{
+			long count = this.orm.count(Member.class)
+				.where("name LIKE 'm%'")
+				.execute();
+			assertEquals(2, count);
+		}
+		{
+			long count = this.orm.count(Member.class)
+				.where("name LIKE CONCAT(?, '%')", "b")
+				.execute();
+			assertEquals(1, count);
+		}
+	}
+
 	@Table("member")
 	@Data
 	@EqualsAndHashCode(callSuper = false)
@@ -418,34 +446,6 @@ public class TinyORMTest extends TestBase {
 
 		public MemberUpdateForm(String name) {
 			this.name = name;
-		}
-	}
-
-	@Test
-	public void testCount() throws SQLException, RichSQLException {
-		this.orm.insert(Member.class).value("name", "m1")
-			.execute();
-		this.orm.insert(Member.class).value("name", "m2")
-			.execute();
-		this.orm.insert(Member.class).value("name", "b1")
-			.execute();
-
-		{
-			long count = this.orm.count(Member.class)
-				.execute();
-			assertEquals(3, count);
-		}
-		{
-			long count = this.orm.count(Member.class)
-				.where("name LIKE 'm%'")
-				.execute();
-			assertEquals(2, count);
-		}
-		{
-			long count = this.orm.count(Member.class)
-				.where("name LIKE CONCAT(?, '%')", "b")
-				.execute();
-			assertEquals(1, count);
 		}
 	}
 

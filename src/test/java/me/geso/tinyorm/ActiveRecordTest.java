@@ -1,9 +1,14 @@
 package me.geso.tinyorm;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.SQLException;
 import java.util.Optional;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,32 +19,29 @@ import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 
-import org.junit.Before;
-import org.junit.Test;
-
 public class ActiveRecordTest extends TestBase {
 	@Before
 	public final void setupSchema() throws SQLException {
 		connection.prepareStatement("DROP TABLE IF EXISTS member")
-				.executeUpdate();
+			.executeUpdate();
 		connection
-				.prepareStatement(
-						"CREATE TABLE member (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), createdOn INT UNSIGNED DEFAULT NULL, updatedOn INT UNSIGNED DEFAULT NULL)")
-				.executeUpdate();
+			.prepareStatement(
+				"CREATE TABLE member (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), createdOn INT UNSIGNED DEFAULT NULL, updatedOn INT UNSIGNED DEFAULT NULL)")
+			.executeUpdate();
 	}
 
 	@SuppressWarnings("unused")
 	@Test
 	public void testRefetch() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		Member member2 = orm.insert(Member.class)
-				.value("name", "Taro")
-				.executeSelect();
+			.value("name", "Taro")
+			.executeSelect();
 		Member member3 = orm.insert(Member.class)
-				.value("name", "Yuzo")
-				.executeSelect();
+			.value("name", "Yuzo")
+			.executeSelect();
 		Optional<Member> got = member2.refetch();
 		assertTrue(got.isPresent());
 		assertEquals("Taro", got.get().getName());
@@ -49,19 +51,19 @@ public class ActiveRecordTest extends TestBase {
 	@Test
 	public void testUpdateByBean() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		Member member2 = orm.insert(Member.class)
-				.value("name", "Taro")
-				.executeSelect();
+			.value("name", "Taro")
+			.executeSelect();
 		Member member3 = orm.insert(Member.class)
-				.value("name", "Yuzo")
-				.executeSelect();
+			.value("name", "Yuzo")
+			.executeSelect();
 		MemberForm form = new MemberForm();
 		form.setName("hoge");
 		member2.update()
-				.setBean(form)
-				.execute();
+			.setBean(form)
+			.execute();
 		Optional<Member> got = member2.refetch();
 		assertTrue(got.isPresent());
 		assertEquals("hoge", got.get().getName());
@@ -71,17 +73,17 @@ public class ActiveRecordTest extends TestBase {
 	@Test
 	public void testCreateUpdateStatement() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		Member member2 = orm.insert(Member.class)
-				.value("name", "Taro")
-				.executeSelect();
+			.value("name", "Taro")
+			.executeSelect();
 		Member member3 = orm.insert(Member.class)
-				.value("name", "Yuzo")
-				.executeSelect();
+			.value("name", "Yuzo")
+			.executeSelect();
 		member2.update()
-				.set("name", "hoge")
-				.execute();
+			.set("name", "hoge")
+			.execute();
 		Optional<Member> got = member2.refetch();
 		assertTrue(got.isPresent());
 		assertEquals("hoge", got.get().getName());
@@ -91,14 +93,14 @@ public class ActiveRecordTest extends TestBase {
 	@Test
 	public void testDelete() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
-				.value("name", "John")
-				.executeSelect();
+			.value("name", "John")
+			.executeSelect();
 		Member member2 = orm.insert(Member.class)
-				.value("name", "Taro")
-				.executeSelect();
+			.value("name", "Taro")
+			.executeSelect();
 		Member member3 = orm.insert(Member.class)
-				.value("name", "Yuzo")
-				.executeSelect();
+			.value("name", "Yuzo")
+			.executeSelect();
 		member2.delete();
 		Optional<Member> got = member2.refetch();
 		assertTrue(member1.refetch().isPresent());

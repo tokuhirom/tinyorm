@@ -29,19 +29,19 @@ public class BeanSelectStatement<T extends Row<?>> extends
 
 		try {
 			return JDBCUtils.executeQuery(
-					this.connection,
-					query,
-					(rs) -> {
-						if (rs.next()) {
-							final T row = this.tableMeta.createRowFromResultSet(
-									this.klass,
-									rs, this.orm);
-							rs.close();
-							return Optional.of(row);
-						} else {
-							return Optional.<T>empty();
-						}
-					});
+				this.connection,
+				query,
+				(rs) -> {
+					if (rs.next()) {
+						final T row = this.tableMeta.createRowFromResultSet(
+							this.klass,
+							rs, this.orm);
+						rs.close();
+						return Optional.of(row);
+					} else {
+						return Optional.<T>empty();
+					}
+				});
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}

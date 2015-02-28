@@ -23,7 +23,7 @@ public abstract class AbstractSelectStatement<T, Impl> {
 		this.tableName = tableName;
 		try {
 			this.identifierQuoteString = connection.getMetaData()
-					.getIdentifierQuoteString();
+				.getIdentifierQuoteString();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -35,56 +35,56 @@ public abstract class AbstractSelectStatement<T, Impl> {
 		for (Object p : params) {
 			this.whereParams.add(p);
 		}
-		return (Impl) this;
+		return (Impl)this;
 	}
 
 	@SuppressWarnings("unchecked")
 	public Impl limit(long limit) {
 		this.limit = limit;
-		return (Impl) this;
+		return (Impl)this;
 	}
 
 	@SuppressWarnings("unchecked")
 	public Impl offset(long offset) {
 		this.offset = offset;
-		return (Impl) this;
+		return (Impl)this;
 	}
 
 	@SuppressWarnings("unchecked")
 	public Impl orderBy(String orderBy) {
 		this.orderBy.add(orderBy);
-		return (Impl) this;
+		return (Impl)this;
 	}
 
 	@SuppressWarnings("unchecked")
 	public Impl forUpdate() {
 		this.forUpdate = true;
-		return (Impl) this;
+		return (Impl)this;
 	}
 
 	protected Query buildQuery() {
 		QueryBuilder builder = new QueryBuilder(this.identifierQuoteString)
-				.appendQuery("SELECT * FROM ")
-				.appendIdentifier(this.tableName);
+			.appendQuery("SELECT * FROM ")
+			.appendIdentifier(this.tableName);
 		if (this.whereQuery != null && !this.whereQuery.isEmpty()) {
 			builder.appendQuery(" WHERE ");
 			builder.appendQuery(this.whereQuery.stream()
-					.map(it -> "(" + it + ")")
-					.collect(Collectors.joining(" AND ")));
+				.map(it -> "(" + it + ")")
+				.collect(Collectors.joining(" AND ")));
 			builder.addParameters(this.whereParams);
 		}
 		if (!this.orderBy.isEmpty()) {
 			builder.appendQuery(" ORDER BY ")
-					.appendQuery(
-							this.orderBy.stream().collect(Collectors.joining(",")));
+				.appendQuery(
+					this.orderBy.stream().collect(Collectors.joining(",")));
 		}
 		if (this.limit != null) {
 			builder.appendQuery(" LIMIT ")
-					.appendQuery("" + this.limit);
+				.appendQuery("" + this.limit);
 		}
 		if (this.offset != null) {
 			builder.appendQuery(" OFFSET ")
-					.appendQuery("" + this.offset);
+				.appendQuery("" + this.offset);
 		}
 		if (this.forUpdate) {
 			builder.appendQuery(" FOR UPDATE");

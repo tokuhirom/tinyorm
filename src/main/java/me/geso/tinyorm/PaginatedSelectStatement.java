@@ -33,7 +33,7 @@ public class PaginatedSelectStatement<T extends Row<?>> extends
 				List<T> rows = orm.mapRowListFromResultSet(klass, rs);
 
 				final Paginated<T> paginated = new Paginated<T>(
-						rows, entriesPerPage);
+					rows, entriesPerPage);
 				return paginated;
 			});
 		} catch (RichSQLException e) {
