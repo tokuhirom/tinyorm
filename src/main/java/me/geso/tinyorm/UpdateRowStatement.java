@@ -157,5 +157,6 @@ public class UpdateRowStatement<T extends Row<?>> {
 			throw new RuntimeException(
 				"You may forgot to call 'execute' method on UpdateRowStatement.");
 		}
+		super.finalize();
 	}
 }
