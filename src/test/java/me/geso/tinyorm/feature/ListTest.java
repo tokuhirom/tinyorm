@@ -23,7 +23,7 @@ import me.geso.tinyorm.annotations.Table;
 public class ListTest extends TestBase {
 
 	@Before
-	public void beefffff() throws SQLException {
+	public void beforeHook() throws SQLException {
 		Connection connection = this.connection;
 		connection.prepareStatement("DROP TABLE IF EXISTS foo").executeUpdate();
 		connection
@@ -125,22 +125,19 @@ public class ListTest extends TestBase {
 		@Inflate("csvInt")
 		public static Object inflateCsvInt(String value) {
 			String[] split = value.split(",");
-			return Arrays.stream(split).map(it -> Integer.parseInt(it))
+			return Arrays.stream(split).map(Integer::parseInt)
 				.collect(Collectors.toList());
 		}
 
 		@Deflate("csvInt")
-		public static Object deflateCsvInt(List<Integer> value) {
-			List<Integer> list = value;
-			String string = list.stream().map(it -> it.toString())
+		public static Object deflateCsvInt(List<Integer> list) {
+			return list.stream().map(Object::toString)
 				.collect(Collectors.joining(","));
-			return string;
 		}
 
 		@Deflate("csvString")
 		public static Object deflateCsvString(List<String> value) {
-			List<String> list = value;
-			return list.stream().collect(Collectors.joining(","));
+			return value.stream().collect(Collectors.joining(","));
 		}
 
 		public long getId() {

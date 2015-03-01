@@ -2,7 +2,6 @@ package me.geso.tinyorm.annotations;
 
 import static org.junit.Assert.assertEquals;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -19,13 +18,11 @@ import me.geso.tinyorm.TestBase;
 
 public class CsvColumnTest extends TestBase {
 	@Before
-	public void beefffff() throws SQLException {
-		Connection connection = this.connection;
-		connection.prepareStatement("DROP TABLE IF EXISTS foo").executeUpdate();
-		connection
-			.prepareStatement(
-				"CREATE TABLE foo (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, csvInt TEXT NOT NULL, csvString TEXT NOT NULL)")
-			.executeUpdate();
+	public void before() throws SQLException {
+		createTable("foo",
+			"id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY",
+			"csvInt TEXT NOT NULL",
+			"csvString TEXT NOT NULL");
 	}
 
 	@Test

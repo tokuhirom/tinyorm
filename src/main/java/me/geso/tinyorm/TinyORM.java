@@ -31,7 +31,7 @@ import me.geso.jdbcutils.RichSQLException;
 @Slf4j
 public class TinyORM {
 
-	private static ConcurrentHashMap<Class<?>, TableMeta<?>> tableMetaRegistry = new ConcurrentHashMap<>();
+	private static final ConcurrentHashMap<Class<?>, TableMeta<?>> TABLE_META_REGISTRY = new ConcurrentHashMap<>();
 	private final Connection connection;
 
 	public TinyORM(Connection connection) {
@@ -49,8 +49,8 @@ public class TinyORM {
 	 * 	.execute();
 	 * }
 	 * 
-	 * @param klass
-	 * @return
+	 * @param klass Row class to retrieve
+	 * @return insert statement object
 	 */
 	public <T extends Row<?>> InsertStatement<T> insert(Class<T> klass) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
@@ -59,7 +59,6 @@ public class TinyORM {
 
 	/**
 	 * Select one row from the database.
-	 * 
 	 */
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
 			String sql,
@@ -89,9 +88,9 @@ public class TinyORM {
 	/**
 	 * Select one row from the database.
 	 * 
-	 * @param klass
-	 * @param query
-	 * @return
+	 * @param klass Row class to retrieve.
+	 * @param query Query object
+	 * @return Got value.
 	 */
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
 			Query query) {
@@ -103,7 +102,7 @@ public class TinyORM {
 	 * 
 	 * @param klass
 	 *            Target entity class.
-	 * @return
+	 * @return select statement object.
 	 */
 	public <T extends Row<?>> BeanSelectStatement<T> single(Class<T> klass) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
@@ -116,7 +115,7 @@ public class TinyORM {
 	 * 
 	 * @param klass
 	 *            Target entity class.
-	 * @return
+	 * @return Select statement object.
 	 */
 	public <T extends Row<?>> ListSelectStatement<T> search(Class<T> klass) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
@@ -127,8 +126,8 @@ public class TinyORM {
 	/**
 	 * Create new <code>PaginatedSelectStatement</code> for selecting rows.
 	 * 
-	 * @param klass
-	 * @return
+	 * @param klass Row class
+	 * @return paginated select statement object
 	 */
 	public <T extends Row<?>> PaginatedSelectStatement<T> searchWithPager(
 			final Class<T> klass, final long limit) {
@@ -139,17 +138,12 @@ public class TinyORM {
 
 	/**
 	 * Search by SQL.
-	 * 
-	 * 
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(
 			final Class<T> klass, final String sql, final List<Object> params) {
 		try {
 			return JDBCUtils.executeQuery(this.connection, sql, params,
-				(rs) -> {
-					List<T> rows = this.mapRowListFromResultSet(klass, rs);
-					return rows;
-				});
+				(rs) -> this.mapRowListFromResultSet(klass, rs));
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
 		}
@@ -170,7 +164,7 @@ public class TinyORM {
 	 * 
 	 */
 	public <T extends Row<?>> Paginated<T> searchBySQLWithPager(
-			final Class<T> klass, final String sql, final List<Object> params,
+			@NonNull final Class<T> klass, final String sql, final List<Object> params,
 			final long entriesPerPage) {
 		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
 		Connection connection = this.getConnection();
@@ -178,7 +172,7 @@ public class TinyORM {
 			return JDBCUtils.executeQuery(connection, limitedSql, params,
 				(rs) -> {
 					List<T> rows = this.mapRowListFromResultSet(klass, rs);
-					return new Paginated<T>(rows, entriesPerPage);
+					return new Paginated<>(rows, entriesPerPage);
 				});
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);
@@ -188,10 +182,9 @@ public class TinyORM {
 	<T extends Row<?>> UpdateRowStatement<T> createUpdateStatement(T row) {
 		@SuppressWarnings("unchecked")
 		TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
-		UpdateRowStatement<T> stmt = new UpdateRowStatement<>(row,
+		return new UpdateRowStatement<>(row,
 			this.getConnection(), tableMeta,
 			this.getIdentifierQuoteString());
-		return stmt;
 	}
 
 	/**
@@ -244,7 +237,7 @@ public class TinyORM {
 	/**
 	 * Select single long value
 	 * 
-	 * @return
+	 * @return Got long value.
 	 */
 	public OptionalLong queryForLong(final String sql,
 			@NonNull final List<Object> params) {
@@ -266,7 +259,7 @@ public class TinyORM {
 	/**
 	 * Select single long value from database.
 	 * 
-	 * @return
+	 * @return Got value.
 	 */
 	public OptionalLong queryForLong(@NonNull final String sql) {
 		return this.queryForLong(sql, Collections.emptyList());
@@ -275,7 +268,7 @@ public class TinyORM {
 	/**
 	 * Select single String value from database.
 	 * 
-	 * @return
+	 * @return Got value
 	 */
 	public Optional<String> queryForString(final String sql,
 			@NonNull final List<Object> params) {
@@ -297,7 +290,7 @@ public class TinyORM {
 	/**
 	 * Select single String value from database without parameters.
 	 * 
-	 * @return
+	 * @return Got value
 	 */
 	public Optional<String> queryForString(@NonNull final String sql) {
 		return this.queryForString(sql, Collections.emptyList());
@@ -367,7 +360,7 @@ public class TinyORM {
 
 	@SuppressWarnings("unchecked")
 	<T extends Row<?>> TableMeta<T> getTableMeta(final Class<T> klass) {
-		return (TableMeta<T>)tableMetaRegistry.computeIfAbsent(klass, key -> {
+		return (TableMeta<T>)TABLE_META_REGISTRY.computeIfAbsent(klass, key -> {
 			log.info("Loading {}", klass);
 			try {
 				return TableMeta.build(klass);
@@ -389,7 +382,7 @@ public class TinyORM {
 	/**
 	 * Execute query builder.
 	 *
-	 * @return
+	 * @return New query builder object
 	 */
 	public QueryBuilder createQueryBuilder() {
 		return new QueryBuilder(this.getIdentifierQuoteString());
@@ -398,9 +391,9 @@ public class TinyORM {
 	/**
 	 * Execute query.
 	 * 
-	 * @param query
-	 * @param callback
-	 * @return
+	 * @param query Query object
+	 * @param callback callback function to map ResultSet to Object.
+	 * @return Fetched value.
 	 */
 	public <T> T executeQuery(final Query query,
 			final ResultSetCallback<T> callback) {
@@ -414,10 +407,10 @@ public class TinyORM {
 	/**
 	 * Execute query.
 	 * 
-	 * @param sql
-	 * @param params
-	 * @param callback
-	 * @return
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 * @param callback Callback function
+	 * @return Selected value
 	 */
 	public <T> T executeQuery(final String sql, final List<Object> params,
 			final ResultSetCallback<T> callback) {
@@ -432,7 +425,7 @@ public class TinyORM {
 	/**
 	 * Execute query without callback.
 	 * 
-	 * @param sql
+	 * @param sql SQL
 	 */
 	public void executeQuery(final String sql) {
 		try {
@@ -446,8 +439,8 @@ public class TinyORM {
 	/**
 	 * Execute query without callback.
 	 * 
-	 * @param sql
-	 * @param params
+	 * @param sql SQL
+	 * @param params Parameters
 	 */
 	public void executeQuery(final String sql, final List<Object> params) {
 		try {
@@ -460,9 +453,9 @@ public class TinyORM {
 	/**
 	 * Execute query.
 	 * 
-	 * @param sql
-	 * @param callback
-	 * @return
+	 * @param sql SQL
+	 * @param callback Callback function
+	 * @return Selected data
 	 */
 	public <T> T executeQuery(final String sql,
 			final ResultSetCallback<T> callback) {

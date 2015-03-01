@@ -24,23 +24,13 @@ import me.geso.tinyorm.annotations.Table;
 public class BasicRowTest extends TestBase {
 
 	@Before
-	public void beforeeee() throws SQLException {
-		orm.getConnection()
-			.prepareStatement(
-				"DROP TABLE IF EXISTS x")
-			.executeUpdate();
-		orm.getConnection()
-			.prepareStatement(
-				"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, y VARCHAR(255) NOT NULL)")
-			.executeUpdate();
-		orm.getConnection()
-			.prepareStatement(
-				"DROP TABLE IF EXISTS y")
-			.executeUpdate();
-		orm.getConnection()
-			.prepareStatement(
-				"CREATE TABLE y LIKE x")
-			.executeUpdate();
+	public void before() throws SQLException {
+		createTable("x",
+			"id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT",
+			"name VARCHAR(255) NOT NULL",
+			"y VARCHAR(255) NOT NULL");
+		orm.updateBySQL("DROP TABLE IF EXISTS y");
+		orm.updateBySQL("CREATE TABLE y LIKE x");
 
 	}
 
@@ -157,7 +147,7 @@ public class BasicRowTest extends TestBase {
 	}
 
 	@Data
-	public static class XForm {
+	private static class XForm {
 		String name;
 	}
 

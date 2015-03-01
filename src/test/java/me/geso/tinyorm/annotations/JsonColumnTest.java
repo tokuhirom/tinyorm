@@ -22,14 +22,10 @@ public class JsonColumnTest extends TestBase {
 
 	@Test
 	public void test() throws SQLException, RichSQLException {
-		orm.getConnection()
-			.prepareStatement(
-				"DROP TABLE IF EXISTS x")
-			.executeUpdate();
-		orm.getConnection()
-			.prepareStatement(
-				"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, propertiesDump LONGBLOB NOT NULL)")
-			.executeUpdate();
+		createTable("x",
+			"id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT",
+			"propertiesDump LONGBLOB NOT NULL");
+
 		Map<String, String> map = new HashMap<>();
 		map.put("hoge", "fuga");
 		X created = orm.insert(X.class)

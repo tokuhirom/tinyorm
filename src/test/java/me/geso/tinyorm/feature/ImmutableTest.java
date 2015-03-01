@@ -20,7 +20,7 @@ import me.geso.tinyorm.annotations.Table;
 
 public class ImmutableTest extends TestBase {
 	@Before
-	public void beefffff() throws SQLException, RichSQLException {
+	public void beforeHook() throws SQLException, RichSQLException {
 		this.orm.updateBySQL("DROP TABLE IF EXISTS foo");
 		this.orm.updateBySQL("CREATE TABLE foo (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))");
 	}

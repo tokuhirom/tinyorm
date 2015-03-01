@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,7 +17,7 @@ public abstract class TestBase {
 	protected final Connection connection;
 	protected final TinyORM orm;
 
-	public TestBase() {
+	protected TestBase() {
 		try {
 			// この指定で､ログとれる｡
 			Class.forName("net.sf.log4jdbc.DriverSpy");
@@ -56,6 +58,13 @@ public abstract class TestBase {
 			log.error(msg);
 		}
 		assertTrue(msg.startsWith(pattern));
+	}
+
+	protected void createTable(String name, String... columns) {
+		orm.updateBySQL("DROP TABLE IF EXISTS `" + name + "`");
+		orm.updateBySQL("CREATE TABLE `" + name + "` ("
+			+ Arrays.stream(columns).collect(Collectors.joining(","))
+			+ ")");
 	}
 
 	public static interface Callback {

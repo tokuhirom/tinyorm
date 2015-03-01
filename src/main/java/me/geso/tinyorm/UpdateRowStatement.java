@@ -55,9 +55,8 @@ public class UpdateRowStatement<T extends Row<?>> {
 				+ " column list.");
 		}
 		Object current = tableMeta.getValue(this.row, columnName);
-		if (Objects.equals(current, value)) {
-			// We don't need to update database. do nothing.
-		} else {
+		// If there is no modification, do not send update query to database.
+		if (!Objects.equals(current, value)) {
 			this.set.put(columnName, value);
 		}
 		return this;
@@ -98,7 +97,7 @@ public class UpdateRowStatement<T extends Row<?>> {
 	/**
 	 * Should I call execute() method?
 	 * 
-	 * @return
+	 * @return true if the statement object has set clause, false otherwise.
 	 */
 	public boolean hasSetClause() {
 		return !this.set.isEmpty();

@@ -47,8 +47,7 @@ public class SelectCountStatement<T extends Row<?>> {
 				query,
 				(rs) -> {
 					if (rs.next()) {
-						long got = rs.getLong(1);
-						return got;
+						return rs.getLong(1);
 					} else {
 						return 0L;
 					}

@@ -54,9 +54,9 @@ public class InsertStatement<T extends Row<?>> {
 	/**
 	 * Add new value.
 	 * 
-	 * @param columnName
-	 * @param value
-	 * @return
+	 * @param columnName Column name to set value.
+	 * @param value New value for the column
+	 * @return Object itself.
 	 */
 	public InsertStatement<T> value(String columnName, Object value) {
 		Object deflated = this.tableMeta.invokeDeflater(columnName, value);
@@ -64,19 +64,23 @@ public class InsertStatement<T extends Row<?>> {
 		return this;
 	}
 
+	/**
+	 * Set values by map.
+	 *
+	 * @param values values to set
+	 * @return InsertStatement object itself.
+	 */
 	public InsertStatement<T> value(Map<String, Object> values) {
 		values.keySet().stream()
-			.forEach(it -> {
-				this.value(it, values.get(it));
-			});
+			.forEach(it -> this.value(it, values.get(it)));
 		return this;
 	}
 
 	/**
 	 * Set values by Bean.
 	 * 
-	 * @param valueBean
-	 * @return
+	 * @param valueBean bean object
+	 * @return InsertStatement object itself for fluent interface.
 	 */
 	public InsertStatement<T> valueByBean(Object valueBean) {
 		try {
@@ -99,8 +103,14 @@ public class InsertStatement<T extends Row<?>> {
 
 	/**
 	 * [EXPERIMENTAL] Add "ON DUPLICATE KEY UPDATE " clause.
-	 * @param query
-	 * @param params
+	 *
+	 * <code>
+	 *     insert.set("name", "John")
+	 *     		 .onDuplicateKeyUpdate("name=?", "John")
+	 * </code>
+	 *
+	 * @param query Query in string.
+	 * @return InsertStatement object itself for fluent interface.
 	 */
 	public InsertStatement<T> onDuplicateKeyUpdate(String query,
 			Object... params) {
@@ -119,7 +129,7 @@ public class InsertStatement<T extends Row<?>> {
 				values.keySet()
 					.stream()
 					.map(key -> JDBCUtils.quoteIdentifier(key,
-							identifierQuoteString))
+						identifierQuoteString))
 					.collect(Collectors.joining(",")))
 			.appendQuery(") VALUES (")
 			.appendQuery(values.values().stream().map(e -> "?")
@@ -160,18 +170,18 @@ public class InsertStatement<T extends Row<?>> {
 		try {
 			this.execute();
 
-			final List<PropertyDescriptor> primaryKeyMetas = this.tableMeta
+			final List<PropertyDescriptor> primaryKeys = this.tableMeta
 				.getPrimaryKeys();
 			final String tableName = this.tableMeta.getName();
-			if (primaryKeyMetas.isEmpty()) {
+			if (primaryKeys.isEmpty()) {
 				throw new RuntimeException(
 					"You can't call InsertStatement#executeSelect() on the table doesn't have a primary keys.");
 			}
-			if (primaryKeyMetas.size() > 1) {
+			if (primaryKeys.size() > 1) {
 				throw new RuntimeException(
 					"You can't call InsertStatement#executeSelect() on the table has multiple primary keys.");
 			}
-			final String pkName = primaryKeyMetas.get(0).getName();
+			final String pkName = primaryKeys.get(0).getName();
 
 			final Connection connection = this.orm.getConnection();
 			final Query query = new QueryBuilder(connection)

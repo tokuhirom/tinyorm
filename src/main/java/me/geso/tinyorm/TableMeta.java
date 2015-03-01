@@ -69,7 +69,7 @@ class TableMeta<RowType extends Row<?>> {
 	private final Map<String, Deflater> deflaters;
 	private final RowBuilder rowBuilder;
 
-	TableMeta(String name, List<PropertyDescriptor> primaryKeyMetas,
+	private TableMeta(String name, List<PropertyDescriptor> primaryKeyMetas,
 			Map<String, PropertyDescriptor> propertyDescriptorMap,
 			List<BeforeInsertHandler> beforeInsertTriggers,
 			List<BeforeUpdateHandler> beforeUpdateTriggers,
@@ -168,7 +168,7 @@ class TableMeta<RowType extends Row<?>> {
 							"You can only use List<String>, List<Integer> for @CsvColumn.");
 					}
 					Type actualTypeArgument = actualTypeArguments[0];
-					Class<?> klass = null;
+					Class<?> klass;
 					if (actualTypeArgument instanceof Class) {
 						if (Integer.class
 							.isAssignableFrom((Class<?>)actualTypeArgument)) {
@@ -261,7 +261,7 @@ class TableMeta<RowType extends Row<?>> {
 
 		String tableName = TableMeta.getTableName(rowClass);
 
-		return new TableMeta<RowType>(tableName, primaryKeys,
+		return new TableMeta<>(tableName, primaryKeys,
 			propertyDescriptorMap, beforeInsertTriggers,
 			beforeUpdateTriggers, inflaters, deflaters,
 			rowBuilder);
@@ -273,7 +273,7 @@ class TableMeta<RowType extends Row<?>> {
 			ConstructorProperties annotation = constructor
 				.getAnnotation(java.beans.ConstructorProperties.class);
 			if (annotation != null) {
-				return new ConstructorRowBuilder<T>(constructor,
+				return new ConstructorRowBuilder(constructor,
 					annotation.value());
 			}
 		}
@@ -286,11 +286,10 @@ class TableMeta<RowType extends Row<?>> {
 		if (table == null) {
 			throw new RuntimeException("Missing @Table annotation");
 		}
-		String tableName = table.value();
-		return tableName;
+		return table.value();
 	}
 
-	/**
+	/*
 	 * Add before insert handler<br>
 	 * This method may not thread safe.
 	 */
@@ -298,11 +297,9 @@ class TableMeta<RowType extends Row<?>> {
 		this.beforeInsertHandlers.add(handler);
 	}
 
-	/**
+	/*
 	 * Add before update handler<br>
 	 * This method may not thread safe.
-	 *
-	 * @param handler
 	 */
 	void addBeforeUpdateHandler(BeforeUpdateHandler handler) {
 		this.beforeUpdateHandlers.add(handler);
@@ -317,8 +314,7 @@ class TableMeta<RowType extends Row<?>> {
 					+ " in " + this.getName());
 			}
 			Method readMethod = propertyDescriptor.getReadMethod();
-			Object value = readMethod.invoke(row);
-			return value;
+			return readMethod.invoke(row);
 		} catch (IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException e) {
 			throw new RuntimeException(e);
@@ -475,7 +471,7 @@ class TableMeta<RowType extends Row<?>> {
 	@ToString
 	static class CreatedEpochTimestampColumnHook implements
 			BeforeInsertHandler {
-		private String columnName;
+		private final String columnName;
 
 		public CreatedEpochTimestampColumnHook(String columnName) {
 			this.columnName = columnName;
@@ -491,7 +487,7 @@ class TableMeta<RowType extends Row<?>> {
 	@ToString
 	static class UpdatedEpochTimestampColumnHook implements
 			BeforeInsertHandler, BeforeUpdateHandler {
-		private String columnName;
+		private final String columnName;
 
 		public UpdatedEpochTimestampColumnHook(String columnName) {
 			this.columnName = columnName;
@@ -648,8 +644,7 @@ class TableMeta<RowType extends Row<?>> {
 		@Override
 		public Object deflate(Object value) {
 			try {
-				byte[] bytes = mapper.writeValueAsBytes(value);
-				return bytes;
+				return mapper.writeValueAsBytes(value);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -674,25 +669,28 @@ class TableMeta<RowType extends Row<?>> {
 				try {
 					try (CSVParser parse = CSVParser.parse((String)value,
 						CSVFormat.RFC4180)) {
-						for (CSVRecord record : parse.getRecords()) {
-							if (this.klass == String.class) {
-								List<String> list = new ArrayList<>();
-								for (String column : record) {
-									list.add(column);
-								}
-								return Collections.unmodifiableList(list);
-							} else if (this.klass == Integer.class) {
-								List<Integer> list = new ArrayList<>();
-								for (String column : record) {
-									list.add(Integer.parseInt(column));
-								}
-								return Collections.unmodifiableList(list);
-							} else {
-								throw new RuntimeException(
-									"Should not reache here.");
-							}
+						List<CSVRecord> records = parse.getRecords();
+						if (records.isEmpty()) {
+							return null;
 						}
-						return null;
+
+						CSVRecord record = records.get(0);
+						if (this.klass == String.class) {
+							List<String> list = new ArrayList<>();
+							for (String column : record) {
+								list.add(column);
+							}
+							return Collections.unmodifiableList(list);
+						} else if (this.klass == Integer.class) {
+							List<Integer> list = new ArrayList<>();
+							for (String column : record) {
+								list.add(Integer.parseInt(column));
+							}
+							return Collections.unmodifiableList(list);
+						} else {
+							throw new RuntimeException(
+								"Should not reach here.");
+						}
 					}
 				} catch (IOException e) {
 					throw new RuntimeException(e);
@@ -732,7 +730,7 @@ class TableMeta<RowType extends Row<?>> {
 		}
 	}
 
-	private static class ConstructorRowBuilder<T extends Row<?>> implements
+	private static class ConstructorRowBuilder implements
 			RowBuilder {
 		private final Constructor<?> constructor;
 		private final String[] parameterNames;

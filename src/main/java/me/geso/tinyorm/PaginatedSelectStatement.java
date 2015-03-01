@@ -32,9 +32,8 @@ public class PaginatedSelectStatement<T extends Row<?>> extends
 			return JDBCUtils.executeQuery(connection, query, (rs) -> {
 				List<T> rows = orm.mapRowListFromResultSet(klass, rs);
 
-				final Paginated<T> paginated = new Paginated<T>(
+				return new Paginated<>(
 					rows, entriesPerPage);
-				return paginated;
 			});
 		} catch (RichSQLException e) {
 			throw new RuntimeException(e);

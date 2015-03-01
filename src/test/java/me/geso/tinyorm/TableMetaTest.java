@@ -1,5 +1,7 @@
 package me.geso.tinyorm;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 import java.beans.PropertyDescriptor;
@@ -26,10 +28,18 @@ public class TableMetaTest extends TestBase {
 		assertEquals("id", primaryKeyMetas.get(0).getName());
 	}
 
+	@Test
+	public void testHasColumn() {
+		TableMeta<?> tableMeta = orm
+			.getTableMeta(Member.class);
+		assertTrue(tableMeta.hasColumn("id"));
+		assertFalse(tableMeta.hasColumn("unknown"));
+	}
+
 	@Table("member")
 	@Value
 	@EqualsAndHashCode(callSuper = false)
-	public class Member extends Row<Member> {
+	private class Member extends Row<Member> {
 		@PrimaryKey
 		private long id;
 		@Column

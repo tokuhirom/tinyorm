@@ -19,14 +19,11 @@ public class BeforeInsertTest extends TestBase {
 
 	@Test
 	public void test() throws SQLException, RichSQLException {
-		orm.getConnection()
-			.prepareStatement(
-				"DROP TABLE IF EXISTS x")
-			.executeUpdate();
-		orm.getConnection()
-			.prepareStatement(
-				"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, y VARCHAR(255) NOT NULL)")
-			.executeUpdate();
+		this.createTable("x",
+			"id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT",
+			"name VARCHAR(255) NOT NULL",
+			"y VARCHAR(255) NOT NULL");
+
 		X created = orm.insert(X.class)
 			.value("name", "John")
 			.executeSelect();

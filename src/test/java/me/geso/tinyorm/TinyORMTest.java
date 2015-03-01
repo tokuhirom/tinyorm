@@ -31,25 +31,18 @@ public class TinyORMTest extends TestBase {
 
 	@Before
 	public final void setupSchema() throws RichSQLException {
-		this.orm.updateBySQL("DROP TABLE IF EXISTS member");
-		this.orm.updateBySQL(
-			"CREATE TABLE member ("
-				+ "id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-				+ "name VARCHAR(255),"
-				+ "createdOn INT UNSIGNED DEFAULT NULL,"
-				+ "updatedOn INT UNSIGNED DEFAULT NULL"
-				+ ")"
-			);
-		this.orm.updateBySQL("DROP TABLE IF EXISTS blog");
-		this.orm.updateBySQL(
-			"CREATE TABLE blog ("
-				+ "id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,"
-				+ "memberId INT UNSIGNED NOT NULL,"
-				+ "title VARCHAR(255),"
-				+ "createdOn INT UNSIGNED DEFAULT NULL,"
-				+ "updatedOn INT UNSIGNED DEFAULT NULL"
-				+ ")"
-			);
+		createTable("member",
+			"id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY",
+			"name VARCHAR(255)",
+			"createdOn INT UNSIGNED DEFAULT NULL",
+			"updatedOn INT UNSIGNED DEFAULT NULL");
+
+		createTable("blog",
+			"id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY"
+			, "memberId INT UNSIGNED NOT NULL"
+			, "title VARCHAR(255)"
+			, "createdOn INT UNSIGNED DEFAULT NULL"
+			, "updatedOn INT UNSIGNED DEFAULT NULL");
 	}
 
 	@Test
@@ -85,7 +78,7 @@ public class TinyORMTest extends TestBase {
 		assertEquals(member.getId(), 1);
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "UnusedAssignment"})
 	@Test
 	public void single() throws SQLException, RichSQLException {
 		Member member1 = this.orm.insert(Member.class).value("name", "m1")
@@ -102,7 +95,7 @@ public class TinyORMTest extends TestBase {
 		assertEquals(got.getName(), "m2");
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "UnusedAssignment"})
 	@Test
 	public void singleWithStmt() throws SQLException, RichSQLException {
 		Member member1 = this.orm.insert(Member.class).value("name", "m1")
@@ -135,36 +128,45 @@ public class TinyORMTest extends TestBase {
 				Member.class, 4)
 				.offset(0)
 				.execute();
-			assertEquals(paginated.getRows().size(), 4);
-			assertEquals(paginated.getEntriesPerPage(), 4);
-			assertEquals(paginated.getHasNextPage(), true);
+			assertEquals(4, paginated.getRows().size());
+			assertEquals(4, paginated.getEntriesPerPage());
+			assertEquals(true, paginated.getHasNextPage());
 		}
 		{
 			Paginated<Member> paginated = this.orm.searchWithPager(
 				Member.class, 4)
 				.offset(4)
 				.execute();
-			assertEquals(paginated.getRows().size(), 4);
-			assertEquals(paginated.getEntriesPerPage(), 4);
-			assertEquals(paginated.getHasNextPage(), true);
+			assertEquals(4, paginated.getRows().size());
+			assertEquals(4, paginated.getEntriesPerPage());
+			assertEquals(true, paginated.getHasNextPage());
 		}
 		{
 			Paginated<Member> paginated = this.orm.searchWithPager(
 				Member.class, 4)
 				.offset(8)
 				.execute();
-			assertEquals(paginated.getRows().size(), 2);
-			assertEquals(paginated.getEntriesPerPage(), 4);
-			assertEquals(paginated.getHasNextPage(), false);
+			assertEquals(2, paginated.getRows().size());
+			assertEquals(4, paginated.getEntriesPerPage());
+			assertEquals(false, paginated.getHasNextPage());
 		}
 		{
 			Paginated<Member> paginated = this.orm.searchWithPager(
 				Member.class, 4)
 				.offset(12)
 				.execute();
-			assertEquals(paginated.getRows().size(), 0);
-			assertEquals(paginated.getEntriesPerPage(), 4);
-			assertEquals(paginated.getHasNextPage(), false);
+			assertEquals(0, paginated.getRows().size());
+			assertEquals(4, paginated.getEntriesPerPage());
+			assertEquals(false, paginated.getHasNextPage());
+		}
+		{
+			Paginated<Member> paginated = this.orm.searchWithPager(
+				Member.class, 5)
+				.offset(0)
+				.execute();
+			assertEquals(5, paginated.getRows().size());
+			assertEquals(5, paginated.getEntriesPerPage());
+			assertEquals(true, paginated.getHasNextPage());
 		}
 	}
 
@@ -259,9 +261,21 @@ public class TinyORMTest extends TestBase {
 				.map(row -> "" + row.getId())
 				.collect(Collectors.joining(",")));
 		}
+		{
+			Paginated<Member> paginated = this.orm.searchBySQLWithPager(
+				Member.class,
+				"SELECT * FROM member WHERE id<? ORDER BY id DESC",
+				Arrays.asList(3), 10);
+			assertEquals(paginated.getRows().size(), 2);
+			assertEquals(paginated.getEntriesPerPage(), 10);
+			assertEquals(paginated.getHasNextPage(), false);
+			assertEquals("2,1", paginated.getRows().stream()
+				.map(row -> "" + row.getId())
+				.collect(Collectors.joining(",")));
+		}
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "UnusedAssignment"})
 	@Test
 	public void searchWithStmt() throws SQLException, RichSQLException {
 		Member member1 = this.orm.insert(Member.class).value("name", "m1")
@@ -297,6 +311,7 @@ public class TinyORMTest extends TestBase {
 	@Test
 	public void testExecuteQuery() throws SQLException, RichSQLException {
 		this.orm.executeQuery("SELECT 1");
+		this.orm.executeQuery("SELECT 2");
 	}
 
 	@Test
@@ -306,13 +321,34 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
+	public void testExecuteQueryWithCallback() throws SQLException,
+			RichSQLException {
+		orm.insert(Member.class)
+			.value("name", "John")
+			.execute();
+		orm.insert(Member.class)
+			.value("name", "Taro")
+			.execute();
+		String got = orm.executeQuery("SELECT id, name FROM member ORDER BY id ASC", (ResultSet rs) -> {
+			StringBuilder builder = new StringBuilder();
+			while (rs.next()) {
+				long id = rs.getLong(1);
+				String name = rs.getString(2);
+				builder.append(id).append(":").append(name).append("\n");
+			}
+			return builder.toString();
+		});
+		assertEquals("1:John\n2:Taro\n", got);
+	}
+
+	@Test
 	public void testQueryForLong() throws SQLException, RichSQLException {
 		this.orm.updateBySQL(
 			"CREATE TEMPORARY TABLE x (y integer, z varchar(255));"
 			);
-		this.orm.updateBySQL(
+		assertEquals(1, this.orm.updateBySQL(
 			"INSERT INTO x (y,z) values (5963, 'hey')"
-			);
+			));
 		{
 			OptionalLong got = this.orm
 				.queryForLong("SELECT y FROM x WHERE z='hey'");
@@ -406,7 +442,7 @@ public class TinyORMTest extends TestBase {
 	@Table("member")
 	@Data
 	@EqualsAndHashCode(callSuper = false)
-	public static class Member extends Row<Member> {
+	private static class Member extends Row<Member> {
 		@PrimaryKey
 		private long id;
 		@Column
@@ -421,7 +457,7 @@ public class TinyORMTest extends TestBase {
 	@Table("blog")
 	@Data
 	@EqualsAndHashCode(callSuper = false)
-	public static class Blog extends Row<Blog> {
+	private static class Blog extends Row<Blog> {
 		@PrimaryKey
 		private long id;
 		@Column
@@ -434,7 +470,7 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Data
-	public static class MemberForm {
+	private static class MemberForm {
 
 		private long id;
 		private String name;
@@ -442,7 +478,7 @@ public class TinyORMTest extends TestBase {
 
 	@Data
 	public static class MemberUpdateForm {
-		private String name;
+		private final String name;
 
 		public MemberUpdateForm(String name) {
 			this.name = name;

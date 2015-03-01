@@ -46,7 +46,7 @@ public class Paginated<T> {
 	/**
 	 * Get row objects.
 	 * 
-	 * @return
+	 * @return List of row objects
 	 */
 	@Valid
 	public List<T> getRows() {
@@ -56,7 +56,7 @@ public class Paginated<T> {
 	/**
 	 * Get "entriesPerPage".
 	 * 
-	 * @return
+	 * @return the number of entries per page
 	 */
 	public long getEntriesPerPage() {
 		return entriesPerPage;
@@ -65,7 +65,7 @@ public class Paginated<T> {
 	/**
 	 * Return true if the pager has next page. False otherwise.
 	 * 
-	 * @return
+	 * @return true if there is next page, false otherwise.
 	 */
 	public boolean getHasNextPage() {
 		return hasNextPage;
@@ -73,11 +73,13 @@ public class Paginated<T> {
 
 	/**
 	 * Create new Paginated instance with row object mapping.<br>
-	 * 
-	 * {@code paginated.mapRows(row -> row.toJTO());}
-	 * 
-	 * @param f
-	 * @return
+	 *
+	 * <code>
+	 * paginated.mapRows(row -> row.toJTO());
+	 * </code>
+	 *
+	 * @param f callback function
+	 * @return mapped new paginated object.
 	 */
 	public <O> Paginated<O> mapRows(Function<T, O> f) {
 		final List<O> mapped = this.rows.stream().map(f).collect(Collectors.toList());

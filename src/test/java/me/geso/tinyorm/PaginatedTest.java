@@ -15,8 +15,8 @@ public class PaginatedTest {
 
 	@Test
 	public void testJackson() throws IOException {
-		int entriesPerPage = 10;
-		boolean hasNextPage = true;
+		final int entriesPerPage = 10;
+		final boolean hasNextPage = true;
 		List<Source> sourceList = new ArrayList<>();
 		sourceList.add(new Source("hoge"));
 		Paginated<Source> p1 = new Paginated<>(sourceList, entriesPerPage, hasNextPage);
@@ -35,7 +35,7 @@ public class PaginatedTest {
 		public Source() {
 		}
 
-		public Source(String n) {
+		public Source(@SuppressWarnings("SameParameterValue") String n) {
 			this.n = n;
 		}
 

@@ -19,14 +19,11 @@ public class BeforeUpdateTest extends TestBase {
 
 	@Test
 	public void test() throws SQLException, RichSQLException {
-		orm.getConnection()
-			.prepareStatement(
-				"DROP TABLE IF EXISTS x")
-			.executeUpdate();
-		orm.getConnection()
-			.prepareStatement(
-				"CREATE TABLE x (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255) NOT NULL, y VARCHAR(255) NOT NULL)")
-			.executeUpdate();
+		createTable("x",
+			"id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT",
+			"name VARCHAR(255) NOT NULL",
+			"y VARCHAR(255) NOT NULL");
+
 		X created = orm.insert(X.class)
 			.value("name", "John")
 			.value("y", "XXX")
@@ -42,9 +39,7 @@ public class BeforeUpdateTest extends TestBase {
 
 	@Data
 	public static final class XForm {
-
 		private String name;
-
 	}
 
 	@Slf4j

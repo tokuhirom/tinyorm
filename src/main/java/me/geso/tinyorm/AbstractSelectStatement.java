@@ -3,13 +3,14 @@ package me.geso.tinyorm;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
 
-public abstract class AbstractSelectStatement<T, Impl> {
+abstract class AbstractSelectStatement<T, Impl> {
 	private final String tableName;
 	private final String identifierQuoteString;
 	private final List<String> whereQuery = new ArrayList<>();
@@ -32,9 +33,7 @@ public abstract class AbstractSelectStatement<T, Impl> {
 	@SuppressWarnings("unchecked")
 	public Impl where(String query, Object... params) {
 		this.whereQuery.add(query);
-		for (Object p : params) {
-			this.whereParams.add(p);
-		}
+		Collections.addAll(this.whereParams, params);
 		return (Impl)this;
 	}
 

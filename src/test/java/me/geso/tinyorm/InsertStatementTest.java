@@ -17,16 +17,11 @@ import me.geso.tinyorm.annotations.Table;
 public class InsertStatementTest extends TestBase {
 
 	@Before
-	public void beforeeee() throws SQLException {
-		orm.getConnection()
-			.prepareStatement(
-				"DROP TABLE IF EXISTS x")
-			.executeUpdate();
-		orm.getConnection()
-			.prepareStatement(
-				"CREATE TABLE x (a VARCHAR(255) NOT NULL, n int default 0, PRIMARY KEY (a))")
-			.executeUpdate();
-
+	public void beforeHook() throws SQLException {
+		createTable("x",
+			"a VARCHAR(255) NOT NULL",
+			"n int default 0",
+			"PRIMARY KEY (a)");
 	}
 
 	@Test
@@ -60,7 +55,7 @@ public class InsertStatementTest extends TestBase {
 	@Table("x")
 	@Value
 	@EqualsAndHashCode(callSuper = false)
-	public static class X extends Row<X> {
+	private static class X extends Row<X> {
 		@Column
 		private String a;
 		@Column

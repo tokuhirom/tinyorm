@@ -47,7 +47,7 @@ public class ListSelectStatement<T extends Row<?>> extends
 
 	public Paginated<T> executeWithPagination(long entriesPerPage) {
 		final List<T> rows = this.limit(entriesPerPage + 1).execute();
-		return new Paginated<T>(rows, entriesPerPage);
+		return new Paginated<>(rows, entriesPerPage);
 	}
 
 }

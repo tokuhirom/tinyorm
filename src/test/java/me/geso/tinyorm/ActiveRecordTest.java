@@ -30,7 +30,7 @@ public class ActiveRecordTest extends TestBase {
 			.executeUpdate();
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "UnusedAssignment"})
 	@Test
 	public void testRefetch() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
@@ -47,7 +47,7 @@ public class ActiveRecordTest extends TestBase {
 		assertEquals("Taro", got.get().getName());
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "UnusedAssignment"})
 	@Test
 	public void testUpdateByBean() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
@@ -69,7 +69,7 @@ public class ActiveRecordTest extends TestBase {
 		assertEquals("hoge", got.get().getName());
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "UnusedAssignment"})
 	@Test
 	public void testCreateUpdateStatement() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
@@ -89,7 +89,7 @@ public class ActiveRecordTest extends TestBase {
 		assertEquals("hoge", got.get().getName());
 	}
 
-	@SuppressWarnings("unused")
+	@SuppressWarnings({"unused", "UnusedAssignment"})
 	@Test
 	public void testDelete() throws RichSQLException {
 		Member member1 = orm.insert(Member.class)
@@ -111,7 +111,7 @@ public class ActiveRecordTest extends TestBase {
 	@Table("member")
 	@Data
 	@EqualsAndHashCode(callSuper = false)
-	public static class Member extends Row<Member> {
+	private static class Member extends Row<Member> {
 		@PrimaryKey
 		private long id;
 		@Column
@@ -124,7 +124,7 @@ public class ActiveRecordTest extends TestBase {
 	}
 
 	@Data
-	public static class MemberForm {
+	private static class MemberForm {
 		private String name;
 	}
 }
