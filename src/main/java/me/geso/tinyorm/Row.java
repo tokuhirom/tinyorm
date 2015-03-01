@@ -66,7 +66,7 @@ public abstract class Row<T extends Row<?>> {
 	 *
 	 * <pre>
 	 *     <code>
-	 *         List<Entry> entries = orm.searchBySQL(EntryRow.class, "SELECT entry.*, blog.title blogTitle
+	 *         {@literal List<Entry>} entries = orm.searchBySQL(EntryRow.class, "SELECT entry.*, blog.title blogTitle
 	 *                           FROM entry INNER JOIN blog ON (entry.blogId=blog.id)");
 	 *         for (Entry entry: entries) {
 	 *             System.out.println(String.format("%s %s",

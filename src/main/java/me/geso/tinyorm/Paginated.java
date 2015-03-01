@@ -75,7 +75,7 @@ public class Paginated<T> {
 	 * Create new Paginated instance with row object mapping.<br>
 	 *
 	 * <code>
-	 * paginated.mapRows(row -> row.toJTO());
+	 * paginated.mapRows(row -{@literal >} row.toJTO());
 	 * </code>
 	 *
 	 * @param f callback function
