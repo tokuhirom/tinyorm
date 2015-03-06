@@ -76,6 +76,42 @@ Create new database object.
       .get();
     member.delete();
 
+## Annotations
+
+    @Value
+    @Table("member")
+    public MemberRow extends Row<MemberRow> {
+        @PrimaryKey
+        private long id;
+        @Column
+        private String name;
+        @CreatedTimestampColumn
+        private long createdOn;
+    }
+
+### @PrimaryKey
+
+You need to add this annotation for the field, that is a primary key.
+
+### @Column
+
+You need to ad this annotation for each columns(Note, if you specified @PrimaryKey, @CretedOnTimeStamp or @UpdatedOnTimeStamp, you don't need to specify this annotaiton).
+
+### @CreatedOnTimeStamp
+
+TinyORM fills this field when inserting a row. This column must be `long`. TinyORM fills epoch seconds.
+
+### @UpdatedOnTimeStamp
+
+TinyORM fills this field when updating a row. This column must be `long`. TinyORM fills epoch seconds.
+
+### @CsvColumn
+
+    @CsvColumn
+    private List<String> prefectures;
+
+You can store the data in CSV format.
+
 ## HOOKS
 
 You can override `TinyORM#BEFORE_INSERT` and `TinyORM#BEFORE_UPDATE` methods.
