@@ -5,6 +5,8 @@
  */
 package me.geso.tinyorm;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,7 +31,7 @@ import me.geso.jdbcutils.RichSQLException;
  * @author Tokuhiro Matsuno
  */
 @Slf4j
-public class TinyORM {
+public class TinyORM implements Closeable {
 
 	private static final ConcurrentHashMap<Class<?>, TableMeta<?>> TABLE_META_REGISTRY = new ConcurrentHashMap<>();
 	private final Connection connection;
@@ -485,4 +487,17 @@ public class TinyORM {
 		return new SelectCountStatement<>(tableMeta, this.getConnection());
 	}
 
+	/**
+	 * Close connection.
+	 *
+	 * @throws java.lang.RuntimeException This method throws RuntimeException if Connection#close throws SQLException.
+	 */
+	@Override
+	public void close() throws IOException {
+		try {
+			this.connection.close();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

@@ -2,8 +2,10 @@ package me.geso.tinyorm;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -436,6 +438,15 @@ public class TinyORMTest extends TestBase {
 				.where("name LIKE CONCAT(?, '%')", "b")
 				.execute();
 			assertEquals(1, count);
+		}
+	}
+
+	@Test
+	public void testClose() {
+		try (Connection connection = buildConnection()) {
+			assertNotNull(connection);
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
 		}
 	}
 

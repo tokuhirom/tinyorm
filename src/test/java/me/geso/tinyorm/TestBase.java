@@ -18,6 +18,11 @@ public abstract class TestBase {
 	protected final TinyORM orm;
 
 	protected TestBase() {
+		this.connection = buildConnection();
+		this.orm = new TinyORM(connection);
+	}
+
+	protected Connection buildConnection() {
 		try {
 			// この指定で､ログとれる｡
 			Class.forName("net.sf.log4jdbc.DriverSpy");
@@ -32,11 +37,7 @@ public abstract class TestBase {
 				dbpassword = "";
 			}
 
-			connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
-			// connection =
-			// DriverManager.getConnection("jdbc:mysql://localhost/test?profileSQL=true&logger=com.mysql.jdbc.log.Slf4JLogger",
-			// "root", null);
-			this.orm = new TinyORM(connection);
+			return DriverManager.getConnection(dburl, dbuser, dbpassword);
 		} catch (ClassNotFoundException | SQLException | InstantiationException
 				| IllegalAccessException ex) {
 			throw new RuntimeException(ex);
