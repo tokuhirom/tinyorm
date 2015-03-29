@@ -171,6 +171,13 @@
 					<consoleOutput>true</consoleOutput>
 					<outputFile>${project.build.directory}/site/checkstyle/checkstyle-result.xml</outputFile>
 				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>com.puppycrawl.tools</groupId>
+						<artifactId>checkstyle</artifactId>
+						<version>6.4.1</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 	</build>
