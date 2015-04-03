@@ -80,6 +80,7 @@ Create new database object.
 
     @Value
     @Table("member")
+    @EqualsAndHashCode(callSuper = false)
     public MemberRow extends Row<MemberRow> {
         @PrimaryKey
         private long id;
