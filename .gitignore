@@ -2,7 +2,6 @@
 /.project
 /.settings/
 /target/
-/tinyorm.iml
 /.idea/
 /*/target/
 *.iml
