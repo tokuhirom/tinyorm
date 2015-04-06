@@ -12,6 +12,7 @@
 
 	<modules>
 		<module>tinyorm</module>
+		<module>tinyorm-schema-dumper</module>
 	</modules>
 
 	<scm>
