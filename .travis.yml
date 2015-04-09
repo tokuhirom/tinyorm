@@ -4,3 +4,4 @@ jdk:
 before_install:
   - mysql -e "create database IF NOT EXISTS test;" -uroot
 install: mvn install -DskipTests=true -Dgpg.skip=true
+sudo: false
