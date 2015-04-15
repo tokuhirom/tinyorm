@@ -118,6 +118,20 @@ You can store the data in CSV format.
 You can override `TinyORM#BEFORE_INSERT` and `TinyORM#BEFORE_UPDATE` methods.
 You can fill createdOn and updatedOn columns by this.
 
+## How do I use java.time.LocalDate?
+
+You can use java.time.LocalDate for the column field.
+
+    @Value
+    @EqualsAndHashCode(callSuper = false)
+    @Table("foo")
+    public class Foo extends Row<Foo> {
+        @Column
+        private LocalDate date;
+    }
+
+TinyORM automatically convert java.sql.Date to java.time.LocalDate.
+
 ## LICENSE
 
   The MIT License (MIT)
