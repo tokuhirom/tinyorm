@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import me.geso.tinyorm.trigger.Deflater;
 
 /**
- * LocalDate -> String
+ * Convert java.time.LocalDate to java.sql.Date.
  */
 public class LocalDateDeflater implements Deflater {
 	@Override
