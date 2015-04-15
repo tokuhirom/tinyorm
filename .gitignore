@@ -5,3 +5,4 @@
 /tinyorm.iml
 /.idea/
 /*/target/
+*.iml
