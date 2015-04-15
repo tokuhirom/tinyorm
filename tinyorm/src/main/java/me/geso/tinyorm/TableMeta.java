@@ -16,6 +16,7 @@ import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,6 +53,8 @@ import me.geso.tinyorm.annotations.JsonColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
+import me.geso.tinyorm.deflate.LocalDateDeflater;
+import me.geso.tinyorm.inflate.LocalDateInflater;
 import me.geso.tinyorm.trigger.BeforeInsertHandler;
 import me.geso.tinyorm.trigger.BeforeUpdateHandler;
 import me.geso.tinyorm.trigger.Deflater;
@@ -152,6 +155,10 @@ class TableMeta<RowType extends Row<?>> {
 					rowClass, propertyDescriptor, javaType);
 				deflaters.put(propertyDescriptor.getName(), deflater);
 				isColumn = true;
+			}
+			if (field.getType().isAssignableFrom(LocalDate.class)) {
+				inflaters.put(propertyDescriptor.getName(), new LocalDateInflater());
+				deflaters.put(propertyDescriptor.getName(), new LocalDateDeflater());
 			}
 			if (field.getAnnotation(CsvColumn.class) != null) {
 				// deserialize json
