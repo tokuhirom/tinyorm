@@ -382,7 +382,9 @@ class TableMeta<RowType extends Row<?>> {
 					+ JDBCUtils.quoteIdentifier(it,
 						identifierQuoteString) + "=?)"
 			).collect(Collectors.joining(" AND "));
-		List<Object> vars = new ArrayList<>(pkmap.values());
+		List<Object> vars = pkmap.entrySet().stream().map(
+			e -> invokeDeflater(e.getKey(), e.getValue())
+			).collect(Collectors.toList());
 		this.validatePrimaryKeysForSelect(vars);
 		return new Query(sql, vars);
 	}
