@@ -41,11 +41,13 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
+import me.geso.tinyorm.annotations.ColumnName;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.CsvColumn;
 import me.geso.tinyorm.annotations.Deflate;
@@ -132,6 +134,12 @@ class TableMeta<RowType extends Row<?>> {
 			}
 			if (field.getAnnotation(Column.class) != null) {
 				isColumn = true;
+			}
+			ColumnName columnName = field.getAnnotation(ColumnName.class);
+			if (columnName != null) {
+				isColumn = true;
+				// rename column name with a value which is specified by annotation
+				propertyDescriptor.setName(columnName.value());
 			}
 			if (field.getAnnotation(CreatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new CreatedEpochTimestampColumnHook(
