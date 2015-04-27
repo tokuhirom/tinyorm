@@ -8,5 +8,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Column {
-	String value() default "";
+	String value() default ""; // I want to set the null to default value, but it is impossible. So empty string is used.
 }
