@@ -372,6 +372,17 @@ public class TinyORM implements Closeable {
 		});
 	}
 
+	/**
+	 * Get table name from row meta
+	 *
+	 * @param rowClass row class
+	 * @return table name
+	 */
+	public <T extends Row<?>> String getTableName(final Class<T> rowClass) {
+		final TableMeta<T> tableMeta = this.getTableMeta(rowClass);
+		return tableMeta.getName();
+	}
+
 	String getIdentifierQuoteString() {
 		try {
 			return this.getConnection().getMetaData()
