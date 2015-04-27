@@ -86,7 +86,7 @@ Create new database object.
         private long id;
         @Column
         private String name;
-        @ColumnName("alias_name")
+        @Column("alias_name")
         private String aliasName;
         @CreatedTimestampColumn
         private long createdOn;
@@ -98,11 +98,11 @@ You need to add this annotation for the field, that is a primary key.
 
 ### @Column
 
-You need to add this annotation for each columns(Note, if you specified @PrimaryKey, @ColumnName, @CretedOnTimeStamp or @UpdatedOnTimeStamp, you don't need to specify this annotaiton).
+You need to add this annotation for each columns(Note, if you specified @PrimaryKey, @CretedOnTimeStamp or @UpdatedOnTimeStamp, you don't need to specify this annotaiton).
 
-### @ColumnName("column_name")
+### @Column("column_name")
 
-This annotation is similar to `@Column`. A point of difference; this annotation can specify a column name without regard for member variable name.
+This annotation is almost the same as `@Column`. A point of difference; this annotation can specify a column name without regard for member variable name.
 
 ### @CreatedOnTimeStamp
 

@@ -47,7 +47,6 @@ import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
 import me.geso.tinyorm.annotations.BeforeUpdate;
 import me.geso.tinyorm.annotations.Column;
-import me.geso.tinyorm.annotations.ColumnName;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.CsvColumn;
 import me.geso.tinyorm.annotations.Deflate;
@@ -132,14 +131,15 @@ class TableMeta<RowType extends Row<?>> {
 				primaryKeys.add(propertyDescriptor);
 				isColumn = true;
 			}
-			if (field.getAnnotation(Column.class) != null) {
+			Column column = field.getAnnotation(Column.class);
+			if (column != null) {
 				isColumn = true;
-			}
-			ColumnName columnName = field.getAnnotation(ColumnName.class);
-			if (columnName != null) {
-				isColumn = true;
-				// rename column name with a value which is specified by annotation
-				propertyDescriptor.setName(columnName.value());
+
+				String columnName = column.value();
+				if (!columnName.isEmpty()) {
+					// rename a column name with a value if it is specified by annotation
+					propertyDescriptor.setName(columnName);
+				}
 			}
 			if (field.getAnnotation(CreatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new CreatedEpochTimestampColumnHook(

@@ -13,7 +13,7 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 
-public class ColumnNameTest extends TestBase {
+public class NamedColumnTest extends TestBase {
 	@Test
 	public void test() throws SQLException, RichSQLException {
 		createTable("x",
@@ -37,10 +37,10 @@ public class ColumnNameTest extends TestBase {
 		@PrimaryKey
 		private long id;
 
-		@ColumnName("member_name")
+		@Column("member_name")
 		private String memberName;
 
-		@ColumnName("entry_name")
+		@Column("entry_name")
 		private String entryName;
 	}
 }
