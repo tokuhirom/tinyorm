@@ -41,6 +41,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
@@ -130,8 +131,15 @@ class TableMeta<RowType extends Row<?>> {
 				primaryKeys.add(propertyDescriptor);
 				isColumn = true;
 			}
-			if (field.getAnnotation(Column.class) != null) {
+			Column column = field.getAnnotation(Column.class);
+			if (column != null) {
 				isColumn = true;
+
+				String columnName = column.value();
+				if (!columnName.isEmpty()) {
+					// rename a column name with a value if it is specified by annotation
+					propertyDescriptor.setName(columnName);
+				}
 			}
 			if (field.getAnnotation(CreatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new CreatedEpochTimestampColumnHook(
