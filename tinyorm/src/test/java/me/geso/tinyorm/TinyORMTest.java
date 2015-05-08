@@ -450,6 +450,11 @@ public class TinyORMTest extends TestBase {
 		}
 	}
 
+	@Test
+	public void testGetTableName() {
+		assertEquals("member", this.orm.getTableName(Member.class));
+	}
+
 	@Table("member")
 	@Data
 	@EqualsAndHashCode(callSuper = false)

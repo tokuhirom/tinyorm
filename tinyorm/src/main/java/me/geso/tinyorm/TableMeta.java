@@ -143,14 +143,14 @@ class TableMeta<RowType extends Row<?>> {
 			}
 			if (field.getAnnotation(CreatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new CreatedEpochTimestampColumnHook(
-					field.getName()));
+					propertyDescriptor.getName()));
 				isColumn = true;
 			}
 			if (field.getAnnotation(UpdatedTimestampColumn.class) != null) {
 				beforeInsertTriggers.add(new UpdatedEpochTimestampColumnHook(
-					field.getName()));
+					propertyDescriptor.getName()));
 				beforeUpdateTriggers.add(new UpdatedEpochTimestampColumnHook(
-					field.getName()));
+					propertyDescriptor.getName()));
 				isColumn = true;
 			}
 			if (field.getAnnotation(JsonColumn.class) != null) {
