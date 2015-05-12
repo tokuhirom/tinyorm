@@ -299,13 +299,13 @@ class TableMeta<RowType extends Row<?>> {
 				for (int i=0; i<names.length; ++i) {
 					try {
 						final Field field = rowClass.getDeclaredField(names[i]);
-                        final Column column = field.getAnnotation(Column.class);
-                        if (column != null) {
-                            final String value = column.value();
-                            if (value != null && !value.isEmpty()) {
-                                names[i] = value;
-                            }
-                        }
+						final Column column = field.getAnnotation(Column.class);
+						if (column != null) {
+							final String value = column.value();
+							if (value != null && !value.isEmpty()) {
+								names[i] = value;
+							}
+						}
 					} catch (NoSuchFieldException e) {
 						// nothing.
 						log.info("No such field: {}, {}", rowClass,  e.getMessage());
