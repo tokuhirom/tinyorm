@@ -41,7 +41,6 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
@@ -295,8 +294,26 @@ class TableMeta<RowType extends Row<?>> {
 			ConstructorProperties annotation = constructor
 				.getAnnotation(java.beans.ConstructorProperties.class);
 			if (annotation != null) {
-				return new ConstructorRowBuilder(constructor,
-					annotation.value());
+				final String[] names = annotation.value();
+				// Use @Column(value)'s name.
+				for (int i=0; i<names.length; ++i) {
+					try {
+						final Field field = rowClass.getDeclaredField(names[i]);
+						if (field != null) {
+							final Column column = field.getAnnotation(Column.class);
+							if (column != null) {
+								final String value = column.value();
+								if (value != null && !value.isEmpty()) {
+									names[i] = value;
+								}
+							}
+						}
+					} catch (NoSuchFieldException e) {
+						// nothing.
+						log.info("No such field: {}, {}", rowClass,  e.getMessage());
+					}
+				}
+				return new ConstructorRowBuilder(constructor, names);
 			}
 		}
 		return new SetterRowBuilder();
