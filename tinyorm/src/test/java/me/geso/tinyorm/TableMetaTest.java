@@ -2,9 +2,11 @@ package me.geso.tinyorm;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.*;
 
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.util.List;
 
 import org.junit.Test;
@@ -36,6 +38,19 @@ public class TableMetaTest extends TestBase {
 		assertFalse(tableMeta.hasColumn("unknown"));
 	}
 
+	@Test
+	public void testAlias() throws IllegalAccessException, NoSuchFieldException {
+		TableMeta<?> tableMeta = orm
+				.getTableMeta(Member.class);
+		final Field rowBuilderField = TableMeta.class.getDeclaredField("rowBuilder");
+		rowBuilderField.setAccessible(true);
+		final Object rowBuilder = rowBuilderField.get(tableMeta);
+		final Field parameterNamesField = rowBuilder.getClass().getDeclaredField("parameterNames");
+		parameterNamesField.setAccessible(true);
+		final String[] parameterNames = (String[])parameterNamesField.get(rowBuilder);
+		assertThat(parameterNames, is(new String[] {"id", "name", "e_mail", "createdOn", "updatedOn" }));
+	}
+
 	@Table("member")
 	@Value
 	@EqualsAndHashCode(callSuper = false)
@@ -44,6 +59,8 @@ public class TableMetaTest extends TestBase {
 		private long id;
 		@Column
 		private String name;
+		@Column("e_mail")
+		private String email;
 
 		@CreatedTimestampColumn
 		private long createdOn;
