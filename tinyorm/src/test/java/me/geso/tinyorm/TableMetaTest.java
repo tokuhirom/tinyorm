@@ -22,6 +22,7 @@ import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
+import me.geso.tinyorm.exception.ConstructorIllegalArgumentException;
 
 public class TableMetaTest extends TestBase {
 
@@ -88,9 +89,17 @@ public class TableMetaTest extends TestBase {
 			preparedStatement.executeUpdate();
 		}
 		final TinyORM tinyORM = new TinyORM(connection);
-		final Optional<Member> memberOptional = tinyORM.single(Member.class)
-			.where("id=?", 1)
-			.execute();
+
+		boolean thrown = false;
+		try {
+			final Optional<Member> memberOptional = tinyORM.single(Member.class)
+					.where("id=?", 1)
+					.execute();
+		} catch (ConstructorIllegalArgumentException e) {
+			assertThat(e.getMessage(), containsString("me.geso.tinyorm.TableMetaTest$Member#updatedOn(long) is not nullable."));
+			thrown = true;
+		}
+		assertTrue(thrown);
 	}
 
 	/**
