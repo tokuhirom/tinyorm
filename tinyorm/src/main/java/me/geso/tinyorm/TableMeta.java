@@ -27,8 +27,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import me.geso.tinyorm.deflate.OptionalDeflater;
+import me.geso.tinyorm.inflate.OptionalInflater;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -173,6 +176,10 @@ class TableMeta<RowType extends Row<?>> {
 			if (field.getType().isAssignableFrom(LocalTime.class)) {
 				inflaters.put(propertyDescriptor.getName(), new LocalTimeInflater());
 				deflaters.put(propertyDescriptor.getName(), new LocalTimeDeflater());
+			}
+			if (field.getType().isAssignableFrom(Optional.class)) {
+				inflaters.put(propertyDescriptor.getName(), new OptionalInflater());
+				deflaters.put(propertyDescriptor.getName(), new OptionalDeflater());
 			}
 			if (field.getAnnotation(CsvColumn.class) != null) {
 				// deserialize json
