@@ -74,15 +74,15 @@ class TableMeta<RowType extends Row<?>> {
 	private final Map<String, PropertyDescriptor> propertyDescriptorMap;
 	private final List<BeforeInsertHandler> beforeInsertHandlers;
 	private final List<BeforeUpdateHandler> beforeUpdateHandlers;
-	private final Map<String, Inflater> inflaters;
-	private final Map<String, Deflater> deflaters;
+	private final Map<String, List<Inflater>> inflaters;
+	private final Map<String, List<Deflater>> deflaters;
 	private final RowBuilder rowBuilder;
 
 	private TableMeta(String name, List<PropertyDescriptor> primaryKeyMetas,
 			Map<String, PropertyDescriptor> propertyDescriptorMap,
 			List<BeforeInsertHandler> beforeInsertTriggers,
 			List<BeforeUpdateHandler> beforeUpdateTriggers,
-			Map<String, Inflater> inflaters, Map<String, Deflater> deflaters,
+			Map<String, List<Inflater>> inflaters, Map<String, List<Deflater>> deflaters,
 			RowBuilder rowBuilder) {
 		this.name = name;
 		this.primaryKeys = primaryKeyMetas;
@@ -105,8 +105,8 @@ class TableMeta<RowType extends Row<?>> {
 		List<BeforeUpdateHandler> beforeUpdateTriggers = new ArrayList<>();
 		Map<String, PropertyDescriptor> propertyDescriptorMap = new LinkedHashMap<>();
 		// It should be stable... I want to use LinkedHashMap here.
-		final Map<String, Inflater> inflaters = new LinkedHashMap<>();
-		final Map<String, Deflater> deflaters = new LinkedHashMap<>();
+		final Map<String, List<Inflater>> inflaters = new LinkedHashMap<>();
+		final Map<String, List<Deflater>> deflaters = new LinkedHashMap<>();
 		List<Field> fields = new ArrayList<>();
 		Collections.addAll(fields, rowClass.getDeclaredFields());
 		Class<?> superClass = rowClass.getSuperclass();
@@ -155,6 +155,33 @@ class TableMeta<RowType extends Row<?>> {
 					propertyDescriptor.getName()));
 				isColumn = true;
 			}
+
+			// Initialize inflaters and deflaters if they are null
+			if (inflaters.get(propertyDescriptor.getName()) == null) {
+				inflaters.put(propertyDescriptor.getName(), new ArrayList<>());
+			}
+			if (deflaters.get(propertyDescriptor.getName()) == null) {
+				deflaters.put(propertyDescriptor.getName(), new ArrayList<>());
+			}
+
+			boolean isOptionalColumn = false;
+			boolean isOptionalLocalDate = false;
+			boolean isOptionalLocalTime = false;
+			if (field.getType().isAssignableFrom(Optional.class)) {
+				isOptionalColumn = true;
+				deflaters.get(propertyDescriptor.getName()).add(new OptionalDeflater());
+
+				// Get parameter type
+				ParameterizedType type = (ParameterizedType) field.getGenericType();
+				for (Type t : type.getActualTypeArguments()) {
+					// search target types
+					if (t == LocalDate.class) {
+						isOptionalLocalDate = true;
+					} else if (t == LocalTime.class) {
+						isOptionalLocalTime = true;
+					}
+				}
+			}
 			if (field.getAnnotation(JsonColumn.class) != null) {
 				// deserialize json
 				Type type = field.getGenericType();
@@ -162,24 +189,20 @@ class TableMeta<RowType extends Row<?>> {
 					.constructType(type);
 				JsonInflater inflater = new JsonInflater(
 					rowClass, propertyDescriptor, javaType);
-				inflaters.put(propertyDescriptor.getName(), inflater);
+				inflaters.get(propertyDescriptor.getName()).add(inflater);
 				// serialize json
 				JsonDeflater deflater = new JsonDeflater(
 					rowClass, propertyDescriptor, javaType);
-				deflaters.put(propertyDescriptor.getName(), deflater);
+				deflaters.get(propertyDescriptor.getName()).add(deflater);
 				isColumn = true;
 			}
-			if (field.getType().isAssignableFrom(LocalDate.class)) {
-				inflaters.put(propertyDescriptor.getName(), new LocalDateInflater());
-				deflaters.put(propertyDescriptor.getName(), new LocalDateDeflater());
+			if (field.getType().isAssignableFrom(LocalDate.class) || isOptionalLocalDate) {
+				inflaters.get(propertyDescriptor.getName()).add(new LocalDateInflater());
+				deflaters.get(propertyDescriptor.getName()).add(new LocalDateDeflater());
 			}
-			if (field.getType().isAssignableFrom(LocalTime.class)) {
-				inflaters.put(propertyDescriptor.getName(), new LocalTimeInflater());
-				deflaters.put(propertyDescriptor.getName(), new LocalTimeDeflater());
-			}
-			if (field.getType().isAssignableFrom(Optional.class)) {
-				inflaters.put(propertyDescriptor.getName(), new OptionalInflater());
-				deflaters.put(propertyDescriptor.getName(), new OptionalDeflater());
+			if (field.getType().isAssignableFrom(LocalTime.class) || isOptionalLocalTime) {
+				inflaters.get(propertyDescriptor.getName()).add(new LocalTimeInflater());
+				deflaters.get(propertyDescriptor.getName()).add(new LocalTimeDeflater());
 			}
 			if (field.getAnnotation(CsvColumn.class) != null) {
 				// deserialize json
@@ -210,10 +233,10 @@ class TableMeta<RowType extends Row<?>> {
 						}
 						CsvInflater inflater = new CsvInflater(
 							klass);
-						inflaters.put(propertyDescriptor.getName(), inflater);
+						inflaters.get(propertyDescriptor.getName()).add(inflater);
 						// serialize json
 						CsvDeflater deflater = new CsvDeflater();
-						deflaters.put(propertyDescriptor.getName(), deflater);
+						deflaters.get(propertyDescriptor.getName()).add(deflater);
 						isColumn = true;
 					} else {
 						throw new RuntimeException(
@@ -224,6 +247,11 @@ class TableMeta<RowType extends Row<?>> {
 					throw new RuntimeException(field.getName()
 						+ " field isn't generic type.");
 				}
+			}
+
+			if (isOptionalColumn) {
+				// OptionalInflater must be applied at the last
+				inflaters.get(propertyDescriptor.getName()).add(new OptionalInflater());
 			}
 
 			if (isColumn) {
@@ -246,14 +274,17 @@ class TableMeta<RowType extends Row<?>> {
 				Inflate inflate = method.getAnnotation(Inflate.class);
 				if (inflate != null) {
 					String columnName = inflate.value();
-					if (inflaters.containsKey(columnName)) {
+
+					if (inflaters.containsKey(columnName) && !inflaters.get(columnName).isEmpty()) {
 						throw new RuntimeException(String.format(
 							"Duplicated @Inflate in %s(%s).",
 							rowClass.getName(), columnName));
 					}
 					if (Modifier.isStatic(method.getModifiers())) {
-						inflaters.put(columnName, new MethodInflater(rowClass,
-							method));
+						if (inflaters.get(columnName) == null)  {
+							inflaters.put(columnName, new ArrayList<>());
+						}
+						inflaters.get(columnName).add(new MethodInflater(rowClass, method));
 					} else {
 						throw new RuntimeException(
 							String.format(
@@ -266,14 +297,16 @@ class TableMeta<RowType extends Row<?>> {
 				Deflate deflate = method.getAnnotation(Deflate.class);
 				if (deflate != null) {
 					String columnName = deflate.value();
-					if (deflaters.containsKey(columnName)) {
+					if (deflaters.containsKey(columnName) && !deflaters.get(columnName).isEmpty()) {
 						throw new RuntimeException(String.format(
 							"Duplicated @Deflate in %s(%s).",
 							rowClass.getName(), columnName));
 					}
 					if (Modifier.isStatic(method.getModifiers())) {
-						deflaters.put(columnName, new MethodDeflater(rowClass,
-							method));
+						if (deflaters.get(columnName) == null)  {
+							deflaters.put(columnName, new ArrayList<>());
+						}
+						deflaters.get(columnName).add(new MethodDeflater(rowClass, method));
 					} else {
 						throw new RuntimeException(
 							String.format(
@@ -303,7 +336,7 @@ class TableMeta<RowType extends Row<?>> {
 			if (annotation != null) {
 				final String[] names = annotation.value();
 				// Use @Column(value)'s name.
-				for (int i=0; i<names.length; ++i) {
+				for (int i = 0; i < names.length; ++i) {
 					try {
 						final Field field = rowClass.getDeclaredField(names[i]);
 						final Column column = field.getAnnotation(Column.class);
@@ -470,21 +503,35 @@ class TableMeta<RowType extends Row<?>> {
 	}
 
 	Object invokeInflater(String columnName, Object value) {
-		Inflater inflater = this.inflaters.get(columnName);
-		if (inflater != null) {
-			return inflater.inflate(value);
-		} else {
+		List<Inflater> inflaters = this.inflaters.get(columnName);
+		if (inflaters == null) {
 			return value;
 		}
+
+		Object inflatedValue = value;
+		for (Inflater inflater : inflaters) {
+			if (inflater != null) {
+				inflatedValue = inflater.inflate(inflatedValue);
+			}
+		}
+
+		return inflatedValue;
 	}
 
 	Object invokeDeflater(String columnName, Object value) {
-		Deflater deflater = this.deflaters.get(columnName);
-		if (deflater != null) {
-			return deflater.deflate(value);
-		} else {
+		List<Deflater> deflaters = this.deflaters.get(columnName);
+		if (deflaters == null) {
 			return value;
 		}
+
+		Object deflatedValue = value;
+		for (Deflater deflater : deflaters) {
+			if (deflater != null) {
+				deflatedValue = deflater.deflate(deflatedValue);
+			}
+		}
+
+		return deflatedValue;
 	}
 
 	public String getName() {
