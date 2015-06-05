@@ -29,18 +29,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.tinyorm.annotations.BeforeInsert;
@@ -52,16 +44,28 @@ import me.geso.tinyorm.annotations.Deflate;
 import me.geso.tinyorm.annotations.Inflate;
 import me.geso.tinyorm.annotations.JsonColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
+import me.geso.tinyorm.annotations.SetColumn;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 import me.geso.tinyorm.deflate.LocalDateDeflater;
 import me.geso.tinyorm.deflate.LocalTimeDeflater;
+import me.geso.tinyorm.deflate.SetDeflater;
 import me.geso.tinyorm.inflate.LocalDateInflater;
 import me.geso.tinyorm.inflate.LocalTimeInflater;
+import me.geso.tinyorm.inflate.SetInflater;
 import me.geso.tinyorm.trigger.BeforeInsertHandler;
 import me.geso.tinyorm.trigger.BeforeUpdateHandler;
 import me.geso.tinyorm.trigger.Deflater;
 import me.geso.tinyorm.trigger.Inflater;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 
 @Slf4j
 class TableMeta<RowType extends Row<?>> {
@@ -174,8 +178,14 @@ class TableMeta<RowType extends Row<?>> {
 				inflaters.put(propertyDescriptor.getName(), new LocalTimeInflater());
 				deflaters.put(propertyDescriptor.getName(), new LocalTimeDeflater());
 			}
+			if (field.getAnnotation(SetColumn.class) != null) {
+				// MySQL's set type
+				inflaters.put(propertyDescriptor.getName(), new SetInflater());
+				deflaters.put(propertyDescriptor.getName(), new SetDeflater());
+				isColumn = true;
+			}
 			if (field.getAnnotation(CsvColumn.class) != null) {
-				// deserialize json
+				// deserialize csv
 				if (!Collection.class.isAssignableFrom(field.getType())) {
 					throw new RuntimeException(
 						"You can't add @CsvColumn annotation for non-Collection field.");
@@ -296,7 +306,7 @@ class TableMeta<RowType extends Row<?>> {
 			if (annotation != null) {
 				final String[] names = annotation.value();
 				// Use @Column(value)'s name.
-				for (int i=0; i<names.length; ++i) {
+				for (int i = 0; i < names.length; ++i) {
 					try {
 						final Field field = rowClass.getDeclaredField(names[i]);
 						final Column column = field.getAnnotation(Column.class);

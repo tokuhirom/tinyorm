@@ -1,7 +1,5 @@
 package me.geso.tinyorm.inflate;
 
-import java.sql.Time;
-
 import me.geso.tinyorm.trigger.Inflater;
 
 public class LocalTimeInflater implements Inflater {
