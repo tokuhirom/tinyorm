@@ -50,6 +50,7 @@ import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 import me.geso.tinyorm.deflate.LocalDateDeflater;
 import me.geso.tinyorm.deflate.LocalTimeDeflater;
 import me.geso.tinyorm.deflate.SetDeflater;
+import me.geso.tinyorm.exception.ConstructorIllegalArgumentException;
 import me.geso.tinyorm.inflate.LocalDateInflater;
 import me.geso.tinyorm.inflate.LocalTimeInflater;
 import me.geso.tinyorm.inflate.SetInflater;
@@ -318,8 +319,15 @@ class TableMeta<RowType extends Row<?>> {
 						}
 					} catch (NoSuchFieldException e) {
 						// nothing.
-						log.info("No such field: {}, {}", rowClass,  e.getMessage());
+						log.info("No such field: {}, {}", rowClass, e.getMessage());
 					}
+				}
+				final Class<?>[] parameterTypes = constructor.getParameterTypes();
+				if (parameterTypes.length == 0) {
+					continue;
+				}
+				if (parameterTypes[0].isAssignableFrom(rowClass.getEnclosingClass())) {
+					throw new IllegalArgumentException("Row class must be non-static class: " + rowClass.getName());
 				}
 				return new ConstructorRowBuilder(constructor, names);
 			}
@@ -824,8 +832,10 @@ class TableMeta<RowType extends Row<?>> {
 				}
 				row.setOrm(orm);
 				return row;
+			} catch (IllegalArgumentException e) {
+				throw new ConstructorIllegalArgumentException(e, klass, constructor, parameterNames, initargs);
 			} catch (InstantiationException | IllegalAccessException
-					| IllegalArgumentException | InvocationTargetException e) {
+					| InvocationTargetException e) {
 				log.error(
 					"{}: {}, {}, extraColumns:{}, parameterPositionFor:{}, {}",
 					e.getClass(), klass,

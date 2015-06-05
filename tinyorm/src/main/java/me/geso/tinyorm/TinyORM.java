@@ -5,6 +5,7 @@
  */
 package me.geso.tinyorm;
 
+import java.beans.IntrospectionException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.Connection;
@@ -366,7 +367,7 @@ public class TinyORM implements Closeable {
 			log.info("Loading {}", klass);
 			try {
 				return TableMeta.build(klass);
-			} catch (Exception e) {
+			} catch (IntrospectionException e) {
 				throw new RuntimeException(e);
 			}
 		});
