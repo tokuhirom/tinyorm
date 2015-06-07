@@ -23,11 +23,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import me.geso.tinyorm.deflate.OptionalDeflater;
@@ -165,8 +167,7 @@ class TableMeta<RowType extends Row<?>> {
 			}
 
 			boolean isOptionalColumn = false;
-			boolean isOptionalLocalDate = false;
-			boolean isOptionalLocalTime = false;
+			Set<Class<?>> actualTypeArgumentsSet = new HashSet<>();
 			if (field.getType().isAssignableFrom(Optional.class)) {
 				isOptionalColumn = true;
 				deflaters.get(propertyDescriptor.getName()).add(new OptionalDeflater());
@@ -174,12 +175,7 @@ class TableMeta<RowType extends Row<?>> {
 				// Get parameter type
 				ParameterizedType type = (ParameterizedType) field.getGenericType();
 				for (Type t : type.getActualTypeArguments()) {
-					// search target types
-					if (t == LocalDate.class) {
-						isOptionalLocalDate = true;
-					} else if (t == LocalTime.class) {
-						isOptionalLocalTime = true;
-					}
+					actualTypeArgumentsSet.add((Class<?>) t);
 				}
 			}
 			if (field.getAnnotation(JsonColumn.class) != null) {
@@ -196,11 +192,13 @@ class TableMeta<RowType extends Row<?>> {
 				deflaters.get(propertyDescriptor.getName()).add(deflater);
 				isColumn = true;
 			}
-			if (field.getType().isAssignableFrom(LocalDate.class) || isOptionalLocalDate) {
+			if (field.getType().isAssignableFrom(LocalDate.class) ||
+					(isOptionalColumn && actualTypeArgumentsSet.contains(LocalDate.class))) {
 				inflaters.get(propertyDescriptor.getName()).add(new LocalDateInflater());
 				deflaters.get(propertyDescriptor.getName()).add(new LocalDateDeflater());
 			}
-			if (field.getType().isAssignableFrom(LocalTime.class) || isOptionalLocalTime) {
+			if (field.getType().isAssignableFrom(LocalTime.class) ||
+					(isOptionalColumn && actualTypeArgumentsSet.contains(LocalTime.class))) {
 				inflaters.get(propertyDescriptor.getName()).add(new LocalTimeInflater());
 				deflaters.get(propertyDescriptor.getName()).add(new LocalTimeDeflater());
 			}
@@ -222,10 +220,10 @@ class TableMeta<RowType extends Row<?>> {
 					Class<?> klass;
 					if (actualTypeArgument instanceof Class) {
 						if (Integer.class
-							.isAssignableFrom((Class<?>)actualTypeArgument)) {
+							.isAssignableFrom((Class<?>) actualTypeArgument)) {
 							klass = Integer.class;
 						} else if (String.class
-							.isAssignableFrom((Class<?>)actualTypeArgument)) {
+							.isAssignableFrom((Class<?>) actualTypeArgument)) {
 							klass = String.class;
 						} else {
 							throw new RuntimeException(
