@@ -119,6 +119,20 @@ TinyORM fills this field when updating a row. This column must be `long`. TinyOR
 
 You can store the data in CSV format.
 
+### @JsonColumn
+
+    @JsonColumn
+    private MyComplexType myComplexThing;
+
+You can store the data in JSON format.
+
+### @SetColumn
+
+    @SetColumn
+    private Set<String> categories;
+
+TinyORM conerts MySQL's SET value as java.util.Set.
+
 ## HOOKS
 
 You can override `TinyORM#BEFORE_INSERT` and `TinyORM#BEFORE_UPDATE` methods.
