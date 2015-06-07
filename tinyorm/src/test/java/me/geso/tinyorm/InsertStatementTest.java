@@ -21,6 +21,7 @@ public class InsertStatementTest extends TestBase {
 		createTable("x",
 			"a VARCHAR(255) NOT NULL",
 			"n int default 0",
+			"m int default 0",
 			"PRIMARY KEY (a)");
 	}
 
@@ -29,26 +30,32 @@ public class InsertStatementTest extends TestBase {
 		{
 			assertThat(orm.insert(X.class).value("a", "hoge")
 				.onDuplicateKeyUpdate("n=n+1")
+				.onDuplicateKeyUpdate("m=m+2")
 				.execute(), is(1));
 			Optional<X> row = orm.single(X.class).where("a=?", "hoge")
 				.execute();
 			assertThat(row.get().getN(), is(0));
+			assertThat(row.get().getM(), is(0));
 		}
 		{
 			assertThat(orm.insert(X.class).value("a", "hoge")
 				.onDuplicateKeyUpdate("n=n+1")
+				.onDuplicateKeyUpdate("m=m+2")
 				.execute(), is(2));
 			Optional<X> row = orm.single(X.class).where("a=?", "hoge")
 				.execute();
 			assertThat(row.get().getN(), is(1));
+			assertThat(row.get().getM(), is(2));
 		}
 		{
 			assertThat(orm.insert(X.class).value("a", "hoge")
 				.onDuplicateKeyUpdate("n=n+1")
+				.onDuplicateKeyUpdate("m=m+?", 8)
 				.execute(), is(2));
 			Optional<X> row = orm.single(X.class).where("a=?", "hoge")
 				.execute();
 			assertThat(row.get().getN(), is(2));
+			assertThat(row.get().getM(), is(10));
 		}
 	}
 
@@ -60,5 +67,7 @@ public class InsertStatementTest extends TestBase {
 		private String a;
 		@Column
 		private int n;
+		@Column
+		private int m;
 	}
 }

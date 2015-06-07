@@ -42,6 +42,21 @@ Create new database object.
       .value("name", "John")
       .execute();
 
+This statement generate following query:
+
+    INSERT INTO member (name) VALUES ('John')
+
+If you want to use `ON DUPLICATE KEY UPDATE`, you can call `InsertStatement#onDuplicateKeyUpdate` method.
+
+For example:
+
+			orm.insert(Member.class)
+        .value("email", email)
+        .value("name", name)
+				.onDuplicateKeyUpdate("name=?", name)
+				.execute();
+    
+
 ### Insert row with form class.
 
     @Data // lombok
