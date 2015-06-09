@@ -152,6 +152,19 @@ You can use java.time.LocalDate for the column field.
 
 TinyORM automatically convert java.sql.Date to java.time.LocalDate.
 
+## HOW DO I WRITE MY OWN CONSTRUCTOR?
+
+You can create your own constructor, and create it from the constructor, you need to add `java.beans.ConstructorProperties` annotation.
+
+    public class RowExample {
+        @java.beans.ConstructorProperties({"name", "age", "score", "tags"})
+        public RowExample(String name, long age, long score, String tags) {
+           // ...
+        }
+    }
+
+Normally, you should use lombok.Value to create constructor.
+
 ## LICENSE
 
   The MIT License (MIT)
