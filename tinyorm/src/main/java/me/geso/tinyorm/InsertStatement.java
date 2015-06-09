@@ -12,7 +12,8 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class InsertStatement<T extends Row<?>> {
 	private final Class<T> klass;
 	private final TinyORM orm;
 	private final TableMeta<T> tableMeta;
-	private String onDuplicateKeyUpdateQuery;
+	private List<String> onDuplicateKeyUpdateQuery;
 	private List<Object> onDuplicateKeyUpdateValues;
 
 	InsertStatement(TinyORM orm, Class<T> klass, TableMeta<T> tableMeta) {
@@ -114,8 +115,15 @@ public class InsertStatement<T extends Row<?>> {
 	 */
 	public InsertStatement<T> onDuplicateKeyUpdate(String query,
 			Object... params) {
-		this.onDuplicateKeyUpdateQuery = query;
-		this.onDuplicateKeyUpdateValues = Arrays.asList(params);
+		if (onDuplicateKeyUpdateQuery == null) {
+			onDuplicateKeyUpdateQuery = new ArrayList<>();
+		}
+		onDuplicateKeyUpdateQuery.add(query);
+
+		if (onDuplicateKeyUpdateValues == null) {
+			onDuplicateKeyUpdateValues = new ArrayList<>();
+		}
+		Collections.addAll(onDuplicateKeyUpdateValues, params);
 		return this;
 	}
 
@@ -137,9 +145,11 @@ public class InsertStatement<T extends Row<?>> {
 			.addParameters(values.values())
 			.appendQuery(")");
 		if (onDuplicateKeyUpdateQuery != null) {
-			builder.appendQuery(" ON DUPLICATE KEY UPDATE ")
-				.appendQuery(onDuplicateKeyUpdateQuery)
-				.addParameters(onDuplicateKeyUpdateValues);
+			builder.appendQuery(" ON DUPLICATE KEY UPDATE ");
+			builder.appendQuery(
+					onDuplicateKeyUpdateQuery.stream()
+						.collect(Collectors.joining(",")));
+			builder.addParameters(onDuplicateKeyUpdateValues);
 		}
 		return builder.build();
 	}
