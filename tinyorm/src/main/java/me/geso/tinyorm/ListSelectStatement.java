@@ -1,8 +1,15 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
-import java.util.ArrayList;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
@@ -25,24 +32,52 @@ public class ListSelectStatement<T extends Row<?>> extends
 		this.connection = connection;
 	}
 
-	public List<T> execute() {
+	/**
+	 * Create stream from select statement.
+	 *
+	 * @return stream, that generates row objects.
+	 */
+	public Stream<T> executeStream() {
 		final Query query = this.buildQuery();
 		try {
-			return JDBCUtils.executeQuery(
-				connection,
-				query,
-				(rs) -> {
-					List<T> rows = new ArrayList<>();
-					while (rs.next()) {
-						T row = tableMeta.createRowFromResultSet(klass, rs,
-							this.orm);
-						rows.add(row);
+			final PreparedStatement preparedStatement = connection.prepareStatement(query.getSQL());
+			JDBCUtils.fillPreparedStatementParams(preparedStatement, query.getParameters());
+			ResultSet resultSet = preparedStatement.executeQuery();
+			ResultSetIterator<T> iterator = new ResultSetIterator<>(
+					preparedStatement,
+					resultSet,
+					query.getSQL(),
+					query.getParameters(),
+					(rs) -> tableMeta.createRowFromResultSet(klass, rs,
+							this.orm)
+			);
+
+			Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(
+					iterator, Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.SIZED);
+			final Stream<T> stream = StreamSupport.stream(spliterator, false);
+			stream.onClose(() -> {
+				try {
+					preparedStatement.close();
+				} catch (SQLException e) {
+					throw new RuntimeException(e);
+				}
+				if (resultSet != null) {
+					try {
+						resultSet.close();
+					} catch (SQLException e) {
+						throw new RuntimeException(e);
 					}
-					return rows;
-				});
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+				}
+			});
+			return stream;
+		} catch (SQLException e) {
+			throw new RuntimeException(new RichSQLException(e, query.getSQL(), query.getParameters()));
 		}
+	}
+
+	public List<T> execute() {
+		return this.executeStream()
+			.collect(Collectors.toList());
 	}
 
 	public Paginated<T> executeWithPagination(long entriesPerPage) {
