@@ -34,6 +34,7 @@ public class ListSelectStatement<T extends Row<?>> extends
 
 	/**
 	 * Create stream from select statement.
+	 * You must close the stream after use. I mean you should use try-with-resources for return value from this method.
 	 *
 	 * @return stream, that generates row objects.
 	 */
@@ -44,16 +45,16 @@ public class ListSelectStatement<T extends Row<?>> extends
 			JDBCUtils.fillPreparedStatementParams(preparedStatement, query.getParameters());
 			ResultSet resultSet = preparedStatement.executeQuery();
 			ResultSetIterator<T> iterator = new ResultSetIterator<>(
-					preparedStatement,
-					resultSet,
-					query.getSQL(),
-					query.getParameters(),
-					(rs) -> tableMeta.createRowFromResultSet(klass, rs,
-							this.orm)
-			);
+				preparedStatement,
+				resultSet,
+				query.getSQL(),
+				query.getParameters(),
+				(rs) -> tableMeta.createRowFromResultSet(klass, rs,
+					this.orm)
+					);
 
 			Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(
-					iterator, Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.SIZED);
+				iterator, Spliterator.NONNULL | Spliterator.ORDERED | Spliterator.SIZED);
 			final Stream<T> stream = StreamSupport.stream(spliterator, false);
 			stream.onClose(() -> {
 				try {
