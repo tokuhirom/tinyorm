@@ -49,7 +49,7 @@ public class TinyORM implements Closeable {
 
 	public PreparedStatement prepareStatement(String sql) {
 		try {
-			final PreparedStatement preparedStatement = connection.prepareStatement(sql);
+			final PreparedStatement preparedStatement = getConnection().prepareStatement(sql);
 			if (queryTimeout != null) {
 				preparedStatement.setQueryTimeout(queryTimeout);
 			}
@@ -314,7 +314,6 @@ public class TinyORM implements Closeable {
 	}
 
 	public <T extends Row<?>> void delete(final T row) {
-		final Connection connection = this.getConnection();
 		@SuppressWarnings("unchecked")
 		final TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		final String tableName = tableMeta.getName();
@@ -346,7 +345,6 @@ public class TinyORM implements Closeable {
 
 	@SuppressWarnings("unchecked")
 	<T extends Row<?>> Optional<T> refetch(final T row) {
-		final Connection connection = this.getConnection();
 		final TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		final String identifierQuoteString = this.getIdentifierQuoteString();
 		final Query where = tableMeta.createWhereClauseFromRow(row,
