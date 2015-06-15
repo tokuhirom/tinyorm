@@ -17,7 +17,6 @@ public class ListSelectStatement<T extends Row<?>> extends
 	private final TableMeta<T> tableMeta;
 	private final TinyORM orm;
 	private final Class<T> klass;
-	private final Connection connection;
 
 	ListSelectStatement(Connection connection,
 			Class<T> klass, TableMeta<T> tableMeta, TinyORM orm) {
@@ -25,7 +24,6 @@ public class ListSelectStatement<T extends Row<?>> extends
 		this.tableMeta = tableMeta;
 		this.orm = orm;
 		this.klass = klass;
-		this.connection = connection;
 	}
 
 	public List<T> execute() {
@@ -33,7 +31,7 @@ public class ListSelectStatement<T extends Row<?>> extends
 
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = connection.prepareStatement(sql)) {
+		try (final PreparedStatement ps = orm.prepareStatement(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<T> rows = new ArrayList<>();

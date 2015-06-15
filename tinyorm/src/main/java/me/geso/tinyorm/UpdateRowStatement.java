@@ -5,7 +5,6 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -32,17 +31,16 @@ public class UpdateRowStatement<T extends Row<?>> {
 
 	private final Object row;
 	private final Map<String, Object> set = new TreeMap<>();
-	private final Connection connection;
 	private final TableMeta<T> tableMeta;
 	private final String identifierQuoteString;
+	private final TinyORM orm;
 	private boolean executed = false;
 
-	UpdateRowStatement(T row, Connection connection, TableMeta<T> tableMeta,
-			final String identifierQuoteString) {
+	UpdateRowStatement(T row, TinyORM orm) {
 		this.row = row;
-		this.connection = connection;
-		this.tableMeta = tableMeta;
-		this.identifierQuoteString = identifierQuoteString;
+		this.orm = orm;
+		this.tableMeta = orm.getTableMeta((Class<T>)row.getClass());
+		this.identifierQuoteString = orm.getIdentifierQuoteString();
 	}
 
 	public UpdateRowStatement<T> set(String columnName, Object value) {
@@ -142,7 +140,7 @@ public class UpdateRowStatement<T extends Row<?>> {
 
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = connection.prepareStatement(sql)) {
+		try (final PreparedStatement ps = orm.prepareStatement(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			ps.executeUpdate();
 		} catch (final SQLException ex) {

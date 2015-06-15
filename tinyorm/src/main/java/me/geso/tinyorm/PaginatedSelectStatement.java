@@ -16,7 +16,6 @@ public class PaginatedSelectStatement<T extends Row<?>> extends
 	private final TinyORM orm;
 	private final long entriesPerPage;
 	private final Class<T> klass;
-	private final Connection connection;
 
 	PaginatedSelectStatement(Connection connection,
 			Class<T> klass, TableMeta<T> tableMeta, TinyORM orm,
@@ -25,7 +24,6 @@ public class PaginatedSelectStatement<T extends Row<?>> extends
 		this.klass = klass;
 		this.orm = orm;
 		this.entriesPerPage = entriesPerPage;
-		this.connection = connection;
 	}
 
 	public Paginated<T> execute() {
@@ -33,7 +31,7 @@ public class PaginatedSelectStatement<T extends Row<?>> extends
 
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = connection.prepareStatement(sql)) {
+		try (final PreparedStatement ps = orm.prepareStatement(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<T> rows = orm.mapRowListFromResultSet(klass, rs);

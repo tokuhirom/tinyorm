@@ -1,9 +1,7 @@
 package me.geso.tinyorm;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,6 +21,7 @@ import org.junit.Test;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 import me.geso.tinyorm.annotations.Column;
 import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
@@ -499,6 +498,23 @@ public class TinyORMTest extends TestBase {
 		public MemberUpdateForm(String name) {
 			this.name = name;
 		}
+	}
+
+	@Test(expected = com.mysql.jdbc.exceptions.MySQLTimeoutException.class)
+	public void testQueryForLongTimeout() throws Throwable {
+		orm.setQueryTimeout(1);
+		try {
+			final OptionalLong optionalLong = orm.queryForLong("SELECT SLEEP(3)");
+		} catch (UncheckedRichSQLException e) {
+			throw e.getCause().getCause();
+		}
+	}
+
+	@Test
+	public void testQueryForLongTimeoutPassed() throws Throwable {
+		orm.setQueryTimeout(1);
+		final OptionalLong optionalLong = orm.queryForLong("SELECT 3");
+		assertEquals(3, optionalLong.getAsLong());
 	}
 
 }

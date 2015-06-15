@@ -1,6 +1,5 @@
 package me.geso.tinyorm;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,21 +17,16 @@ import me.geso.jdbcutils.UncheckedRichSQLException;
  * This class represents `SELECT COUNT(*)` statement.
  */
 public class SelectCountStatement<T extends Row<?>> {
-	private final Connection connection;
 	private final String identifierQuoteString;
 	private final String tableName;
 	private final List<String> whereQuery = new ArrayList<>();
 	private final List<Object> whereParams = new ArrayList<>();
+	private final TinyORM orm;
 
-	SelectCountStatement(TableMeta<T> tableMeta, Connection connection) {
+	SelectCountStatement(TableMeta<T> tableMeta, TinyORM orm) {
 		this.tableName = tableMeta.getName();
-		this.connection = connection;
-		try {
-			this.identifierQuoteString = connection.getMetaData()
-				.getIdentifierQuoteString();
-		} catch (SQLException e) {
-			throw new RuntimeException(e);
-		}
+		this.orm = orm;
+		this.identifierQuoteString = orm.getIdentifierQuoteString();
 	}
 
 	public SelectCountStatement<T> where(String query, Object... params) {
@@ -45,7 +39,7 @@ public class SelectCountStatement<T extends Row<?>> {
 		final Query query = this.buildQuery();
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.orm.prepareStatement(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
