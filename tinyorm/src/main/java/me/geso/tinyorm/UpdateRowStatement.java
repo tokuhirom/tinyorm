@@ -5,7 +5,9 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
-import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -16,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
-import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 
 /**
  * UPDATE statement for one row.
@@ -29,17 +31,16 @@ public class UpdateRowStatement<T extends Row<?>> {
 
 	private final Object row;
 	private final Map<String, Object> set = new TreeMap<>();
-	private final Connection connection;
 	private final TableMeta<T> tableMeta;
 	private final String identifierQuoteString;
+	private final TinyORM orm;
 	private boolean executed = false;
 
-	UpdateRowStatement(T row, Connection connection, TableMeta<T> tableMeta,
-			final String identifierQuoteString) {
+	UpdateRowStatement(T row, TinyORM orm) {
 		this.row = row;
-		this.connection = connection;
-		this.tableMeta = tableMeta;
-		this.identifierQuoteString = identifierQuoteString;
+		this.orm = orm;
+		this.tableMeta = orm.getTableMeta((Class<T>)row.getClass());
+		this.identifierQuoteString = orm.getIdentifierQuoteString();
 	}
 
 	public UpdateRowStatement<T> set(String columnName, Object value) {
@@ -115,7 +116,7 @@ public class UpdateRowStatement<T extends Row<?>> {
 		String tableName = tableMeta.getName();
 
 		final Query where = tableMeta.createWhereClauseFromRow(row,
-			this.identifierQuoteString);
+				this.identifierQuoteString);
 		if (where.getSQL().isEmpty()) {
 			throw new RuntimeException("Empty where clause");
 		}
@@ -137,10 +138,13 @@ public class UpdateRowStatement<T extends Row<?>> {
 
 		this.executed = true;
 
-		try {
-			JDBCUtils.executeUpdate(connection, query);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = orm.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			ps.executeUpdate();
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
