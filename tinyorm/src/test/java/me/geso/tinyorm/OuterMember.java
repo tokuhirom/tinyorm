@@ -11,7 +11,7 @@ import me.geso.tinyorm.annotations.Table;
 @Table("member")
 @Value
 @EqualsAndHashCode(callSuper = false)
-private class OuterMember extends Row<OuterMember> {
+public class OuterMember extends Row<OuterMember> {
 	@PrimaryKey
 	private long id;
 }
