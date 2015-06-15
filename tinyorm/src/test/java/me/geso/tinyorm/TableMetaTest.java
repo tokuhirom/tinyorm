@@ -121,10 +121,13 @@ public class TableMetaTest extends TestBase {
 			tinyORM.getTableName(NonStaticMember.class);
 		} catch (IllegalArgumentException e) {
 			assertThat(e.getMessage(),
-				containsString("Row class must be non-static class"));
+				containsString("Row class must not be non-static inner class"));
 			thrown = true;
 		}
 		Assert.assertTrue(thrown);
+
+		// Nomal Declaring Row Class.
+		tinyORM.getTableName(OuterMember.class);
 	}
 
 }
