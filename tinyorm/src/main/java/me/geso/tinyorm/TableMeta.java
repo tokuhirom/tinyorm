@@ -326,8 +326,9 @@ class TableMeta<RowType extends Row<?>> {
 				if (parameterTypes.length == 0) {
 					continue;
 				}
-				if (parameterTypes[0].isAssignableFrom(rowClass.getEnclosingClass())) {
-					throw new IllegalArgumentException("Row class must be non-static class: " + rowClass.getName());
+				if (rowClass.getEnclosingClass() != null
+					&& parameterTypes[0].isAssignableFrom(rowClass.getEnclosingClass())) {
+					throw new IllegalArgumentException("Row class must not be non-static inner class: " + rowClass.getName());
 				}
 				return new ConstructorRowBuilder(constructor, names);
 			}
