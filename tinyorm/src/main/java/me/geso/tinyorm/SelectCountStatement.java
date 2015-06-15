@@ -1,6 +1,8 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,7 +12,7 @@ import java.util.stream.Collectors;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
-import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 
 /**
  * This class represents `SELECT COUNT(*)` statement.
@@ -40,21 +42,20 @@ public class SelectCountStatement<T extends Row<?>> {
 	}
 
 	public long execute() {
-		try {
-			final Query query = this.buildQuery();
-			return JDBCUtils.executeQuery(
-				this.connection,
-				query,
-				(rs) -> {
-					if (rs.next()) {
-						return rs.getLong(1);
-					} else {
-						return 0L;
-					}
+		final Query query = this.buildQuery();
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return rs.getLong(1);
+				} else {
+					return 0L;
 				}
-				);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 

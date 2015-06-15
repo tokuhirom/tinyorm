@@ -6,6 +6,9 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -16,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
-import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 
 /**
  * UPDATE statement for one row.
@@ -115,7 +118,7 @@ public class UpdateRowStatement<T extends Row<?>> {
 		String tableName = tableMeta.getName();
 
 		final Query where = tableMeta.createWhereClauseFromRow(row,
-			this.identifierQuoteString);
+				this.identifierQuoteString);
 		if (where.getSQL().isEmpty()) {
 			throw new RuntimeException("Empty where clause");
 		}
@@ -137,10 +140,13 @@ public class UpdateRowStatement<T extends Row<?>> {
 
 		this.executed = true;
 
-		try {
-			JDBCUtils.executeUpdate(connection, query);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			ps.executeUpdate();
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 

@@ -9,6 +9,7 @@ import java.beans.IntrospectionException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
 import me.geso.jdbcutils.ResultSetCallback;
-import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -68,23 +69,20 @@ public class TinyORM implements Closeable {
 			List<Object> params) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
 
-		try {
-			return JDBCUtils.executeQuery(
-				this.connection,
-				sql,
-				params,
-				(rs) -> {
-					if (rs.next()) {
-						final T row = tableMeta.createRowFromResultSet(
-							klass,
-							rs, this);
-						return Optional.of(row);
-					} else {
-						return Optional.<T>empty();
-					}
-				});
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					final T row = tableMeta.createRowFromResultSet(
+						klass,
+						rs, this);
+					return Optional.of(row);
+				} else {
+					return Optional.<T>empty();
+				}
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -144,11 +142,13 @@ public class TinyORM implements Closeable {
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(
 			final Class<T> klass, final String sql, final List<Object> params) {
-		try {
-			return JDBCUtils.executeQuery(this.connection, sql, params,
-				(rs) -> this.mapRowListFromResultSet(klass, rs));
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				return this.mapRowListFromResultSet(klass, rs);
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -171,14 +171,14 @@ public class TinyORM implements Closeable {
 			final long entriesPerPage) {
 		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
 		Connection connection = this.getConnection();
-		try {
-			return JDBCUtils.executeQuery(connection, limitedSql, params,
-				(rs) -> {
-					List<T> rows = this.mapRowListFromResultSet(klass, rs);
-					return new Paginated<>(rows, entriesPerPage);
-				});
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		try (final PreparedStatement ps = connection.prepareStatement(limitedSql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				List<T> rows = this.mapRowListFromResultSet(klass, rs);
+				return new Paginated<>(rows, entriesPerPage);
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, limitedSql, params);
 		}
 	}
 
@@ -195,10 +195,11 @@ public class TinyORM implements Closeable {
 	 * 
 	 */
 	public int updateBySQL(final String sql, final List<Object> params) {
-		try {
-			return JDBCUtils.executeUpdate(this.connection, sql, params);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			return ps.executeUpdate();
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -207,10 +208,12 @@ public class TinyORM implements Closeable {
 	 * 
 	 */
 	public int updateBySQL(String sql) {
-		try {
-			return JDBCUtils.executeUpdate(this.connection, sql);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final List<Object> params = Collections.emptyList();
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			return ps.executeUpdate();
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -219,10 +222,13 @@ public class TinyORM implements Closeable {
 	 * 
 	 */
 	public int updateBySQL(Query query) {
-		try {
-			return JDBCUtils.executeUpdate(this.connection, query);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			return ps.executeUpdate();
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -244,18 +250,18 @@ public class TinyORM implements Closeable {
 	 */
 	public OptionalLong queryForLong(final String sql,
 			@NonNull final List<Object> params) {
-		try {
-			return JDBCUtils.executeQuery(this.connection, sql, params,
-				(rs) -> {
-					if (rs.next()) {
-						final long l = rs.getLong(1);
-						return OptionalLong.of(l);
-					} else {
-						return OptionalLong.empty();
-					}
-				});
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					final long l = rs.getLong(1);
+					return OptionalLong.of(l);
+				} else {
+					return OptionalLong.empty();
+				}
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -275,18 +281,18 @@ public class TinyORM implements Closeable {
 	 */
 	public Optional<String> queryForString(final String sql,
 			@NonNull final List<Object> params) {
-		try {
-			return JDBCUtils.executeQuery(this.connection, sql, params,
-				(rs) -> {
-					if (rs.next()) {
-						final String s = rs.getString(1);
-						return Optional.of(s);
-					} else {
-						return Optional.<String>empty();
-					}
-				});
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					final String s = rs.getString(1);
+					return Optional.of(s);
+				} else {
+					return Optional.<String>empty();
+				}
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -315,13 +321,18 @@ public class TinyORM implements Closeable {
 			.append(where)
 			.build();
 
-		try {
-			final int updated = JDBCUtils.executeUpdate(connection, query);
-			if (updated != 1) {
-				throw new RuntimeException("Cannot delete row: " + query);
-			}
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		final int result;
+		try (final PreparedStatement ps = connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			result = ps.executeUpdate();
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
+		}
+		final int updated = result;
+		if (updated != 1) {
+			throw new RuntimeException("Cannot delete row: " + query);
 		}
 	}
 
@@ -340,24 +351,23 @@ public class TinyORM implements Closeable {
 			.append(where)
 			.build();
 
-		try {
-			return JDBCUtils
-				.executeQuery(
-					connection,
-					query,
-					(rs) -> {
-						if (rs.next()) {
-							final T refetched = tableMeta
-								.createRowFromResultSet(
-									(Class<T>)row.getClass(),
-									rs, this);
-							return Optional.of(refetched);
-						} else {
-							return Optional.<T>empty();
-						}
-					});
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					final T refetched = tableMeta
+						.createRowFromResultSet(
+								(Class<T>)row.getClass(),
+								rs, this);
+					return Optional.of(refetched);
+				} else {
+					return Optional.<T>empty();
+				}
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -411,10 +421,15 @@ public class TinyORM implements Closeable {
 	 */
 	public <T> T executeQuery(final Query query,
 			final ResultSetCallback<T> callback) {
-		try {
-			return JDBCUtils.executeQuery(this.connection, query, callback);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				return callback.call(rs);
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -428,11 +443,13 @@ public class TinyORM implements Closeable {
 	 */
 	public <T> T executeQuery(final String sql, final List<Object> params,
 			final ResultSetCallback<T> callback) {
-		try {
-			return JDBCUtils.executeQuery(this.connection, sql, params,
-				callback);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				return callback.call(rs);
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -442,11 +459,13 @@ public class TinyORM implements Closeable {
 	 * @param sql SQL
 	 */
 	public void executeQuery(final String sql) {
-		try {
-			JDBCUtils.executeQuery(this.connection, sql,
-				Collections.emptyList());
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final List<Object> params = Collections.emptyList();
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			final ResultSet resultSet = ps.executeQuery();
+			resultSet.close();
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -457,10 +476,12 @@ public class TinyORM implements Closeable {
 	 * @param params Parameters
 	 */
 	public void executeQuery(final String sql, final List<Object> params) {
-		try {
-			JDBCUtils.executeQuery(this.connection, sql, params);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			final ResultSet rs = ps.executeQuery();
+			rs.close();
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
@@ -473,12 +494,14 @@ public class TinyORM implements Closeable {
 	 */
 	public <T> T executeQuery(final String sql,
 			final ResultSetCallback<T> callback) {
-		try {
-			return JDBCUtils.executeQuery(this.connection, sql,
-				Collections.emptyList(),
-				callback);
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		final List<Object> params = Collections.emptyList();
+		try (final PreparedStatement ps = this.connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				return callback.call(rs);
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 

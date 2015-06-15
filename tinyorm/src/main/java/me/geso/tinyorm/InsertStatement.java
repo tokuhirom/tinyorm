@@ -12,6 +12,8 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -23,7 +25,7 @@ import java.util.stream.Collectors;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
-import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 
 /**
  *
@@ -163,16 +165,18 @@ public class InsertStatement<T extends Row<?>> {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
 		final Query query = this.buildQuery();
 
-		try {
-			final int inserted = JDBCUtils
-				.executeUpdate(orm.getConnection(), query);
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = orm.getConnection().prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			final int inserted = ps.executeUpdate();
 			if (inserted != 1 && this.onDuplicateKeyUpdateQuery == null) {
 				throw new RuntimeException("Cannot insert to database:"
-					+ query);
+						+ query);
 			}
 			return inserted;
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 

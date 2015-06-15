@@ -1,12 +1,15 @@
 package me.geso.tinyorm;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
-import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 
 public class ListSelectStatement<T extends Row<?>> extends
 		AbstractSelectStatement<T, ListSelectStatement<T>> {
@@ -27,21 +30,22 @@ public class ListSelectStatement<T extends Row<?>> extends
 
 	public List<T> execute() {
 		final Query query = this.buildQuery();
-		try {
-			return JDBCUtils.executeQuery(
-				connection,
-				query,
-				(rs) -> {
-					List<T> rows = new ArrayList<>();
-					while (rs.next()) {
-						T row = tableMeta.createRowFromResultSet(klass, rs,
+
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = connection.prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			try (final ResultSet rs = ps.executeQuery()) {
+				List<T> rows = new ArrayList<>();
+				while (rs.next()) {
+					T row = tableMeta.createRowFromResultSet(klass, rs,
 							this.orm);
-						rows.add(row);
-					}
-					return rows;
-				});
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+					rows.add(row);
+				}
+				return rows;
+			}
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
