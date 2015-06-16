@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>tinyorm-project</artifactId>
-	<version>1.7.1-SNAPSHOT</version>
+	<version>1.7.2</version>
 	<packaging>pom</packaging>
 	<description>parent project for tinyorm</description>
 	<url>http://github.com/tokuhirom/tinyorm/</url>
@@ -18,7 +18,7 @@
 		<url>https://github.com/tokuhirom/tinyorm/</url>
 		<connection>scm:git:git://github.com/tokuhirom/tinyorm.git</connection>
 		<developerConnection>scm:git:git@github.com:tokuhirom/tinyorm.git</developerConnection>
-	  <tag>HEAD</tag>
+	  <tag>tinyorm-project-1.7.2</tag>
   </scm>
 
 	<developers>
