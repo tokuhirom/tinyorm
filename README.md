@@ -32,7 +32,7 @@ Create new database object.
 
 ### Selecting rows.
 
-    List<Member> member = db.single(Member.class)
+    List<Member> member = db.search(Member.class)
       .where("name LIKE CONCAT(?, '%')", "John")
       .execute();
 
@@ -50,12 +50,11 @@ If you want to use `ON DUPLICATE KEY UPDATE`, you can call `InsertStatement#onDu
 
 For example:
 
-			orm.insert(Member.class)
-        .value("email", email)
-        .value("name", name)
-				.onDuplicateKeyUpdate("name=?", name)
-				.execute();
-    
+    orm.insert(Member.class)
+      .value("email", email)
+      .value("name", name)
+      .onDuplicateKeyUpdate("name=?", name)
+      .execute();
 
 ### Insert row with form class.
 
