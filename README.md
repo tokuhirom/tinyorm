@@ -32,7 +32,7 @@ Create new database object.
 
 ### Selecting rows.
 
-    List<Member> member = db.single(Member.class)
+    List<Member> member = db.search(Member.class)
       .where("name LIKE CONCAT(?, '%')", "John")
       .execute();
 
