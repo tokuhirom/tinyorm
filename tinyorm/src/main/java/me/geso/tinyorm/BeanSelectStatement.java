@@ -34,10 +34,11 @@ public class BeanSelectStatement<T extends Row<?>> extends
 		try (final PreparedStatement ps = this.orm.prepareStatement(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
+				List<String> columnLabels = TinyORM.getColumnLabels(rs);
 				if (rs.next()) {
 					final T row = this.tableMeta.createRowFromResultSet(
-							this.klass,
-							rs, this.orm);
+							this.klass, rs,
+							columnLabels, this.orm);
 					rs.close();
 					return Optional.of(row);
 				} else {
