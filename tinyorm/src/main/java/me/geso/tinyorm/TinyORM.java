@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -418,10 +419,11 @@ public class TinyORM implements Closeable {
 	 * @return column label list
 	 * @throws SQLException
 	 */
-	List<String> getColumnLabels(ResultSet rs) throws SQLException {
-		List<String> columnLabels = new ArrayList<>();
-		for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-			columnLabels.add(rs.getMetaData().getColumnLabel(i + 1));
+	static public List<String> getColumnLabels(ResultSet rs) throws SQLException {
+		ResultSetMetaData metaData = rs.getMetaData();
+		List<String> columnLabels = new ArrayList<>(metaData.getColumnCount());
+		for (int i = 0; i < metaData.getColumnCount(); i++) {
+			columnLabels.add(metaData.getColumnLabel(i + 1));
 		}
 		return columnLabels;
 	}

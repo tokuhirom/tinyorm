@@ -463,7 +463,7 @@ public class TinyORMTest extends TestBase {
 		try (PreparedStatement ps = this.orm.getConnection().prepareStatement(
 				"SELECT * FROM member")) {
 			try (ResultSet rs = ps.executeQuery()) {
-				List<String> columnLabels = this.orm.getColumnLabels(rs);
+				List<String> columnLabels = TinyORM.getColumnLabels(rs);
 				assertEquals("id,name,createdOn,updatedOn", columnLabels.stream().collect(Collectors.joining(",")));
 			}
 		}
