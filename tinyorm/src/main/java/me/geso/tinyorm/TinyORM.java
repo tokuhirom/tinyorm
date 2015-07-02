@@ -85,10 +85,11 @@ public class TinyORM implements Closeable {
 		try (final PreparedStatement ps = this.prepareStatement(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
+				List<String> columnLabels = getColumnLabels(rs);
 				if (rs.next()) {
 					final T row = tableMeta.createRowFromResultSet(
-						klass,
-						rs, this);
+							klass, rs,
+							columnLabels, this);
 					return Optional.of(row);
 				} else {
 					return Optional.<T>empty();
@@ -244,8 +245,9 @@ public class TinyORM implements Closeable {
 			ResultSet rs) throws SQLException {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
 		ArrayList<T> rows = new ArrayList<>();
+		List<String> columnLabels = getColumnLabels(rs);
 		while (rs.next()) {
-			T row = tableMeta.createRowFromResultSet(klass, rs, this);
+			T row = tableMeta.createRowFromResultSet(klass, rs, columnLabels, this);
 			rows.add(row);
 		}
 		return rows;
@@ -362,11 +364,12 @@ public class TinyORM implements Closeable {
 		try (final PreparedStatement ps = this.prepareStatement(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
+				List<String> columnLabels = getColumnLabels(rs);
 				if (rs.next()) {
 					final T refetched = tableMeta
 						.createRowFromResultSet(
-								(Class<T>)row.getClass(),
-								rs, this);
+								(Class<T>)row.getClass(), rs,
+								columnLabels, this);
 					return Optional.of(refetched);
 				} else {
 					return Optional.<T>empty();
@@ -407,6 +410,20 @@ public class TinyORM implements Closeable {
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Get column labels from result set.
+	 * @param rs result set
+	 * @return column label list
+	 * @throws SQLException
+	 */
+	List<String> getColumnLabels(ResultSet rs) throws SQLException {
+		List<String> columnLabels = new ArrayList<>();
+		for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+			columnLabels.add(rs.getMetaData().getColumnLabel(i + 1));
+		}
+		return columnLabels;
 	}
 
 	/**

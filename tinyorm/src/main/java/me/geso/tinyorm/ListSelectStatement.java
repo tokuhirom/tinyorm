@@ -35,9 +35,10 @@ public class ListSelectStatement<T extends Row<?>> extends
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<T> rows = new ArrayList<>();
+				List<String> columnLabels = this.orm.getColumnLabels(rs);
 				while (rs.next()) {
 					T row = tableMeta.createRowFromResultSet(klass, rs,
-							this.orm);
+							columnLabels, this.orm);
 					rows.add(row);
 				}
 				return rows;

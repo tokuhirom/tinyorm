@@ -14,7 +14,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -511,18 +510,22 @@ class TableMeta<RowType extends Row<?>> {
 		return propertyDescriptorMap.containsKey(columnName);
 	}
 
-	RowType createRowFromResultSet(final Class<RowType> klass,
+	RowType createRowFromResultSet(
+			final Class<RowType> klass,
 			final ResultSet rs,
+			final List<String> columnLabels,
 			final TinyORM orm) throws SQLException {
 		return this.rowBuilder.build(klass, this,
-			rs, orm);
+			rs, columnLabels, orm);
 	}
 
 	private static interface RowBuilder {
 		public <RowType extends Row<?>> RowType build(
 				final Class<RowType> klass,
 				final TableMeta<RowType> tableMeta,
-				final ResultSet rs, final TinyORM orm)
+				final ResultSet rs,
+				final List<String> columnLabels,
+				final TinyORM orm)
 				throws SQLException;
 	}
 
@@ -808,14 +811,15 @@ class TableMeta<RowType extends Row<?>> {
 		public <RowType extends Row<?>> RowType build(
 				final Class<RowType> klass,
 				final TableMeta<RowType> tableMeta,
-				final ResultSet rs, final TinyORM orm)
+				final ResultSet rs,
+				final List<String> columnLabels,
+				final TinyORM orm)
 				throws SQLException {
 			Object[] initargs = new Object[parameterNames.length];
-			int columnCount = rs.getMetaData().getColumnCount();
+			int columnCount = columnLabels.size();
 			Map<String, Object> extraColumns = new HashMap<>();
-			ResultSetMetaData metaData = rs.getMetaData();
 			for (int i = 0; i < columnCount; ++i) {
-				String columnName = metaData.getColumnLabel(i + 1);
+				String columnName = columnLabels.get(i);
 				Object value = rs.getObject(i + 1);
 				value = tableMeta.invokeInflater(columnName, value);
 				Integer idx = parameterPositionFor.get(columnName);
@@ -850,15 +854,17 @@ class TableMeta<RowType extends Row<?>> {
 	private static class SetterRowBuilder implements
 			RowBuilder {
 		@Override
-		public <T extends Row<?>> T build(Class<T> klass,
+		public <T extends Row<?>> T build(
+				Class<T> klass,
 				TableMeta<T> tableMeta,
 				ResultSet rs,
+				List<String> columnLabels,
 				TinyORM orm) throws SQLException {
 			try {
-				int columnCount = rs.getMetaData().getColumnCount();
+				int columnCount = columnLabels.size();
 				T row = klass.newInstance();
 				for (int i = 0; i < columnCount; ++i) {
-					String columnName = rs.getMetaData().getColumnLabel(i + 1);
+					String columnName = columnLabels.get(i);
 					Object value = rs.getObject(i + 1);
 					value = tableMeta.invokeInflater(columnName, value);
 					this.setValue(tableMeta, row, columnName, value);

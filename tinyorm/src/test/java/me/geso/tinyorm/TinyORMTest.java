@@ -454,6 +454,21 @@ public class TinyORMTest extends TestBase {
 		assertEquals("member", this.orm.getTableName(Member.class));
 	}
 
+	@Test
+	public void testGetColumnLabels() throws Exception {
+		this.orm.getConnection()
+				.prepareStatement(
+						"INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
+				.executeUpdate();
+		try (PreparedStatement ps = this.orm.getConnection().prepareStatement(
+				"SELECT * FROM member")) {
+			try (ResultSet rs = ps.executeQuery()) {
+				List<String> columnLabels = this.orm.getColumnLabels(rs);
+				assertEquals("id,name,createdOn,updatedOn", columnLabels.stream().collect(Collectors.joining(",")));
+			}
+		}
+	}
+
 	@Table("member")
 	@Data
 	@EqualsAndHashCode(callSuper = false)
