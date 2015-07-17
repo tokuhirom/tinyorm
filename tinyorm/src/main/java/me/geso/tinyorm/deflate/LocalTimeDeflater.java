@@ -12,7 +12,7 @@ public class LocalTimeDeflater implements Deflater {
 		if (value instanceof java.time.LocalTime) {
 			return java.sql.Time.valueOf((java.time.LocalTime)value);
 		} else {
-			throw new IllegalArgumentException("LocalTimeDeflater supports only java.time.LocalDate");
+			throw new IllegalArgumentException("LocalTimeDeflater supports only java.time.LocalTime");
 		}
 	}
 }
