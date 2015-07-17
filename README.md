@@ -32,7 +32,7 @@ Create new database object.
 
 ### Selecting rows.
 
-    List<Member> member = db.single(Member.class)
+    List<Member> member = db.search(Member.class)
       .where("name LIKE CONCAT(?, '%')", "John")
       .execute();
 
@@ -40,6 +40,20 @@ Create new database object.
 
     db.insert(Member.class)
       .value("name", "John")
+      .execute();
+
+This statement generate following query:
+
+    INSERT INTO member (name) VALUES ('John')
+
+If you want to use `ON DUPLICATE KEY UPDATE`, you can call `InsertStatement#onDuplicateKeyUpdate` method.
+
+For example:
+
+    orm.insert(Member.class)
+      .value("email", email)
+      .value("name", name)
+      .onDuplicateKeyUpdate("name=?", name)
       .execute();
 
 ### Insert row with form class.
@@ -119,6 +133,20 @@ TinyORM fills this field when updating a row. This column must be `long`. TinyOR
 
 You can store the data in CSV format.
 
+### @JsonColumn
+
+    @JsonColumn
+    private MyComplexType myComplexThing;
+
+You can store the data in JSON format.
+
+### @SetColumn
+
+    @SetColumn
+    private Set<String> categories;
+
+TinyORM conerts MySQL's SET value as java.util.Set.
+
 ## HOOKS
 
 You can override `TinyORM#BEFORE_INSERT` and `TinyORM#BEFORE_UPDATE` methods.
@@ -137,6 +165,19 @@ You can use java.time.LocalDate for the column field.
     }
 
 TinyORM automatically convert java.sql.Date to java.time.LocalDate.
+
+## HOW DO I WRITE MY OWN CONSTRUCTOR?
+
+You can create your own constructor, and create it from the constructor, you need to add `java.beans.ConstructorProperties` annotation.
+
+    public class RowExample {
+        @java.beans.ConstructorProperties({"name", "age", "score", "tags"})
+        public RowExample(String name, long age, long score, String tags) {
+           // ...
+        }
+    }
+
+Normally, you should use lombok.Value to create constructor.
 
 ## LICENSE
 

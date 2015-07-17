@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>me.geso</groupId>
 	<artifactId>tinyorm-project</artifactId>
-	<version>1.5.2-SNAPSHOT</version>
+	<version>1.8.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<description>parent project for tinyorm</description>
 	<url>http://github.com/tokuhirom/tinyorm/</url>
@@ -151,6 +151,7 @@
 					<outputEncoding>UTF-8</outputEncoding>
 					<xmlOutputDirectory>target/site/findbugs</xmlOutputDirectory>
 					<findbugsXmlOutputDirectory>target/site/findbugs</findbugsXmlOutputDirectory>
+					<excludeFilterFile>findbugs-exclude.xml</excludeFilterFile>
 				</configuration>
 			</plugin>
 			<plugin>

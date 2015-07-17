@@ -14,7 +14,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -32,8 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import me.geso.tinyorm.deflate.OptionalDeflater;
-import me.geso.tinyorm.inflate.OptionalInflater;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -57,12 +54,18 @@ import me.geso.tinyorm.annotations.Deflate;
 import me.geso.tinyorm.annotations.Inflate;
 import me.geso.tinyorm.annotations.JsonColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
+import me.geso.tinyorm.annotations.SetColumn;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 import me.geso.tinyorm.deflate.LocalDateDeflater;
 import me.geso.tinyorm.deflate.LocalTimeDeflater;
+import me.geso.tinyorm.deflate.OptionalDeflater;
+import me.geso.tinyorm.deflate.SetDeflater;
+import me.geso.tinyorm.exception.ConstructorIllegalArgumentException;
 import me.geso.tinyorm.inflate.LocalDateInflater;
 import me.geso.tinyorm.inflate.LocalTimeInflater;
+import me.geso.tinyorm.inflate.OptionalInflater;
+import me.geso.tinyorm.inflate.SetInflater;
 import me.geso.tinyorm.trigger.BeforeInsertHandler;
 import me.geso.tinyorm.trigger.BeforeUpdateHandler;
 import me.geso.tinyorm.trigger.Deflater;
@@ -202,8 +205,14 @@ class TableMeta<RowType extends Row<?>> {
 				inflaters.get(propertyDescriptor.getName()).add(new LocalTimeInflater());
 				deflaters.get(propertyDescriptor.getName()).add(new LocalTimeDeflater());
 			}
+			if (field.getAnnotation(SetColumn.class) != null) {
+				// MySQL's set type
+				inflaters.get(propertyDescriptor.getName()).add(new SetInflater());
+				deflaters.get(propertyDescriptor.getName()).add(new SetDeflater());
+				isColumn = true;
+			}
 			if (field.getAnnotation(CsvColumn.class) != null) {
-				// deserialize json
+				// deserialize csv
 				if (!Collection.class.isAssignableFrom(field.getType())) {
 					throw new RuntimeException(
 						"You can't add @CsvColumn annotation for non-Collection field.");
@@ -346,8 +355,16 @@ class TableMeta<RowType extends Row<?>> {
 						}
 					} catch (NoSuchFieldException e) {
 						// nothing.
-						log.info("No such field: {}, {}", rowClass,  e.getMessage());
+						log.info("No such field: {}, {}", rowClass, e.getMessage());
 					}
+				}
+				final Class<?>[] parameterTypes = constructor.getParameterTypes();
+				if (parameterTypes.length == 0) {
+					continue;
+				}
+				if (rowClass.getEnclosingClass() != null
+					&& parameterTypes[0].isAssignableFrom(rowClass.getEnclosingClass())) {
+					throw new IllegalArgumentException("Row class must not be non-static inner class: " + rowClass.getName());
 				}
 				return new ConstructorRowBuilder(constructor, names);
 			}
@@ -544,18 +561,22 @@ class TableMeta<RowType extends Row<?>> {
 		return propertyDescriptorMap.containsKey(columnName);
 	}
 
-	RowType createRowFromResultSet(final Class<RowType> klass,
+	RowType createRowFromResultSet(
+			final Class<RowType> klass,
 			final ResultSet rs,
+			final List<String> columnLabels,
 			final TinyORM orm) throws SQLException {
 		return this.rowBuilder.build(klass, this,
-			rs, orm);
+			rs, columnLabels, orm);
 	}
 
 	private static interface RowBuilder {
 		public <RowType extends Row<?>> RowType build(
 				final Class<RowType> klass,
 				final TableMeta<RowType> tableMeta,
-				final ResultSet rs, final TinyORM orm)
+				final ResultSet rs,
+				final List<String> columnLabels,
+				final TinyORM orm)
 				throws SQLException;
 	}
 
@@ -841,14 +862,15 @@ class TableMeta<RowType extends Row<?>> {
 		public <RowType extends Row<?>> RowType build(
 				final Class<RowType> klass,
 				final TableMeta<RowType> tableMeta,
-				final ResultSet rs, final TinyORM orm)
+				final ResultSet rs,
+				final List<String> columnLabels,
+				final TinyORM orm)
 				throws SQLException {
 			Object[] initargs = new Object[parameterNames.length];
-			int columnCount = rs.getMetaData().getColumnCount();
+			int columnCount = columnLabels.size();
 			Map<String, Object> extraColumns = new HashMap<>();
-			ResultSetMetaData metaData = rs.getMetaData();
 			for (int i = 0; i < columnCount; ++i) {
-				String columnName = metaData.getColumnLabel(i + 1);
+				String columnName = columnLabels.get(i);
 				Object value = rs.getObject(i + 1);
 				value = tableMeta.invokeInflater(columnName, value);
 				Integer idx = parameterPositionFor.get(columnName);
@@ -866,8 +888,10 @@ class TableMeta<RowType extends Row<?>> {
 				}
 				row.setOrm(orm);
 				return row;
+			} catch (IllegalArgumentException e) {
+				throw new ConstructorIllegalArgumentException(e, klass, constructor, parameterNames, initargs);
 			} catch (InstantiationException | IllegalAccessException
-					| IllegalArgumentException | InvocationTargetException e) {
+					| InvocationTargetException e) {
 				log.error(
 					"{}: {}, {}, extraColumns:{}, parameterPositionFor:{}, {}",
 					e.getClass(), klass,
@@ -881,15 +905,17 @@ class TableMeta<RowType extends Row<?>> {
 	private static class SetterRowBuilder implements
 			RowBuilder {
 		@Override
-		public <T extends Row<?>> T build(Class<T> klass,
+		public <T extends Row<?>> T build(
+				Class<T> klass,
 				TableMeta<T> tableMeta,
 				ResultSet rs,
+				List<String> columnLabels,
 				TinyORM orm) throws SQLException {
 			try {
-				int columnCount = rs.getMetaData().getColumnCount();
+				int columnCount = columnLabels.size();
 				T row = klass.newInstance();
 				for (int i = 0; i < columnCount; ++i) {
-					String columnName = rs.getMetaData().getColumnLabel(i + 1);
+					String columnName = columnLabels.get(i);
 					Object value = rs.getObject(i + 1);
 					value = tableMeta.invokeInflater(columnName, value);
 					this.setValue(tableMeta, row, columnName, value);

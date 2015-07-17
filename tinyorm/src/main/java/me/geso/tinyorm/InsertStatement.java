@@ -12,7 +12,10 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.util.Arrays;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +25,7 @@ import java.util.stream.Collectors;
 import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
-import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 
 /**
  *
@@ -35,7 +38,7 @@ public class InsertStatement<T extends Row<?>> {
 	private final Class<T> klass;
 	private final TinyORM orm;
 	private final TableMeta<T> tableMeta;
-	private String onDuplicateKeyUpdateQuery;
+	private List<String> onDuplicateKeyUpdateQuery;
 	private List<Object> onDuplicateKeyUpdateValues;
 
 	InsertStatement(TinyORM orm, Class<T> klass, TableMeta<T> tableMeta) {
@@ -114,8 +117,15 @@ public class InsertStatement<T extends Row<?>> {
 	 */
 	public InsertStatement<T> onDuplicateKeyUpdate(String query,
 			Object... params) {
-		this.onDuplicateKeyUpdateQuery = query;
-		this.onDuplicateKeyUpdateValues = Arrays.asList(params);
+		if (onDuplicateKeyUpdateQuery == null) {
+			onDuplicateKeyUpdateQuery = new ArrayList<>();
+		}
+		onDuplicateKeyUpdateQuery.add(query);
+
+		if (onDuplicateKeyUpdateValues == null) {
+			onDuplicateKeyUpdateValues = new ArrayList<>();
+		}
+		Collections.addAll(onDuplicateKeyUpdateValues, params);
 		return this;
 	}
 
@@ -137,9 +147,11 @@ public class InsertStatement<T extends Row<?>> {
 			.addParameters(values.values())
 			.appendQuery(")");
 		if (onDuplicateKeyUpdateQuery != null) {
-			builder.appendQuery(" ON DUPLICATE KEY UPDATE ")
-				.appendQuery(onDuplicateKeyUpdateQuery)
-				.addParameters(onDuplicateKeyUpdateValues);
+			builder.appendQuery(" ON DUPLICATE KEY UPDATE ");
+			builder.appendQuery(
+					onDuplicateKeyUpdateQuery.stream()
+						.collect(Collectors.joining(",")));
+			builder.addParameters(onDuplicateKeyUpdateValues);
 		}
 		return builder.build();
 	}
@@ -153,16 +165,18 @@ public class InsertStatement<T extends Row<?>> {
 		this.tableMeta.invokeBeforeInsertTriggers(this);
 		final Query query = this.buildQuery();
 
-		try {
-			final int inserted = JDBCUtils
-				.executeUpdate(orm.getConnection(), query);
+		final String sql = query.getSQL();
+		final List<Object> params = query.getParameters();
+		try (final PreparedStatement ps = orm.getConnection().prepareStatement(sql)) {
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+			final int inserted = ps.executeUpdate();
 			if (inserted != 1 && this.onDuplicateKeyUpdateQuery == null) {
 				throw new RuntimeException("Cannot insert to database:"
-					+ query);
+						+ query);
 			}
 			return inserted;
-		} catch (RichSQLException e) {
-			throw new RuntimeException(e);
+		} catch (final SQLException ex) {
+			throw new UncheckedRichSQLException(ex, sql, params);
 		}
 	}
 
