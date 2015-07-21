@@ -195,13 +195,13 @@ class TableMeta<RowType extends Row<?>> {
 				deflaters.get(propertyDescriptor.getName()).add(deflater);
 				isColumn = true;
 			}
-			if (field.getType().isAssignableFrom(LocalDate.class) ||
-					(isOptionalColumn && actualTypeArgumentsSet.contains(LocalDate.class))) {
+			if (field.getType().isAssignableFrom(LocalDate.class)
+					|| (isOptionalColumn && actualTypeArgumentsSet.contains(LocalDate.class))) {
 				inflaters.get(propertyDescriptor.getName()).add(new LocalDateInflater());
 				deflaters.get(propertyDescriptor.getName()).add(new LocalDateDeflater());
 			}
-			if (field.getType().isAssignableFrom(LocalTime.class) ||
-					(isOptionalColumn && actualTypeArgumentsSet.contains(LocalTime.class))) {
+			if (field.getType().isAssignableFrom(LocalTime.class)
+					|| (isOptionalColumn && actualTypeArgumentsSet.contains(LocalTime.class))) {
 				inflaters.get(propertyDescriptor.getName()).add(new LocalTimeInflater());
 				deflaters.get(propertyDescriptor.getName()).add(new LocalTimeDeflater());
 			}
