@@ -18,18 +18,12 @@ import java.util.Optional;
 public class TransactionTest extends TestBase {
 	@Before
 	public void before() throws SQLException {
-		orm.setAutoCommit(true);
+		orm.getConnection().setAutoCommit(true);
 		orm.getConnection().prepareStatement("DROP TABLE IF EXISTS x")
 			.executeUpdate();
 		orm.getConnection()
 			.prepareStatement("CREATE TABLE x (a VARCHAR(255) NOT NULL, n int default 0, PRIMARY KEY (a))")
 			.executeUpdate();
-	}
-
-	@Test
-	public void setAutocommitSuccessfully() throws SQLException {
-		orm.setAutoCommit(false);
-		assertEquals(false, orm.getConnection().getAutoCommit());
 	}
 
 	@Test

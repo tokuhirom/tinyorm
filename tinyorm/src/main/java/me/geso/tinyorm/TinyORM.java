@@ -582,16 +582,6 @@ public class TinyORM implements Closeable {
 	}
 
 	/**
-	 * Set auto-commit mode (means do with transaction or not) to connection.
-	 *
-	 * @param isAutoCommit auto-commit mode
-	 * @throws SQLException
-	 */
-	 public void setAutoCommit(boolean isAutoCommit) throws SQLException {
-		 connection.setAutoCommit(isAutoCommit);
-	 }
-
-	/**
 	 * Begin transaction.
 	 * <p>
 	 * This method backups automatically the status of auto commit mode when called.
