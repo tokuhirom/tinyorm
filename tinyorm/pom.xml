@@ -24,6 +24,11 @@
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.7</version>
 		</dependency>
+		<dependency>
+			<groupId>net.moznion</groupId>
+			<artifactId>db-transaction-manager</artifactId>
+			<version>1.1.0</version>
+		</dependency>
 		<!-- testing dependencies. -->
 		<dependency>
 			<groupId>junit</groupId>

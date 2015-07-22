@@ -27,6 +27,8 @@ import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
 import me.geso.jdbcutils.ResultSetCallback;
 import me.geso.jdbcutils.UncheckedRichSQLException;
+import net.moznion.db.transaction.manager.TransactionManager;
+import net.moznion.db.transaction.manager.TransactionScope;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -38,14 +40,20 @@ public class TinyORM implements Closeable {
 
 	private static final ConcurrentHashMap<Class<?>, TableMeta<?>> TABLE_META_REGISTRY = new ConcurrentHashMap<>();
 	private final Connection connection;
+	private final TransactionManager transactionManager;
 	private Integer queryTimeout;
 
 	public TinyORM(Connection connection) {
 		this.connection = connection;
+		this.transactionManager = new TransactionManager(this.connection);
 	}
 
 	public Connection getConnection() {
 		return this.connection;
+	}
+
+	public TransactionManager getTransactionManager() {
+		return this.transactionManager;
 	}
 
 	public PreparedStatement prepareStatement(String sql) {
@@ -103,7 +111,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select one row from the database.
-	 * 
+	 *
 	 * @param klass Row class to retrieve.
 	 * @param query Query object
 	 * @return Got value.
@@ -115,7 +123,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Create new <code>BeanSelectStatement</code> for selecting 1 row.
-	 * 
+	 *
 	 * @param klass
 	 *            Target entity class.
 	 * @return select statement object.
@@ -128,7 +136,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Create new <code>ListSelectStatement</code> for selecting rows.
-	 * 
+	 *
 	 * @param klass
 	 *            Target entity class.
 	 * @return Select statement object.
@@ -141,7 +149,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Create new <code>PaginatedSelectStatement</code> for selecting rows.
-	 * 
+	 *
 	 * @param klass Row class
 	 * @return paginated select statement object
 	 */
@@ -169,7 +177,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Search by SQL.
-	 * 
+	 *
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass,
 			final String sql) {
@@ -178,8 +186,8 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Search by SQL with Pager.
-	 * 
-	 * 
+	 *
+	 *
 	 */
 	public <T extends Row<?>> Paginated<T> searchBySQLWithPager(
 			@NonNull final Class<T> klass, final String sql, final List<Object> params,
@@ -202,7 +210,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
-	 * 
+	 *
 	 */
 	public int updateBySQL(final String sql, final List<Object> params) {
 		try (final PreparedStatement ps = this.prepareStatement(sql)) {
@@ -215,7 +223,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
-	 * 
+	 *
 	 */
 	public int updateBySQL(String sql) {
 		final List<Object> params = Collections.emptyList();
@@ -229,7 +237,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Execute an UPDATE, INSERT, and DELETE query.
-	 * 
+	 *
 	 */
 	public int updateBySQL(Query query) {
 		final String sql = query.getSQL();
@@ -256,7 +264,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select single long value
-	 * 
+	 *
 	 * @return Got long value.
 	 */
 	public OptionalLong queryForLong(final String sql,
@@ -278,7 +286,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select single long value from database.
-	 * 
+	 *
 	 * @return Got value.
 	 */
 	public OptionalLong queryForLong(@NonNull final String sql) {
@@ -287,7 +295,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select single String value from database.
-	 * 
+	 *
 	 * @return Got value
 	 */
 	public Optional<String> queryForString(final String sql,
@@ -309,7 +317,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select single String value from database without parameters.
-	 * 
+	 *
 	 * @return Got value
 	 */
 	public Optional<String> queryForString(@NonNull final String sql) {
@@ -571,5 +579,61 @@ public class TinyORM implements Closeable {
 
 	public void clearQueryTimeout() {
 		this.queryTimeout = null;
+	}
+
+	/**
+	 * Begin transaction.
+	 * <p>
+	 * This method backups automatically the status of auto commit mode when called.
+	 * The status will be turned back when transaction is end.
+	 *
+	 * @throws SQLException
+	 */
+	public void transactionBegin() throws SQLException {
+		transactionManager.txnBegin();
+	}
+
+	/**
+	 * Create a new transaction scope.
+	 *
+	 * <pre>
+	 * {@code
+	 * try (TransactionScope txn = db.createTransactionScope()) {
+	 *     db.insert(Member.class)
+	 * 	       .value("name", "John")
+	 * 	       .execute();
+	 *     db.transactionCommit();
+	 * }
+	 * }
+	 * </pre>
+	 *
+	 * <p>
+	 * If it escapes from try-with-resource statement without any action
+	 * ({@code transactionCommit()} or {@code transactionRollback()}),
+	 * transaction will rollback automatically.
+	 *
+	 * @throws SQLException
+	 * @return a transaction scope
+	 */
+	public TransactionScope createTransactionScope() throws SQLException {
+		return new TransactionScope(transactionManager);
+	}
+
+	/**
+	 * Commit a current transaction.
+	 *
+	 * @throws SQLException
+	 */
+	public void transactionCommit() throws SQLException {
+		transactionManager.txnCommit();
+	}
+
+	/**
+	 * Rollback a current transaction.
+	 *
+	 * @throws SQLException
+	 */
+	public void transactionRollback() throws SQLException {
+		transactionManager.txnRollback();
 	}
 }
