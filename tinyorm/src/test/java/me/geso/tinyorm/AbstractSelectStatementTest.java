@@ -30,25 +30,30 @@ public class AbstractSelectStatementTest extends TestBase {
 	@Test
 	public void singleForUpdate() throws SQLException, RichSQLException {
 		assertThat(this.orm.single(Member.class).buildQuery().getSQL(),
-			is("SELECT * FROM `member`"));
+			is("SELECT * FROM `member` LIMIT 1"));
 		assertThat(this.orm.single(Member.class).forUpdate().buildQuery()
 			.getSQL(),
-			is("SELECT * FROM `member` FOR UPDATE"));
+			is("SELECT * FROM `member` LIMIT 1 FOR UPDATE"));
 	}
 
 	@Test
 	public void testOrderBy() throws SQLException, RichSQLException {
 		assertThat(this.orm.single(Member.class)
 			.orderBy("id ASC").buildQuery().getSQL(),
-			is("SELECT * FROM `member` ORDER BY id ASC"));
+			is("SELECT * FROM `member` ORDER BY id ASC LIMIT 1"));
 		assertThat(this.orm.single(Member.class)
 			.orderBy("id DESC").buildQuery().getSQL(),
-			is("SELECT * FROM `member` ORDER BY id DESC"));
+			is("SELECT * FROM `member` ORDER BY id DESC LIMIT 1"));
 	}
 
 	@Test
 	public void testLimit() {
 		assertThat(this.orm.search(Member.class)
+			.limit(10).buildQuery().getSQL(),
+			is("SELECT * FROM `member` LIMIT 10"));
+
+		// limit(10) override limit(1) (default for single())
+		assertThat(this.orm.single(Member.class)
 			.limit(10).buildQuery().getSQL(),
 			is("SELECT * FROM `member` LIMIT 10"));
 	}
