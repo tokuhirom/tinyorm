@@ -48,7 +48,7 @@ public class AbstractSelectStatementTest extends TestBase {
 
 	@Test
 	public void testLimit() {
-		assertThat(this.orm.single(Member.class)
+		assertThat(this.orm.search(Member.class)
 			.limit(10).buildQuery().getSQL(),
 			is("SELECT * FROM `member` LIMIT 10"));
 	}
