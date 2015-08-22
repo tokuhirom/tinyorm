@@ -130,8 +130,13 @@ public class TinyORM implements Closeable {
 	 */
 	public <T extends Row<?>> BeanSelectStatement<T> single(Class<T> klass) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
-		return new BeanSelectStatement<>(this.getConnection(),
-			klass, tableMeta, this);
+		BeanSelectStatement<T> statement =  new BeanSelectStatement<>(
+			this.getConnection(), klass, tableMeta, this);
+
+		// ensure at most single result for single(). (as default behavior)
+		statement.limit(1);
+		
+		return statement;
 	}
 
 	/**
