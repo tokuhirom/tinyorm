@@ -16,6 +16,7 @@ import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,11 +59,13 @@ import me.geso.tinyorm.annotations.SetColumn;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 import me.geso.tinyorm.deflate.LocalDateDeflater;
+import me.geso.tinyorm.deflate.LocalDateTimeDeflater;
 import me.geso.tinyorm.deflate.LocalTimeDeflater;
 import me.geso.tinyorm.deflate.OptionalDeflater;
 import me.geso.tinyorm.deflate.SetDeflater;
 import me.geso.tinyorm.exception.ConstructorIllegalArgumentException;
 import me.geso.tinyorm.inflate.LocalDateInflater;
+import me.geso.tinyorm.inflate.LocalDateTimeInflater;
 import me.geso.tinyorm.inflate.LocalTimeInflater;
 import me.geso.tinyorm.inflate.OptionalInflater;
 import me.geso.tinyorm.inflate.SetInflater;
@@ -199,6 +202,11 @@ class TableMeta<RowType extends Row<?>> {
 					|| (isOptionalColumn && actualTypeArgumentsSet.contains(LocalDate.class))) {
 				inflaters.get(propertyDescriptor.getName()).add(new LocalDateInflater());
 				deflaters.get(propertyDescriptor.getName()).add(new LocalDateDeflater());
+			}
+			if (field.getType().isAssignableFrom(LocalDateTime.class)
+				|| (isOptionalColumn && actualTypeArgumentsSet.contains(LocalDateTime.class))) {
+				inflaters.get(propertyDescriptor.getName()).add(new LocalDateTimeInflater());
+				deflaters.get(propertyDescriptor.getName()).add(new LocalDateTimeDeflater());
 			}
 			if (field.getType().isAssignableFrom(LocalTime.class)
 					|| (isOptionalColumn && actualTypeArgumentsSet.contains(LocalTime.class))) {
