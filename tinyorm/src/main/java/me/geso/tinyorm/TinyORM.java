@@ -7,7 +7,6 @@ package me.geso.tinyorm;
 
 import java.beans.IntrospectionException;
 import java.io.Closeable;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -566,7 +565,7 @@ public class TinyORM implements Closeable {
 	 * @throws java.lang.RuntimeException This method throws RuntimeException if Connection#close throws SQLException.
 	 */
 	@Override
-	public void close() throws IOException {
+	public void close() {
 		try {
 			this.connection.close();
 		} catch (SQLException e) {
