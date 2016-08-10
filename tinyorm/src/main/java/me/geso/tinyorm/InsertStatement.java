@@ -205,7 +205,7 @@ public class InsertStatement<T extends Row<?>> {
 				.appendIdentifier(pkName)
 				.appendQuery("=last_insert_id()")
 				.build();
-			final Optional<T> maybeRow = this.orm.singleBySQL(klass, query);
+			final Optional<T> maybeRow = this.orm.singleBySQL(klass, query, connection);
 			if (maybeRow.isPresent()) {
 				return maybeRow.get();
 			} else {

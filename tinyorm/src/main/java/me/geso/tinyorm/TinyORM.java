@@ -39,16 +39,28 @@ public class TinyORM implements Closeable {
 
 	private static final ConcurrentHashMap<Class<?>, TableMeta<?>> TABLE_META_REGISTRY = new ConcurrentHashMap<>();
 	private final Connection connection;
+	private final Connection readConnection;
 	private final TransactionManager transactionManager;
 	private Integer queryTimeout;
 
 	public TinyORM(Connection connection) {
 		this.connection = connection;
+		this.readConnection = connection;
+		this.transactionManager = new TransactionManager(this.connection);
+	}
+
+	public TinyORM(Connection writeConnection, Connection readConnection) {
+		this.connection = writeConnection;
+		this.readConnection = readConnection;
 		this.transactionManager = new TransactionManager(this.connection);
 	}
 
 	public Connection getConnection() {
-		return this.connection;
+		return connection;
+	}
+
+	public Connection getReadConnection() {
+		return readConnection;
 	}
 
 	public TransactionManager getTransactionManager() {
@@ -56,8 +68,16 @@ public class TinyORM implements Closeable {
 	}
 
 	public PreparedStatement prepareStatement(String sql) {
+		return prepareStatement(sql, getConnection());
+	}
+
+	public PreparedStatement prepareStatementForRead(String sql) {
+		return prepareStatement(sql, getReadConnection());
+	}
+
+	private PreparedStatement prepareStatement(String sql, Connection connection) {
 		try {
-			final PreparedStatement preparedStatement = getConnection().prepareStatement(sql);
+			final PreparedStatement preparedStatement = connection.prepareStatement(sql);
 			if (queryTimeout != null) {
 				preparedStatement.setQueryTimeout(queryTimeout);
 			}
@@ -73,7 +93,7 @@ public class TinyORM implements Closeable {
 	 * 	.value("name", "John")
 	 * 	.execute();
 	 * }
-	 * 
+	 *
 	 * @param klass Row class to retrieve
 	 * @return insert statement object
 	 */
@@ -86,11 +106,18 @@ public class TinyORM implements Closeable {
 	 * Select one row from the database.
 	 */
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
-			String sql,
-			List<Object> params) {
+													  String sql,
+													  List<Object> params) {
+		return singleBySQL(klass, sql, params, getReadConnection());
+	}
+
+	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
+													  String sql,
+													  List<Object> params,
+													  Connection connection) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
 
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatement(sql, connection)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<String> columnLabels = getColumnLabels(rs);
@@ -121,6 +148,22 @@ public class TinyORM implements Closeable {
 	}
 
 	/**
+	 * Select one row from the database by specified connection.
+	 *
+	 * NOTE: for select query with `last_insert_id()`.
+	 *
+	 * @param klass Row class to retrieve.
+	 * @param query Query object.
+	 * @param connection Connection to retrieve row.
+     * @return Got value.
+     */
+	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
+													  Query query,
+													  Connection connection) {
+		return this.singleBySQL(klass, query.getSQL(), query.getParameters(), connection);
+	}
+
+	/**
 	 * Create new <code>BeanSelectStatement</code> for selecting 1 row.
 	 *
 	 * @param klass
@@ -130,7 +173,7 @@ public class TinyORM implements Closeable {
 	public <T extends Row<?>> BeanSelectStatement<T> single(Class<T> klass) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
 		BeanSelectStatement<T> statement =  new BeanSelectStatement<>(
-			this.getConnection(), klass, tableMeta, this);
+			getReadConnection(), klass, tableMeta, this);
 
 		// ensure at most single result for single(). (as default behavior)
 		statement.limit(1);
@@ -147,7 +190,7 @@ public class TinyORM implements Closeable {
 	 */
 	public <T extends Row<?>> ListSelectStatement<T> search(Class<T> klass) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
-		return new ListSelectStatement<>(this.getConnection(),
+		return new ListSelectStatement<>(getReadConnection(),
 			klass, tableMeta, this);
 	}
 
@@ -160,7 +203,7 @@ public class TinyORM implements Closeable {
 	public <T extends Row<?>> PaginatedSelectStatement<T> searchWithPager(
 			final Class<T> klass, final long limit) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
-		return new PaginatedSelectStatement<>(this.getConnection(),
+		return new PaginatedSelectStatement<>(getReadConnection(),
 			klass, tableMeta, this, limit);
 	}
 
@@ -169,7 +212,7 @@ public class TinyORM implements Closeable {
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(
 			final Class<T> klass, final String sql, final List<Object> params) {
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				return this.mapRowListFromResultSet(klass, rs);
@@ -197,7 +240,7 @@ public class TinyORM implements Closeable {
 			@NonNull final Class<T> klass, final String sql, final List<Object> params,
 			final long entriesPerPage) {
 		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
-		try (final PreparedStatement ps = this.prepareStatement(limitedSql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(limitedSql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<T> rows = this.mapRowListFromResultSet(klass, rs);
@@ -273,7 +316,7 @@ public class TinyORM implements Closeable {
 	 */
 	public OptionalLong queryForLong(final String sql,
 			@NonNull final List<Object> params) {
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
@@ -304,7 +347,7 @@ public class TinyORM implements Closeable {
 	 */
 	public Optional<String> queryForString(final String sql,
 			@NonNull final List<Object> params) {
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
@@ -374,7 +417,7 @@ public class TinyORM implements Closeable {
 
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<String> columnLabels = getColumnLabels(rs);
@@ -418,7 +461,7 @@ public class TinyORM implements Closeable {
 
 	String getIdentifierQuoteString() {
 		try {
-			return this.getConnection().getMetaData()
+			return getConnection().getMetaData()
 				.getIdentifierQuoteString();
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
@@ -460,7 +503,7 @@ public class TinyORM implements Closeable {
 			final ResultSetCallback<T> callback) {
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				return callback.call(rs);
@@ -480,7 +523,7 @@ public class TinyORM implements Closeable {
 	 */
 	public <T> T executeQuery(final String sql, final List<Object> params,
 			final ResultSetCallback<T> callback) {
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				return callback.call(rs);
@@ -497,7 +540,7 @@ public class TinyORM implements Closeable {
 	 */
 	public void executeQuery(final String sql) {
 		final List<Object> params = Collections.emptyList();
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			final ResultSet resultSet = ps.executeQuery();
 			resultSet.close();
@@ -513,7 +556,7 @@ public class TinyORM implements Closeable {
 	 * @param params Parameters
 	 */
 	public void executeQuery(final String sql, final List<Object> params) {
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			final ResultSet rs = ps.executeQuery();
 			rs.close();
@@ -532,7 +575,7 @@ public class TinyORM implements Closeable {
 	public <T> T executeQuery(final String sql,
 			final ResultSetCallback<T> callback) {
 		final List<Object> params = Collections.emptyList();
-		try (final PreparedStatement ps = this.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				return callback.call(rs);
@@ -567,7 +610,12 @@ public class TinyORM implements Closeable {
 	@Override
 	public void close() {
 		try {
-			this.connection.close();
+			getConnection().close();
+
+			Connection readConnection = getReadConnection();
+			if (!readConnection.isClosed()) {
+				readConnection.close();
+			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}

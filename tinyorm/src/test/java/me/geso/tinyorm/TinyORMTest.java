@@ -44,6 +44,14 @@ public class TinyORMTest extends TestBase {
 			, "title VARCHAR(255)"
 			, "createdOn INT UNSIGNED DEFAULT NULL"
 			, "updatedOn INT UNSIGNED DEFAULT NULL");
+
+		createTable("foo",
+			"y integer",
+			"z varchar(255)");
+
+		createTable("bar",
+			"y varchar(255)",
+			"z varchar(255)");
 	}
 
 	@Test
@@ -344,34 +352,31 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void testQueryForLong() throws SQLException, RichSQLException {
-		this.orm.updateBySQL(
-			"CREATE TEMPORARY TABLE x (y integer, z varchar(255));"
-			);
 		assertEquals(1, this.orm.updateBySQL(
-			"INSERT INTO x (y,z) values (5963, 'hey')"
+			"INSERT INTO foo (y,z) values (5963, 'hey')"
 			));
 		{
 			OptionalLong got = this.orm
-				.queryForLong("SELECT y FROM x WHERE z='hey'");
+				.queryForLong("SELECT y FROM foo WHERE z='hey'");
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.getAsLong(), is(5963L));
 		}
 		{
 			OptionalLong got = this.orm
-				.queryForLong("SELECT y FROM x WHERE z='nothing'");
+				.queryForLong("SELECT y FROM foo WHERE z='nothing'");
 			assertThat(got.isPresent(), is(false));
 		}
 		// with placeholders
 		{
 			OptionalLong got = this.orm
-				.queryForLong("SELECT y FROM x WHERE z=?",
+				.queryForLong("SELECT y FROM foo WHERE z=?",
 					Arrays.asList("hey"));
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.getAsLong(), is(5963L));
 		}
 		{
 			OptionalLong got = this.orm
-				.queryForLong("SELECT y FROM x WHERE z=?",
+				.queryForLong("SELECT y FROM foo WHERE z=?",
 					Arrays.asList("Nothing"));
 			assertThat(got.isPresent(), is(false));
 		}
@@ -380,33 +385,30 @@ public class TinyORMTest extends TestBase {
 	@Test
 	public void testQueryForString() throws SQLException, RichSQLException {
 		this.orm.updateBySQL(
-			"CREATE TEMPORARY TABLE x (y varchar(255), z varchar(255));"
-			);
-		this.orm.updateBySQL(
-			"INSERT INTO x (y,z) values ('ho', 'hey')"
+			"INSERT INTO bar (y,z) values ('ho', 'hey')"
 			);
 		{
 			Optional<String> got = this.orm
-				.queryForString("SELECT y FROM x WHERE z='hey'");
+				.queryForString("SELECT y FROM bar WHERE z='hey'");
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.get(), is("ho"));
 		}
 		{
 			Optional<String> got = this.orm
-				.queryForString("SELECT y FROM x WHERE z='nothing'");
+				.queryForString("SELECT y FROM bar WHERE z='nothing'");
 			assertThat(got.isPresent(), is(false));
 		}
 		// with placeholders
 		{
 			Optional<String> got = this.orm
-				.queryForString("SELECT y FROM x WHERE z=?",
+				.queryForString("SELECT y FROM bar WHERE z=?",
 					Arrays.asList("hey"));
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.get(), is("ho"));
 		}
 		{
 			Optional<String> got = this.orm
-				.queryForString("SELECT y FROM x WHERE z=?",
+				.queryForString("SELECT y FROM bar WHERE z=?",
 					Arrays.asList("Nothing"));
 			assertThat(got.isPresent(), is(false));
 		}

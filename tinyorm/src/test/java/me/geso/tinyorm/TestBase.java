@@ -15,26 +15,51 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class TestBase {
 
 	protected final Connection connection;
+	protected final Connection readConnection;
 	protected final TinyORM orm;
 
 	protected TestBase() {
 		this.connection = buildConnection();
-		this.orm = new TinyORM(connection);
+		this.readConnection = buildReadConnection();
+		this.orm = new TinyORM(connection, readConnection);
 	}
 
 	protected Connection buildConnection() {
+		return buildConnection(false);
+	}
+
+	protected Connection buildReadConnection() {
+		return buildConnection(true);
+	}
+
+	private Connection buildConnection(boolean isRead) {
 		try {
 			// この指定で､ログとれる｡
 			Class.forName("net.sf.log4jdbc.DriverSpy");
 			Class.forName("com.mysql.jdbc.Driver").newInstance();
 
 			String dburl = System.getProperty("test.dburl");
-			String dbuser = System.getProperty("test.dbuser");
-			String dbpassword = System.getProperty("test.dbpassword");
+
+			String dbuser;
+			String dbpassword;
+			if (isRead) {
+				dbuser = System.getProperty("test.read.dbuser");
+				dbpassword = System.getProperty("test.read.dbpassword");
+			} else {
+				dbuser = System.getProperty("test.dbuser");
+				dbpassword = System.getProperty("test.dbpassword");
+			}
+
 			if (dburl == null) {
 				dburl = "jdbc:log4jdbc:mysql://localhost/test";
-				dbuser = "root";
-				dbpassword = "";
+
+				if (isRead) {
+					dbuser = "read_only";
+					dbpassword = "";
+				} else {
+					dbuser = "root";
+					dbpassword = "";
+				}
 			}
 
 			return DriverManager.getConnection(dburl, dbuser, dbpassword);

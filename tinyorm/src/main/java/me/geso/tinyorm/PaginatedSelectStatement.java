@@ -31,7 +31,7 @@ public class PaginatedSelectStatement<T extends Row<?>> extends
 
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = orm.prepareStatement(sql)) {
+		try (final PreparedStatement ps = orm.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<T> rows = orm.mapRowListFromResultSet(klass, rs);
