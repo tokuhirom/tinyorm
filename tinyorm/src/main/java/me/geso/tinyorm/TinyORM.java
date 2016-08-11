@@ -29,6 +29,8 @@ import me.geso.jdbcutils.UncheckedRichSQLException;
 import net.moznion.db.transaction.manager.TransactionManager;
 import net.moznion.db.transaction.manager.TransactionScope;
 
+import javax.inject.Provider;
+
 /**
  * Tiny O/R Mapper implementation.
  * 
@@ -38,10 +40,13 @@ import net.moznion.db.transaction.manager.TransactionScope;
 public class TinyORM implements Closeable {
 
 	private static final ConcurrentHashMap<Class<?>, TableMeta<?>> TABLE_META_REGISTRY = new ConcurrentHashMap<>();
-	private final Connection connection;
-	private final Connection readConnection;
-	private final TransactionManager transactionManager;
+	private Connection connection;
+	private Connection readConnection;
+	private TransactionManager transactionManager;
 	private Integer queryTimeout;
+
+	private Provider<Connection> connectionProvider;
+	private Provider<Connection> readConnectionProvider;
 
 	public TinyORM(Connection connection) {
 		this.connection = connection;
@@ -55,11 +60,31 @@ public class TinyORM implements Closeable {
 		this.transactionManager = new TransactionManager(this.connection);
 	}
 
+	public TinyORM(Provider<Connection> connectionProvider, Provider<Connection> readConnectionProvider) {
+		this.connectionProvider = connectionProvider;
+		this.readConnectionProvider = readConnectionProvider;
+	}
+
 	public Connection getConnection() {
+		if (connection == null) {
+			if (connectionProvider == null) {
+				throw new RuntimeException();
+			}
+
+			connection = connectionProvider.get();
+			transactionManager = new TransactionManager(connection);
+		}
 		return connection;
 	}
 
 	public Connection getReadConnection() {
+		if (readConnection == null) {
+			if (readConnectionProvider == null) {
+				throw new RuntimeException();
+			}
+
+			readConnection = readConnectionProvider.get();
+		}
 		return readConnection;
 	}
 
