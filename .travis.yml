@@ -2,6 +2,8 @@ language: java
 jdk:
   - oraclejdk8
 before_install:
-  - mysql -e "create database IF NOT EXISTS test;" -uroot
+  - mysql -e "CREATE DATABASE IF NOT EXISTS test;" -uroot
+  - mysql -e "CREATE USER 'read_only'@'localhost';" -uroot
+  - mysql -e "GRANT SELECT ON *.* TO 'read_only'@'localhost';" -uroot
 install: mvn install -DskipTests=true -Dgpg.skip=true
 sudo: false

@@ -39,7 +39,7 @@ public class SelectCountStatement<T extends Row<?>> {
 		final Query query = this.buildQuery();
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = this.orm.prepareStatement(sql)) {
+		try (final PreparedStatement ps = this.orm.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
