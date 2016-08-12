@@ -68,7 +68,7 @@ public class TinyORM implements Closeable {
 	public Connection getConnection() {
 		if (connection == null) {
 			if (connectionProvider == null) {
-				throw new RuntimeException();
+				throw new RuntimeException("Connection provider is null");
 			}
 
 			connection = connectionProvider.get();
@@ -80,7 +80,7 @@ public class TinyORM implements Closeable {
 	public Connection getReadConnection() {
 		if (readConnection == null) {
 			if (readConnectionProvider == null) {
-				throw new RuntimeException();
+				throw new RuntimeException("Read connection provider is null");
 			}
 
 			readConnection = readConnectionProvider.get();
