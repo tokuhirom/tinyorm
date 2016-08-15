@@ -90,8 +90,4 @@ abstract class AbstractSelectStatement<T, Impl> {
 		}
 		return builder.build();
 	}
-
-	protected boolean isForUpdate() {
-		return forUpdate;
-	}
 }
