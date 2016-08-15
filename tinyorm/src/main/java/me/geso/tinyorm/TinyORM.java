@@ -33,7 +33,7 @@ import javax.inject.Provider;
 
 /**
  * Tiny O/R Mapper implementation.
- * 
+ *
  * @author Tokuhiro Matsuno
  */
 @Slf4j
@@ -78,6 +78,15 @@ public class TinyORM implements Closeable {
 	}
 
 	public Connection getReadConnection() {
+		try {
+			if (connection != null && !connection.getAutoCommit()) {
+				// If transaction has been started, return the connection which has taken the transaction.
+				return connection;
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Failed to get the mode of auto commit", e);
+		}
+
 		if (readConnection == null) {
 			if (readConnectionProvider == null) {
 				throw new RuntimeException("Read connection provider is null");
@@ -205,7 +214,7 @@ public class TinyORM implements Closeable {
 
 		// ensure at most single result for single(). (as default behavior)
 		statement.limit(1);
-		
+
 		return statement;
 	}
 
@@ -522,7 +531,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Execute query.
-	 * 
+	 *
 	 * @param query Query object
 	 * @param callback callback function to map ResultSet to Object.
 	 * @return Fetched value.
@@ -543,7 +552,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Execute query.
-	 * 
+	 *
 	 * @param sql SQL query
 	 * @param params SQL parameters
 	 * @param callback Callback function
@@ -563,7 +572,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Execute query without callback.
-	 * 
+	 *
 	 * @param sql SQL
 	 */
 	public void executeQuery(final String sql) {
@@ -579,7 +588,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Execute query without callback.
-	 * 
+	 *
 	 * @param sql SQL
 	 * @param params Parameters
 	 */
@@ -595,7 +604,7 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Execute query.
-	 * 
+	 *
 	 * @param sql SQL
 	 * @param callback Callback function
 	 * @return Selected data
@@ -621,7 +630,7 @@ public class TinyORM implements Closeable {
 	 * 		.where("status=?", 1)
 	 * 		.execute();
 	 * </code></pre>
-	 * 
+	 *
 	 * @param klass row class.
 	 * @return Instance of {@link me.geso.tinyorm.SelectCountStatement}.
 	 */
