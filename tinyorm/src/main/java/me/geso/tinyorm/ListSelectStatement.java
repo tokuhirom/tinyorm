@@ -31,7 +31,7 @@ public class ListSelectStatement<T extends Row<?>> extends
 
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = orm.prepareStatementForRead(sql)) {
+		try (final PreparedStatement ps = isForUpdate() ? orm.prepareStatement(sql) : orm.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<T> rows = new ArrayList<>();
