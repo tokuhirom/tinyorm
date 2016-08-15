@@ -84,7 +84,14 @@ public class TinyORM implements Closeable {
 				return connection;
 			}
 		} catch (SQLException e) {
-			throw new RuntimeException("Failed to get the mode of auto commit", e);
+			try {
+				if (!connection.isClosed()) {
+					// Not closed connection, DB access error is occured
+					throw new RuntimeException("Failed to get the mode of auto commit", e);
+				}
+			} catch (SQLException e1) {
+				throw new RuntimeException("Failed to get the mode of auto commit", e1);
+			}
 		}
 
 		if (readConnection == null) {
