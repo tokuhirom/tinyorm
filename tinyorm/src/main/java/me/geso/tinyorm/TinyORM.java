@@ -89,7 +89,10 @@ public class TinyORM implements Closeable {
 	}
 
 	public TransactionManager getTransactionManager() {
-		return this.transactionManager;
+		if (transactionManager == null) {
+			getConnection();
+		}
+		return transactionManager;
 	}
 
 	public PreparedStatement prepareStatement(String sql) {
@@ -667,7 +670,7 @@ public class TinyORM implements Closeable {
 	 * @throws SQLException
 	 */
 	public void transactionBegin() throws SQLException {
-		transactionManager.txnBegin();
+		getTransactionManager().txnBegin();
 	}
 
 	/**
@@ -693,7 +696,7 @@ public class TinyORM implements Closeable {
 	 * @return a transaction scope
 	 */
 	public TransactionScope createTransactionScope() throws SQLException {
-		return new TransactionScope(transactionManager);
+		return new TransactionScope(getTransactionManager());
 	}
 
 	/**
@@ -702,7 +705,7 @@ public class TinyORM implements Closeable {
 	 * @throws SQLException
 	 */
 	public void transactionCommit() throws SQLException {
-		transactionManager.txnCommit();
+		getTransactionManager().txnCommit();
 	}
 
 	/**
@@ -711,6 +714,6 @@ public class TinyORM implements Closeable {
 	 * @throws SQLException
 	 */
 	public void transactionRollback() throws SQLException {
-		transactionManager.txnRollback();
+		getTransactionManager().txnRollback();
 	}
 }
