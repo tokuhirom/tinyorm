@@ -40,8 +40,8 @@ import javax.inject.Provider;
 public class TinyORM implements Closeable {
 
 	private static final ConcurrentHashMap<Class<?>, TableMeta<?>> TABLE_META_REGISTRY = new ConcurrentHashMap<>();
-	private Connection connection;
-	private Connection readConnection;
+	private volatile Connection connection;
+	private volatile Connection readConnection;
 	private TransactionManager transactionManager;
 	private Integer queryTimeout;
 
@@ -71,8 +71,13 @@ public class TinyORM implements Closeable {
 				throw new RuntimeException("Connection provider is null");
 			}
 
-			connection = connectionProvider.get();
-			transactionManager = new TransactionManager(connection);
+			synchronized (this) { // For multi-threads, protect from duplicated borrowing
+				if (connection == null) {
+					connection = connectionProvider.get();
+					transactionManager = new TransactionManager(connection);
+				}
+				// otherwise, connection has been borrowed by another thread
+			}
 		}
 		return connection;
 	}
@@ -99,7 +104,12 @@ public class TinyORM implements Closeable {
 				throw new RuntimeException("Read connection provider is null");
 			}
 
-			readConnection = readConnectionProvider.get();
+			synchronized (this) { // For multi-threads, protect from duplicated borrowing
+				if (readConnection == null) {
+					readConnection = readConnectionProvider.get();
+				}
+				// otherwise, connection has been borrowed by another thread
+			}
 		}
 		return readConnection;
 	}
