@@ -42,7 +42,7 @@ public class TinyORM implements Closeable {
 	private static final ConcurrentHashMap<Class<?>, TableMeta<?>> TABLE_META_REGISTRY = new ConcurrentHashMap<>();
 	private volatile Connection connection;
 	private volatile Connection readConnection;
-	private TransactionManager transactionManager;
+	private volatile TransactionManager transactionManager;
 	private Integer queryTimeout;
 
 	private Provider<Connection> connectionProvider;
