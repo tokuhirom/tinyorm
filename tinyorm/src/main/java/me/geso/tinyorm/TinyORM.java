@@ -664,11 +664,14 @@ public class TinyORM implements Closeable {
 	@Override
 	public void close() {
 		try {
-			getConnection().close();
+			if (connection != null) {
+				connection.close();
+			}
 
-			Connection readConnection = getReadConnection();
-			if (!readConnection.isClosed()) {
-				readConnection.close();
+			if (readConnection != null) {
+				if (!readConnection.isClosed()) {
+					readConnection.close();
+				}
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
