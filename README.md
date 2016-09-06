@@ -64,7 +64,7 @@ db.insert(Member.class)
 
 This statement generate following query:
 
-```java
+```sql
 INSERT INTO member (name) VALUES ('John')
 ```
 
