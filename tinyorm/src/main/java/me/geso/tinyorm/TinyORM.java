@@ -60,6 +60,11 @@ public class TinyORM implements Closeable {
 		this.transactionManager = new TransactionManager(this.connection);
 	}
 
+	public TinyORM(Provider<Connection> connectionProvider) {
+		this.connectionProvider = connectionProvider;
+		// Do not assign to readConnectionProvider
+	}
+
 	public TinyORM(Provider<Connection> connectionProvider, Provider<Connection> readConnectionProvider) {
 		this.connectionProvider = connectionProvider;
 		this.readConnectionProvider = readConnectionProvider;
@@ -101,6 +106,12 @@ public class TinyORM implements Closeable {
 
 		if (readConnection == null) {
 			if (readConnectionProvider == null) {
+				if (connectionProvider != null) {
+					// For lazily borrowing with single connection
+					readConnection = getConnection(); // use the same connection as write/read
+					return readConnection;
+				}
+
 				throw new RuntimeException("Read connection provider is null");
 			}
 
