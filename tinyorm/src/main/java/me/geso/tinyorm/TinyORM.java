@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package me.geso.tinyorm;
 
 import java.beans.IntrospectionException;
@@ -170,16 +165,12 @@ public class TinyORM implements Closeable {
 	/**
 	 * Select one row from the database.
 	 */
-	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
-													  String sql,
-													  List<Object> params) {
+	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass, String sql, List<Object> params) {
 		return singleBySQL(klass, sql, params, getReadConnection());
 	}
 
-	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
-													  String sql,
-													  List<Object> params,
-													  Connection connection) {
+	public <T extends Row<?>> Optional<T> singleBySQL(
+			Class<T> klass, String sql, List<Object> params, Connection connection) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
 
 		try (final PreparedStatement ps = this.prepareStatement(sql, connection)) {
@@ -207,8 +198,7 @@ public class TinyORM implements Closeable {
 	 * @param query Query object
 	 * @return Got value.
 	 */
-	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
-			Query query) {
+	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass, Query query) {
 		return this.singleBySQL(klass, query.getSQL(), query.getParameters());
 	}
 
@@ -222,9 +212,7 @@ public class TinyORM implements Closeable {
 	 * @param connection Connection to retrieve row.
      * @return Got value.
      */
-	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass,
-													  Query query,
-													  Connection connection) {
+	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass, Query query, Connection connection) {
 		return this.singleBySQL(klass, query.getSQL(), query.getParameters(), connection);
 	}
 
@@ -291,8 +279,7 @@ public class TinyORM implements Closeable {
 	 * Search by SQL.
 	 *
 	 */
-	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass,
-			final String sql) {
+	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql) {
 		return this.searchBySQL(klass, sql, Collections.emptyList());
 	}
 
@@ -362,8 +349,7 @@ public class TinyORM implements Closeable {
 		}
 	}
 
-	<T extends Row<?>> List<T> mapRowListFromResultSet(Class<T> klass,
-			ResultSet rs) throws SQLException {
+	<T extends Row<?>> List<T> mapRowListFromResultSet(Class<T> klass, ResultSet rs) throws SQLException {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
 		ArrayList<T> rows = new ArrayList<>();
 		List<String> columnLabels = getColumnLabels(rs);
@@ -379,8 +365,7 @@ public class TinyORM implements Closeable {
 	 *
 	 * @return Got long value.
 	 */
-	public OptionalLong queryForLong(final String sql,
-			@NonNull final List<Object> params) {
+	public OptionalLong queryForLong(final String sql, @NonNull final List<Object> params) {
 		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
@@ -410,8 +395,7 @@ public class TinyORM implements Closeable {
 	 *
 	 * @return Got value
 	 */
-	public Optional<String> queryForString(final String sql,
-			@NonNull final List<Object> params) {
+	public Optional<String> queryForString(final String sql, @NonNull final List<Object> params) {
 		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
@@ -564,8 +548,7 @@ public class TinyORM implements Closeable {
 	 * @param callback callback function to map ResultSet to Object.
 	 * @return Fetched value.
 	 */
-	public <T> T executeQuery(final Query query,
-			final ResultSetCallback<T> callback) {
+	public <T> T executeQuery(final Query query, final ResultSetCallback<T> callback) {
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
 		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
@@ -637,8 +620,7 @@ public class TinyORM implements Closeable {
 	 * @param callback Callback function
 	 * @return Selected data
 	 */
-	public <T> T executeQuery(final String sql,
-			final ResultSetCallback<T> callback) {
+	public <T> T executeQuery(final String sql, final ResultSetCallback<T> callback) {
 		final List<Object> params = Collections.emptyList();
 		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
