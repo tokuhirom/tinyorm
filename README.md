@@ -10,101 +10,133 @@ This is a tiny o/r mapper for Java 8.
 
 main/java/myapp/rows/Member.java
 
-    @Table("member")
-    @Data // lombok
-    @EqualsAndHashCode(callSuper = false)
-    public Member extends Row<Member> {
-      private long id;
-      private String name;
-    }
+```java
+@Table("member")
+@Data // lombok
+@EqualsAndHashCode(callSuper = false)
+public Member extends Row<Member> {
+  private long id;
+  private String name;
+}
+```
 
 ## Examples
 
 Create new database object.
 
-    TinyORM db = new TinyORM(connection);
+```java
+Connection connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
+TinyORM db = new TinyORM(connection);
+```
+
+Or you can instantiate with lazily connection borrowing, like so;
+
+```java
+Provider<Connection> connectionProvider = ConnectionPool.borrow();
+TinyORM db = new TinyORM(connectionPooling);
+```
+
+Please see [Connection](#connection) section.
 
 ### Selecting one row.
 
-    Optional<Member> member = db.single(Member.class)
-      .where("id=?", 1)
-      .execute();
+```java
+Optional<Member> member = db.single(Member.class)
+  .where("id=?", 1)
+  .execute();
+```
 
 ### Selecting rows.
 
-    List<Member> member = db.search(Member.class)
-      .where("name LIKE CONCAT(?, '%')", "John")
-      .execute();
+```java
+List<Member> member = db.search(Member.class)
+  .where("name LIKE CONCAT(?, '%')", "John")
+  .execute();
+```
 
 ### Insert row
 
-    db.insert(Member.class)
-      .value("name", "John")
-      .execute();
+```java
+db.insert(Member.class)
+  .value("name", "John")
+  .execute();
+```
 
 This statement generate following query:
 
-    INSERT INTO member (name) VALUES ('John')
+```java
+INSERT INTO member (name) VALUES ('John')
+```
 
 If you want to use `ON DUPLICATE KEY UPDATE`, you can call `InsertStatement#onDuplicateKeyUpdate` method.
 
 For example:
 
-    orm.insert(Member.class)
-      .value("email", email)
-      .value("name", name)
-      .onDuplicateKeyUpdate("name=?", name)
-      .execute();
+```java
+orm.insert(Member.class)
+  .value("email", email)
+  .value("name", name)
+  .onDuplicateKeyUpdate("name=?", name)
+  .execute();
+```
 
 ### Insert row with form class.
 
-    @Data // lombok
-    class MemberInsertForm {
-      private String name;
-    }
-    
-    MemberInsertForm form = new MemberInsertForm();
-    form.name = name;
-    db.insert(Member.class).valueByBean(form).execute();
+```java
+@Data // lombok
+class MemberInsertForm {
+  private String name;
+}
+
+MemberInsertForm form = new MemberInsertForm();
+form.name = name;
+db.insert(Member.class).valueByBean(form).execute();
+```
 
 ### Update row with form class.
 
-    @Data // lombok
-    class MemberUpdateForm {
-      private String name;
-    }
-    
-    MemberUpdateForm form = new MemberUpdateForm();
-    form.name = name;
-    Member member = db.single(Member.class)
-      .where("id=?", 1)
-      .execute()
-      .get();
-    member.updateByBean(form);
+```java
+@Data // lombok
+class MemberUpdateForm {
+  private String name;
+}
+
+MemberUpdateForm form = new MemberUpdateForm();
+form.name = name;
+Member member = db.single(Member.class)
+  .where("id=?", 1)
+  .execute()
+  .get();
+member.updateByBean(form);
+```
 
 ### Delete row
 
-    Member member = db.single(Member.class)
-      .where("id=?", 1)
-      .execute()
-      .get();
-    member.delete();
+```java
+Member member = db.single(Member.class)
+  .where("id=?", 1)
+  .execute()
+  .get();
+member.delete();
+```
 
 ## Annotations
 
-    @Value
-    @Table("member")
-    @EqualsAndHashCode(callSuper = false)
-    public MemberRow extends Row<MemberRow> {
-        @PrimaryKey
-        private long id;
-        @Column
-        private String name;
-        @Column("alias_name")
-        private String aliasName;
-        @CreatedTimestampColumn
-        private long createdOn;
-    }
+```java
+@Value
+@Table("member")
+@EqualsAndHashCode(callSuper = false)
+public MemberRow extends Row<MemberRow> {
+    @PrimaryKey
+    private long id;
+    @Column
+    private String name;
+    @Column("alias_name")
+    private String aliasName;
+    @CreatedTimestampColumn
+    private long createdOn;
+}
+```
 
 ### @PrimaryKey
 
@@ -128,22 +160,28 @@ TinyORM fills this field when updating a row. This column must be `long`. TinyOR
 
 ### @CsvColumn
 
-    @CsvColumn
-    private List<String> prefectures;
+```java
+@CsvColumn
+private List<String> prefectures;
+```
 
 You can store the data in CSV format.
 
 ### @JsonColumn
 
-    @JsonColumn
-    private MyComplexType myComplexThing;
+```java
+@JsonColumn
+private MyComplexType myComplexThing;
+```
 
 You can store the data in JSON format.
 
 ### @SetColumn
 
-    @SetColumn
-    private Set<String> categories;
+```java
+@SetColumn
+private Set<String> categories;
+```
 
 TinyORM conerts MySQL's SET value as java.util.Set.
 
@@ -156,13 +194,15 @@ You can fill createdOn and updatedOn columns by this.
 
 You can use java.time.LocalDate for the column field.
 
-    @Value
-    @EqualsAndHashCode(callSuper = false)
-    @Table("foo")
-    public class Foo extends Row<Foo> {
-        @Column
-        private LocalDate date;
-    }
+```java
+@Value
+@EqualsAndHashCode(callSuper = false)
+@Table("foo")
+public class Foo extends Row<Foo> {
+    @Column
+    private LocalDate date;
+}
+```
 
 TinyORM automatically convert java.sql.Date to java.time.LocalDate.
 
@@ -170,14 +210,43 @@ TinyORM automatically convert java.sql.Date to java.time.LocalDate.
 
 You can create your own constructor, and create it from the constructor, you need to add `java.beans.ConstructorProperties` annotation.
 
-    public class RowExample {
-        @java.beans.ConstructorProperties({"name", "age", "score", "tags"})
-        public RowExample(String name, long age, long score, String tags) {
-           // ...
-        }
+```java
+public class RowExample {
+    @java.beans.ConstructorProperties({"name", "age", "score", "tags"})
+    public RowExample(String name, long age, long score, String tags) {
+       // ...
     }
+}
+```
 
 Normally, you should use lombok.Value to create constructor.
+
+## Connection
+
+### Supports handling two divided connections
+
+TinyORM can use two connections, `read/write` connection and `read only` connection.
+
+TinyORM decide automatically which connection to use depending on the situation.
+It means, TinyORM uses `read only` connection when handling reading query.
+On the other hand, that uses `read/write` connection when handling writing query or handling some queries in a transaction.
+
+It ensures using the same `read/write` connection in a transaction.
+
+#### How to use two connections
+
+```java
+Connection connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
+Connection readConnection = DriverManager.getConnection(readDburl, readDbuser, readDbpassword);
+TinyORM db = new TinyORM(connection, readconnection);
+```
+
+If you pass only one connection to the constructor, TinyORM treats that connection as `read/write` connection and always uses that.
+
+### Supports lazily connection borrowing
+
+If you pass the type of `Provider<Connection>` value to the constructor,
+TinyORM defers borrowing (or establishing) connection until the connection is needed.
 
 ## LICENSE
 
