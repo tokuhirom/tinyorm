@@ -385,13 +385,18 @@ public class TinyORMTest extends TestBase {
 	@Test
 	public void testQueryForString() throws SQLException, RichSQLException {
 		this.orm.updateBySQL(
-			"INSERT INTO bar (y,z) values ('ho', 'hey')"
+			"INSERT INTO bar (y,z) values ('ho', 'hey'), (NULL, 'yo')"
 			);
 		{
 			Optional<String> got = this.orm
 				.queryForString("SELECT y FROM bar WHERE z='hey'");
 			assertThat(got.isPresent(), is(true));
 			assertThat(got.get(), is("ho"));
+		}
+		{
+			Optional<String> got = this.orm
+					.queryForString("SELECT y FROM bar WHERE z='yo'");
+			assertThat(got.isPresent(), is(false));
 		}
 		{
 			Optional<String> got = this.orm

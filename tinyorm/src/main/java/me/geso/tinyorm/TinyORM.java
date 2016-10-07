@@ -401,7 +401,7 @@ public class TinyORM implements Closeable {
 			try (final ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
 					final String s = rs.getString(1);
-					return Optional.of(s);
+					return Optional.ofNullable(s);
 				} else {
 					return Optional.<String>empty();
 				}
