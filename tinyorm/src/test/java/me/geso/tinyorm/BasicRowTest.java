@@ -54,6 +54,20 @@ public class BasicRowTest extends TestBase {
 	}
 
 	@Test
+	public void testRefetchWithSpecifiedConnection() throws Exception {
+		X x = orm.insert(X.class).value("name", "John").executeSelect();
+		assertEquals(x.getName(), "John");
+		assertEquals(x.getId(), 1);
+		assertEquals("inserted", x.getY());
+
+		orm.createUpdateStatement(x).set("name", "Taro").execute();
+		X refetched = orm.refetch(x, orm.getConnection()).get();
+		assertEquals("Taro", refetched.getName());
+		assertEquals(1, refetched.getId());
+		assertEquals("updated", refetched.getY());
+	}
+
+	@Test
 	public void testCreateUpdateStatementWithInheritance() throws SQLException,
 			RichSQLException {
 		Y y = orm.insert(Y.class)

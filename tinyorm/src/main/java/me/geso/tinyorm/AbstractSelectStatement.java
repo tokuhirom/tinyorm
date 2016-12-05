@@ -19,6 +19,7 @@ abstract class AbstractSelectStatement<T, Impl> {
 	private Long limit;
 	private Long offset;
 	private boolean forUpdate = false;
+	private boolean forceWriteConnection = false;
 
 	AbstractSelectStatement(Connection connection, String tableName) {
 		this.tableName = tableName;
@@ -61,6 +62,12 @@ abstract class AbstractSelectStatement<T, Impl> {
 		return (Impl)this;
 	}
 
+	@SuppressWarnings("unchecked")
+	public Impl forceWriteConnection() {
+		forceWriteConnection = true;
+		return (Impl)this;
+	}
+
 	protected Query buildQuery() {
 		QueryBuilder builder = new QueryBuilder(this.identifierQuoteString)
 			.appendQuery("SELECT * FROM ")
@@ -93,5 +100,9 @@ abstract class AbstractSelectStatement<T, Impl> {
 
 	protected boolean isForUpdate() {
 		return forUpdate;
+	}
+
+	protected boolean isForceWriteConnection() {
+		return forceWriteConnection;
 	}
 }

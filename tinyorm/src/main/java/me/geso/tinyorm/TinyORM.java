@@ -135,7 +135,7 @@ public class TinyORM implements Closeable {
 		return prepareStatement(sql, getReadConnection());
 	}
 
-	private PreparedStatement prepareStatement(String sql, Connection connection) {
+	PreparedStatement prepareStatement(String sql, Connection connection) {
 		try {
 			final PreparedStatement preparedStatement = connection.prepareStatement(sql);
 			if (queryTimeout != null) {
@@ -263,12 +263,19 @@ public class TinyORM implements Closeable {
 	/**
 	 * Search by SQL.
 	 */
-	public <T extends Row<?>> List<T> searchBySQL(
-			final Class<T> klass, final String sql, final List<Object> params) {
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
+	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql, final List<Object> params) {
+		return searchBySQL(klass, sql, params, getReadConnection());
+	}
+
+	/**
+	 * Search by SQL.
+	 */
+	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql, final List<Object> params,
+			final Connection connection) {
+		try (final PreparedStatement ps = prepareStatement(sql, connection)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
-				return this.mapRowListFromResultSet(klass, rs);
+				return mapRowListFromResultSet(klass, rs);
 			}
 		} catch (final SQLException ex) {
 			throw new UncheckedRichSQLException(ex, sql, params);
@@ -277,22 +284,30 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Search by SQL.
-	 *
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql) {
-		return this.searchBySQL(klass, sql, Collections.emptyList());
+		return searchBySQL(klass, sql, Collections.emptyList());
+	}
+
+	/**
+	 * Search by SQL.
+	 */
+	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql, final Connection connection) {
+		return searchBySQL(klass, sql, Collections.emptyList(), connection);
 	}
 
 	/**
 	 * Search by SQL with Pager.
-	 *
-	 *
 	 */
-	public <T extends Row<?>> Paginated<T> searchBySQLWithPager(
-			@NonNull final Class<T> klass, final String sql, final List<Object> params,
-			final long entriesPerPage) {
+	public <T extends Row<?>> Paginated<T> searchBySQLWithPager(@NonNull final Class<T> klass, final String sql,
+			final List<Object> params, final long entriesPerPage) {
+		return searchBySQLWithPager(klass, sql, params, entriesPerPage, getReadConnection());
+	}
+
+	public <T extends Row<?>> Paginated<T> searchBySQLWithPager(@NonNull final Class<T> klass, final String sql,
+			final List<Object> params, final long entriesPerPage, final Connection connection) {
 		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
-		try (final PreparedStatement ps = this.prepareStatementForRead(limitedSql)) {
+		try (final PreparedStatement ps = this.prepareStatement(limitedSql, connection)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<T> rows = this.mapRowListFromResultSet(klass, rs);
@@ -366,7 +381,17 @@ public class TinyORM implements Closeable {
 	 * @return Got long value.
 	 */
 	public OptionalLong queryForLong(final String sql, @NonNull final List<Object> params) {
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
+		return queryForLong(sql, params, getReadConnection());
+	}
+
+	/**
+	 * Select single long value
+	 *
+	 * @return Got long value.
+	 */
+	public OptionalLong queryForLong(final String sql, @NonNull final List<Object> params,
+			final Connection connection) {
+		try (final PreparedStatement ps = prepareStatement(sql, connection)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
@@ -387,7 +412,16 @@ public class TinyORM implements Closeable {
 	 * @return Got value.
 	 */
 	public OptionalLong queryForLong(@NonNull final String sql) {
-		return this.queryForLong(sql, Collections.emptyList());
+		return queryForLong(sql, Collections.emptyList());
+	}
+
+	/**
+	 * Select single long value from database.
+	 *
+	 * @return Got value.
+	 */
+	public OptionalLong queryForLong(@NonNull final String sql, final Connection connection) {
+		return queryForLong(sql, Collections.emptyList(), connection);
 	}
 
 	/**
@@ -396,7 +430,17 @@ public class TinyORM implements Closeable {
 	 * @return Got value
 	 */
 	public Optional<String> queryForString(final String sql, @NonNull final List<Object> params) {
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
+		return queryForString(sql, params, getReadConnection());
+	}
+
+	/**
+	 * Select single String value from database.
+	 *
+	 * @return Got value
+	 */
+	public Optional<String> queryForString(final String sql, @NonNull final List<Object> params,
+			final Connection connection) {
+		try (final PreparedStatement ps = prepareStatement(sql, connection)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
@@ -417,7 +461,16 @@ public class TinyORM implements Closeable {
 	 * @return Got value
 	 */
 	public Optional<String> queryForString(@NonNull final String sql) {
-		return this.queryForString(sql, Collections.emptyList());
+		return queryForString(sql, Collections.emptyList());
+	}
+
+	/**
+	 * Select single String value from database without parameters.
+	 *
+	 * @return Got value
+	 */
+	public Optional<String> queryForString(@NonNull final String sql, final Connection connection) {
+		return queryForString(sql, Collections.emptyList(), connection);
 	}
 
 	public <T extends Row<?>> void delete(final T row) {
@@ -450,31 +503,32 @@ public class TinyORM implements Closeable {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	<T extends Row<?>> Optional<T> refetch(final T row) {
+	    return refetch(row, getReadConnection());
+	}
+
+	@SuppressWarnings("unchecked")
+	<T extends Row<?>> Optional<T> refetch(final T row, final Connection connection) {
 		final TableMeta<T> tableMeta = this.getTableMeta((Class<T>)row.getClass());
 		final String identifierQuoteString = this.getIdentifierQuoteString();
-		final Query where = tableMeta.createWhereClauseFromRow(row,
-				identifierQuoteString);
+		final Query where = tableMeta.createWhereClauseFromRow(row, identifierQuoteString);
 
 		final Query query = new QueryBuilder(identifierQuoteString)
-			.appendQuery("SELECT * FROM ")
-			.appendIdentifier(tableMeta.getName())
-			.appendQuery(" WHERE ")
-			.append(where)
-			.build();
+				.appendQuery("SELECT * FROM ")
+				.appendIdentifier(tableMeta.getName())
+				.appendQuery(" WHERE ")
+				.append(where)
+				.build();
 
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
+		try (final PreparedStatement ps = prepareStatement(sql, connection)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				List<String> columnLabels = getColumnLabels(rs);
 				if (rs.next()) {
-					final T refetched = tableMeta
-						.createRowFromResultSet(
-								(Class<T>)row.getClass(), rs,
-								columnLabels, this);
+					final T refetched = tableMeta.createRowFromResultSet((Class<T>)row.getClass(), rs, columnLabels,
+							this);
 					return Optional.of(refetched);
 				} else {
 					return Optional.<T>empty();
@@ -549,16 +603,19 @@ public class TinyORM implements Closeable {
 	 * @return Fetched value.
 	 */
 	public <T> T executeQuery(final Query query, final ResultSetCallback<T> callback) {
-		final String sql = query.getSQL();
-		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
-			JDBCUtils.fillPreparedStatementParams(ps, params);
-			try (final ResultSet rs = ps.executeQuery()) {
-				return callback.call(rs);
-			}
-		} catch (final SQLException ex) {
-			throw new UncheckedRichSQLException(ex, sql, params);
-		}
+		return executeQuery(query.getSQL(), Collections.emptyList(), callback, getReadConnection());
+	}
+
+	/**
+	 * Execute query.
+	 *
+	 * @param query Query object
+	 * @param callback callback function to map ResultSet to Object.
+	 * @param connection Database connection to use.
+	 * @return Fetched value.
+	 */
+	public <T> T executeQuery(final Query query, final ResultSetCallback<T> callback, final Connection connection) {
+		return executeQuery(query.getSQL(), Collections.emptyList(), callback, connection);
 	}
 
 	/**
@@ -569,45 +626,26 @@ public class TinyORM implements Closeable {
 	 * @param callback Callback function
 	 * @return Selected value
 	 */
-	public <T> T executeQuery(final String sql, final List<Object> params,
-			final ResultSetCallback<T> callback) {
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
+	public <T> T executeQuery(final String sql, final List<Object> params, final ResultSetCallback<T> callback) {
+		return executeQuery(sql, params, callback, getReadConnection());
+	}
+
+	/**
+	 * Execute query.
+	 *
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 * @param callback Callback function
+	 * @param connection Database connection to use.
+	 * @return Selected value
+	 */
+	public <T> T executeQuery(final String sql, final List<Object> params, final ResultSetCallback<T> callback,
+			final Connection connection) {
+		try (final PreparedStatement ps = prepareStatement(sql, connection)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				return callback.call(rs);
 			}
-		} catch (final SQLException ex) {
-			throw new UncheckedRichSQLException(ex, sql, params);
-		}
-	}
-
-	/**
-	 * Execute query without callback.
-	 *
-	 * @param sql SQL
-	 */
-	public void executeQuery(final String sql) {
-		final List<Object> params = Collections.emptyList();
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
-			JDBCUtils.fillPreparedStatementParams(ps, params);
-			final ResultSet resultSet = ps.executeQuery();
-			resultSet.close();
-		} catch (final SQLException ex) {
-			throw new UncheckedRichSQLException(ex, sql, params);
-		}
-	}
-
-	/**
-	 * Execute query without callback.
-	 *
-	 * @param sql SQL
-	 * @param params Parameters
-	 */
-	public void executeQuery(final String sql, final List<Object> params) {
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
-			JDBCUtils.fillPreparedStatementParams(ps, params);
-			final ResultSet rs = ps.executeQuery();
-			rs.close();
 		} catch (final SQLException ex) {
 			throw new UncheckedRichSQLException(ex, sql, params);
 		}
@@ -622,11 +660,60 @@ public class TinyORM implements Closeable {
 	 */
 	public <T> T executeQuery(final String sql, final ResultSetCallback<T> callback) {
 		final List<Object> params = Collections.emptyList();
-		try (final PreparedStatement ps = this.prepareStatementForRead(sql)) {
+		return executeQuery(sql, params, callback, getReadConnection());
+	}
+
+	/**
+	 * Execute query.
+	 *
+	 * @param sql SQL
+	 * @param callback Callback function
+	 * @return Selected data
+	 */
+	public <T> T executeQuery(final String sql, final ResultSetCallback<T> callback, final Connection connection) {
+		return executeQuery(sql, Collections.emptyList(), callback, connection);
+	}
+
+	/**
+	 * Execute query without callback.
+	 *
+	 * @param sql SQL
+	 */
+	public void executeQuery(final String sql) {
+		executeQuery(sql, Collections.emptyList(), getReadConnection());
+	}
+
+	/**
+	 * Execute query without callback.
+	 *
+	 * @param sql SQL
+	 * @param connection Database connection to use.
+	 */
+	public void executeQuery(final String sql, final Connection connection) {
+		executeQuery(sql, Collections.emptyList(), connection);
+	}
+
+	/**
+	 * Execute query without callback.
+	 *
+	 * @param sql SQL
+	 * @param params Parameters
+	 */
+	public void executeQuery(final String sql, final List<Object> params) {
+		executeQuery(sql, params, getReadConnection());
+	}
+
+	/**
+	 * Execute query without callback.
+	 *
+	 * @param sql SQL
+	 * @param params Parameters
+	 */
+	public void executeQuery(final String sql, final List<Object> params, final Connection connection) {
+		try (final PreparedStatement ps = prepareStatement(sql, connection)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
-			try (final ResultSet rs = ps.executeQuery()) {
-				return callback.call(rs);
-			}
+			final ResultSet rs = ps.executeQuery();
+			rs.close();
 		} catch (final SQLException ex) {
 			throw new UncheckedRichSQLException(ex, sql, params);
 		}

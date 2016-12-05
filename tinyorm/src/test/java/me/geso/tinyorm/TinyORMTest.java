@@ -58,11 +58,20 @@ public class TinyORMTest extends TestBase {
 	public void singleSimple() throws SQLException, RichSQLException {
 		this.orm.updateBySQL("INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)");
 
-		Member got = this.orm.singleBySQL(Member.class,
-			"SELECT * FROM member WHERE name=?", Arrays.asList("m1"))
-			.get();
-		assertEquals(1, got.getId());
-		assertEquals("m1", got.getName());
+		{
+			Member got = this.orm.singleBySQL(Member.class, "SELECT * FROM member WHERE name=?",
+					Arrays.asList("m1")).get();
+			assertEquals(1, got.getId());
+			assertEquals("m1", got.getName());
+		}
+
+		// Specified connection
+		{
+			Member got = this.orm.singleBySQL(Member.class, "SELECT * FROM member WHERE name=?", Arrays.asList("m1"),
+					orm.getConnection()).get();
+			assertEquals(1, got.getId());
+			assertEquals("m1", got.getName());
+		}
 	}
 
 	@Test
@@ -114,11 +123,18 @@ public class TinyORMTest extends TestBase {
 		Member member3 = this.orm.insert(Member.class).value("name", "m3")
 			.executeSelect();
 
-		Member got = this.orm.single(Member.class)
-			.where("name=?", "m2")
-			.execute().get();
-		assertEquals(got.getId(), member2.getId());
-		assertEquals(got.getName(), "m2");
+		{
+			Member got = this.orm.single(Member.class).where("name=?", "m2").execute().get();
+			assertEquals(got.getId(), member2.getId());
+			assertEquals(got.getName(), "m2");
+		}
+
+		// With force write connection
+		{
+			Member got = this.orm.single(Member.class).forceWriteConnection().where("name=?", "m2").execute().get();
+			assertEquals(got.getId(), member2.getId());
+			assertEquals(got.getName(), "m2");
+		}
 	}
 
 	@Test
@@ -177,6 +193,43 @@ public class TinyORMTest extends TestBase {
 			assertEquals(5, paginated.getEntriesPerPage());
 			assertEquals(true, paginated.getHasNextPage());
 		}
+
+		// Force write connection
+		{
+			Paginated<Member> paginated = this.orm.searchWithPager(Member.class, 4).forceWriteConnection().offset(
+					0).execute();
+			assertEquals(4, paginated.getRows().size());
+			assertEquals(4, paginated.getEntriesPerPage());
+			assertEquals(true, paginated.getHasNextPage());
+		}
+		{
+			Paginated<Member> paginated = this.orm.searchWithPager(Member.class, 4).forceWriteConnection().offset(
+					4).execute();
+			assertEquals(4, paginated.getRows().size());
+			assertEquals(4, paginated.getEntriesPerPage());
+			assertEquals(true, paginated.getHasNextPage());
+		}
+		{
+			Paginated<Member> paginated = this.orm.searchWithPager(Member.class, 4).forceWriteConnection().offset(
+					8).execute();
+			assertEquals(2, paginated.getRows().size());
+			assertEquals(4, paginated.getEntriesPerPage());
+			assertEquals(false, paginated.getHasNextPage());
+		}
+		{
+			Paginated<Member> paginated = this.orm.searchWithPager(Member.class, 4).forceWriteConnection().offset(
+					12).execute();
+			assertEquals(0, paginated.getRows().size());
+			assertEquals(4, paginated.getEntriesPerPage());
+			assertEquals(false, paginated.getHasNextPage());
+		}
+		{
+			Paginated<Member> paginated = this.orm.searchWithPager(Member.class, 5).forceWriteConnection().offset(
+					0).execute();
+			assertEquals(5, paginated.getRows().size());
+			assertEquals(5, paginated.getEntriesPerPage());
+			assertEquals(true, paginated.getHasNextPage());
+		}
 	}
 
 	@Test
@@ -210,6 +263,21 @@ public class TinyORMTest extends TestBase {
 				.map(row -> "" + row.getExtraColumns().get("idPlusOne"))
 				.collect(Collectors.joining(",")));
 		}
+		// With specified connection
+		{
+			List<Member> members = this.orm.searchBySQL(Member.class,
+					"SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC", Collections.emptyList(),
+					orm.getConnection());
+			System.out.println(members);
+			assertEquals(10, members.size());
+			assertEquals("10,9,8,7,6,5,4,3,2,1",
+					members.stream().map(row -> "" + row.getId()).collect(Collectors.joining(",")));
+			assertEquals("11,10,9,8,7,6,5,4,3,2",
+					members.stream().map(row -> "" + row.getExtraColumn("idPlusOne")).collect(Collectors.joining(",")));
+			assertEquals("11,10,9,8,7,6,5,4,3,2",
+					members.stream().map(row -> "" + row.getExtraColumns().get("idPlusOne")).collect(
+							Collectors.joining(",")));
+		}
 		// respect "AS" label.
 		{
 			List<Blog> members = this.orm
@@ -224,8 +292,7 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
-	public void testSearchBySQLWithPager() throws SQLException,
-			RichSQLException {
+	public void testSearchBySQLWithPager() throws SQLException, RichSQLException {
 		IntStream.rangeClosed(1, 10).forEach(i -> {
 			try {
 				this.orm.insert(Member.class).value("name", "m" + i)
@@ -294,13 +361,20 @@ public class TinyORMTest extends TestBase {
 		Member member3 = this.orm.insert(Member.class).value("name", "b1")
 			.executeSelect();
 
-		List<Member> got = this.orm.search(Member.class)
-			.where("name LIKE ?", "m%")
-			.orderBy("id DESC")
-			.execute();
-		assertEquals(got.size(), 2);
-		assertEquals(got.get(0).getName(), "m2");
-		assertEquals(got.get(1).getName(), "m1");
+		{
+			List<Member> got = this.orm.search(Member.class).where("name LIKE ?", "m%").orderBy("id DESC").execute();
+			assertEquals(got.size(), 2);
+			assertEquals(got.get(0).getName(), "m2");
+			assertEquals(got.get(1).getName(), "m1");
+		}
+		// Force write connection
+		{
+			List<Member> got = this.orm.search(Member.class).forceWriteConnection().where("name LIKE ?", "m%").orderBy(
+					"id DESC").execute();
+			assertEquals(got.size(), 2);
+			assertEquals(got.get(0).getName(), "m2");
+			assertEquals(got.get(1).getName(), "m1");
+		}
 	}
 
 	@Test
@@ -338,16 +412,32 @@ public class TinyORMTest extends TestBase {
 		orm.insert(Member.class)
 			.value("name", "Taro")
 			.execute();
-		String got = orm.executeQuery("SELECT id, name FROM member ORDER BY id ASC", (ResultSet rs) -> {
-			StringBuilder builder = new StringBuilder();
-			while (rs.next()) {
-				long id = rs.getLong(1);
-				String name = rs.getString(2);
-				builder.append(id).append(":").append(name).append("\n");
-			}
-			return builder.toString();
-		});
-		assertEquals("1:John\n2:Taro\n", got);
+
+		{
+			String got = orm.executeQuery("SELECT id, name FROM member ORDER BY id ASC", (ResultSet rs) -> {
+				StringBuilder builder = new StringBuilder();
+				while (rs.next()) {
+					long id = rs.getLong(1);
+					String name = rs.getString(2);
+					builder.append(id).append(":").append(name).append("\n");
+				}
+				return builder.toString();
+			});
+			assertEquals("1:John\n2:Taro\n", got);
+		}
+		// With specified connection
+		{
+			String got = orm.executeQuery("SELECT id, name FROM member ORDER BY id ASC", (ResultSet rs) -> {
+				StringBuilder builder = new StringBuilder();
+				while (rs.next()) {
+					long id = rs.getLong(1);
+					String name = rs.getString(2);
+					builder.append(id).append(":").append(name).append("\n");
+				}
+				return builder.toString();
+			}, orm.getConnection());
+			assertEquals("1:John\n2:Taro\n", got);
+		}
 	}
 
 	@Test
@@ -378,6 +468,32 @@ public class TinyORMTest extends TestBase {
 			OptionalLong got = this.orm
 				.queryForLong("SELECT y FROM foo WHERE z=?",
 					Arrays.asList("Nothing"));
+			assertThat(got.isPresent(), is(false));
+		}
+	}
+
+	@Test
+	public void testQueryForLongWithSpecifiedConnection() throws SQLException, RichSQLException {
+		assertEquals(1, this.orm.updateBySQL("INSERT INTO foo (y,z) VALUES (5963, 'hey')"));
+		{
+			OptionalLong got = this.orm.queryForLong("SELECT y FROM foo WHERE z='hey'", orm.getConnection());
+			assertThat(got.isPresent(), is(true));
+			assertThat(got.getAsLong(), is(5963L));
+		}
+		{
+			OptionalLong got = this.orm.queryForLong("SELECT y FROM foo WHERE z='nothing'", orm.getConnection());
+			assertThat(got.isPresent(), is(false));
+		}
+		// with placeholders
+		{
+			OptionalLong got = this.orm.queryForLong("SELECT y FROM foo WHERE z=?", Arrays.asList("hey"),
+					orm.getConnection());
+			assertThat(got.isPresent(), is(true));
+			assertThat(got.getAsLong(), is(5963L));
+		}
+		{
+			OptionalLong got = this.orm.queryForLong("SELECT y FROM foo WHERE z=?", Arrays.asList("Nothing"),
+					orm.getConnection());
 			assertThat(got.isPresent(), is(false));
 		}
 	}
@@ -420,6 +536,36 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
+	public void testQueryForStringWithSpecifiedConnection() throws SQLException, RichSQLException {
+		this.orm.updateBySQL("INSERT INTO bar (y,z) VALUES ('ho', 'hey'), (NULL, 'yo')");
+		{
+			Optional<String> got = this.orm.queryForString("SELECT y FROM bar WHERE z='hey'", orm.getConnection());
+			assertThat(got.isPresent(), is(true));
+			assertThat(got.get(), is("ho"));
+		}
+		{
+			Optional<String> got = this.orm.queryForString("SELECT y FROM bar WHERE z='yo'", orm.getConnection());
+			assertThat(got.isPresent(), is(false));
+		}
+		{
+			Optional<String> got = this.orm.queryForString("SELECT y FROM bar WHERE z='nothing'", orm.getConnection());
+			assertThat(got.isPresent(), is(false));
+		}
+		// with placeholders
+		{
+			Optional<String> got = this.orm.queryForString("SELECT y FROM bar WHERE z=?", Arrays.asList("hey"),
+					orm.getConnection());
+			assertThat(got.isPresent(), is(true));
+			assertThat(got.get(), is("ho"));
+		}
+		{
+			Optional<String> got = this.orm.queryForString("SELECT y FROM bar WHERE z=?", Arrays.asList("Nothing"),
+					orm.getConnection());
+			assertThat(got.isPresent(), is(false));
+		}
+	}
+
+	@Test
 	public void testCount() throws SQLException, RichSQLException {
 		this.orm.insert(Member.class).value("name", "m1")
 			.execute();
@@ -443,6 +589,27 @@ public class TinyORMTest extends TestBase {
 			long count = this.orm.count(Member.class)
 				.where("name LIKE CONCAT(?, '%')", "b")
 				.execute();
+			assertEquals(1, count);
+		}
+	}
+
+	@Test
+	public void testCountForceWriteConnection() throws SQLException, RichSQLException {
+		this.orm.insert(Member.class).value("name", "m1").execute();
+		this.orm.insert(Member.class).value("name", "m2").execute();
+		this.orm.insert(Member.class).value("name", "b1").execute();
+
+		{
+			long count = this.orm.count(Member.class).forceWriteConnection().execute();
+			assertEquals(3, count);
+		}
+		{
+			long count = this.orm.count(Member.class).forceWriteConnection().where("name LIKE 'm%'").execute();
+			assertEquals(2, count);
+		}
+		{
+			long count = this.orm.count(Member.class).forceWriteConnection().where("name LIKE CONCAT(?, '%')",
+					"b").execute();
 			assertEquals(1, count);
 		}
 	}
