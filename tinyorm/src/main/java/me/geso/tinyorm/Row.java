@@ -1,5 +1,6 @@
 package me.geso.tinyorm;
 
+import java.sql.Connection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,8 +31,18 @@ public abstract class Row<T extends Row<?>> {
 	 */
 	@SuppressWarnings("unchecked")
 	public Optional<T> refetch() {
+		return refetch(orm.getReadConnection());
+	}
+
+	/**
+	 * Fetch the latest row data from database.
+	 *
+	 * @return Fetched object. It may return empty response if other connection deleted the row.
+	 */
+	@SuppressWarnings("unchecked")
+	public Optional<T> refetch(final Connection connection) {
 		checkORM();
-		return this.orm.refetch((T)this);
+		return orm.refetch((T)this, connection);
 	}
 
 	/**

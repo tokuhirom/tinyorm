@@ -22,6 +22,7 @@ public class SelectCountStatement<T extends Row<?>> {
 	private final List<String> whereQuery = new ArrayList<>();
 	private final List<Object> whereParams = new ArrayList<>();
 	private final TinyORM orm;
+	private boolean forceWriteConnection = false;
 
 	SelectCountStatement(TableMeta<T> tableMeta, TinyORM orm) {
 		this.tableName = tableMeta.getName();
@@ -35,11 +36,17 @@ public class SelectCountStatement<T extends Row<?>> {
 		return this;
 	}
 
+	public SelectCountStatement<T> forceWriteConnection() {
+		forceWriteConnection = true;
+		return this;
+	}
+
 	public long execute() {
 		final Query query = this.buildQuery();
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = this.orm.prepareStatementForRead(sql)) {
+		try (final PreparedStatement ps = forceWriteConnection ? orm.prepareStatement(sql) :
+				orm.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
