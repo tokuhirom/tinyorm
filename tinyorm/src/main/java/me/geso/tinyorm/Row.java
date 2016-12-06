@@ -37,6 +37,8 @@ public abstract class Row<T extends Row<?>> {
 	/**
 	 * Fetch the latest row data from database.
 	 *
+	 * @param connection Database connection to use.
+	 *
 	 * @return Fetched object. It may return empty response if other connection deleted the row.
 	 */
 	@SuppressWarnings("unchecked")

@@ -164,11 +164,23 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select one row from the database.
+	 *
+	 * @param klass Row class to retrieve
+	 * @param sql SQL query
+	 * @param params SQL parameters
 	 */
 	public <T extends Row<?>> Optional<T> singleBySQL(Class<T> klass, String sql, List<Object> params) {
 		return singleBySQL(klass, sql, params, getReadConnection());
 	}
 
+	/**
+	 * Select one row from the database.
+	 *
+	 * @param klass Row class to retrieve
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 * @param connection Database connection to use
+	 */
 	public <T extends Row<?>> Optional<T> singleBySQL(
 			Class<T> klass, String sql, List<Object> params, Connection connection) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
@@ -217,10 +229,9 @@ public class TinyORM implements Closeable {
 	}
 
 	/**
-	 * Create new <code>BeanSelectStatement</code> for selecting 1 row.
+	 * Create new {@code BeanSelectStatement} for selecting 1 row.
 	 *
-	 * @param klass
-	 *            Target entity class.
+	 * @param klass Target entity class.
 	 * @return select statement object.
 	 */
 	public <T extends Row<?>> BeanSelectStatement<T> single(Class<T> klass) {
@@ -235,10 +246,9 @@ public class TinyORM implements Closeable {
 	}
 
 	/**
-	 * Create new <code>ListSelectStatement</code> for selecting rows.
+	 * Create new {@code ListSelectStatement} for selecting rows.
 	 *
-	 * @param klass
-	 *            Target entity class.
+	 * @param klass Target entity class.
 	 * @return Select statement object.
 	 */
 	public <T extends Row<?>> ListSelectStatement<T> search(Class<T> klass) {
@@ -248,13 +258,13 @@ public class TinyORM implements Closeable {
 	}
 
 	/**
-	 * Create new <code>PaginatedSelectStatement</code> for selecting rows.
+	 * Create new {@code PaginatedSelectStatement} for selecting rows.
 	 *
 	 * @param klass Row class
+	 * @param limit Number of rows per page
 	 * @return paginated select statement object
 	 */
-	public <T extends Row<?>> PaginatedSelectStatement<T> searchWithPager(
-			final Class<T> klass, final long limit) {
+	public <T extends Row<?>> PaginatedSelectStatement<T> searchWithPager(final Class<T> klass, final long limit) {
 		TableMeta<T> tableMeta = this.getTableMeta(klass);
 		return new PaginatedSelectStatement<>(getReadConnection(),
 			klass, tableMeta, this, limit);
@@ -262,6 +272,10 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Search by SQL.
+	 *
+	 * @param klass Row class
+	 * @param sql SQL query
+	 * @param params SQL parameters
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql, final List<Object> params) {
 		return searchBySQL(klass, sql, params, getReadConnection());
@@ -269,6 +283,11 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Search by SQL.
+	 *
+	 * @param klass Row class
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 * @param connection Database connection to use
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql, final List<Object> params,
 			final Connection connection) {
@@ -284,6 +303,9 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Search by SQL.
+	 *
+	 * @param klass Row class
+	 * @param sql SQL query
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql) {
 		return searchBySQL(klass, sql, Collections.emptyList());
@@ -291,6 +313,10 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Search by SQL.
+	 *
+	 * @param klass Row class
+	 * @param sql SQL query
+	 * @param connection Database connection to use
 	 */
 	public <T extends Row<?>> List<T> searchBySQL(final Class<T> klass, final String sql, final Connection connection) {
 		return searchBySQL(klass, sql, Collections.emptyList(), connection);
@@ -298,12 +324,26 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Search by SQL with Pager.
+	 *
+	 * @param klass Row class
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 * @param entriesPerPage Number of rows per page
 	 */
 	public <T extends Row<?>> Paginated<T> searchBySQLWithPager(@NonNull final Class<T> klass, final String sql,
 			final List<Object> params, final long entriesPerPage) {
 		return searchBySQLWithPager(klass, sql, params, entriesPerPage, getReadConnection());
 	}
 
+	/**
+	 * Search by SQL with Pager.
+	 *
+	 * @param klass Row class
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 * @param entriesPerPage Number of rows per page
+	 * @param connection Database connection to use
+	 */
 	public <T extends Row<?>> Paginated<T> searchBySQLWithPager(@NonNull final Class<T> klass, final String sql,
 			final List<Object> params, final long entriesPerPage, final Connection connection) {
 		String limitedSql = sql + " LIMIT " + (entriesPerPage + 1);
@@ -378,6 +418,9 @@ public class TinyORM implements Closeable {
 	/**
 	 * Select single long value
 	 *
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 *
 	 * @return Got long value.
 	 */
 	public OptionalLong queryForLong(final String sql, @NonNull final List<Object> params) {
@@ -386,6 +429,10 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select single long value
+	 *
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 * @param connection Database connection to use
 	 *
 	 * @return Got long value.
 	 */
@@ -409,6 +456,8 @@ public class TinyORM implements Closeable {
 	/**
 	 * Select single long value from database.
 	 *
+	 * @param sql SQL query
+	 *
 	 * @return Got value.
 	 */
 	public OptionalLong queryForLong(@NonNull final String sql) {
@@ -417,6 +466,9 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select single long value from database.
+	 *
+	 * @param sql SQL query
+	 * @param connection Database connection to use
 	 *
 	 * @return Got value.
 	 */
@@ -427,6 +479,9 @@ public class TinyORM implements Closeable {
 	/**
 	 * Select single String value from database.
 	 *
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 *
 	 * @return Got value
 	 */
 	public Optional<String> queryForString(final String sql, @NonNull final List<Object> params) {
@@ -435,6 +490,10 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select single String value from database.
+	 *
+	 * @param sql SQL query
+	 * @param params SQL parameters
+	 * @param connection Database connection to use
 	 *
 	 * @return Got value
 	 */
@@ -458,6 +517,8 @@ public class TinyORM implements Closeable {
 	/**
 	 * Select single String value from database without parameters.
 	 *
+	 * @param sql SQL query
+	 *
 	 * @return Got value
 	 */
 	public Optional<String> queryForString(@NonNull final String sql) {
@@ -466,6 +527,9 @@ public class TinyORM implements Closeable {
 
 	/**
 	 * Select single String value from database without parameters.
+	 *
+	 * @param sql SQL query
+	 * @param connection Database connection to use
 	 *
 	 * @return Got value
 	 */
@@ -707,6 +771,7 @@ public class TinyORM implements Closeable {
 	 * Execute query without callback.
 	 *
 	 * @param sql SQL
+	 * @param connection Database connection to use.
 	 * @param params Parameters
 	 */
 	public void executeQuery(final String sql, final List<Object> params, final Connection connection) {

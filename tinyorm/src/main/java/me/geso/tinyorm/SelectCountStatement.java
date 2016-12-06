@@ -36,6 +36,15 @@ public class SelectCountStatement<T extends Row<?>> {
 		return this;
 	}
 
+	/**
+	 * Force to use write (master) connection for retrieval.
+	 *
+	 * Purpose: To counteract replication delays.
+	 *
+	 * If this method is not called, read-only connection will be used.
+	 *
+	 * @return Took over statement
+	 */
 	public SelectCountStatement<T> forceWriteConnection() {
 		forceWriteConnection = true;
 		return this;
