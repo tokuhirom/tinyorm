@@ -55,7 +55,7 @@ public class TableMetaTest extends TestBase {
 		final Field parameterNamesField = rowBuilder.getClass().getDeclaredField("parameterNames");
 		parameterNamesField.setAccessible(true);
 		final String[] parameterNames = (String[])parameterNamesField.get(rowBuilder);
-		assertThat(parameterNames, is(new String[]{"id", "name", "e_mail", "q_no", "url", "createdOn", "updatedOn"}));
+		assertThat(parameterNames, is(new String[]{"id", "name", "e_mail", "q_no", "url", "a", "createdOn", "updatedOn"}));
 	}
 
 	@Table("member")
@@ -72,6 +72,8 @@ public class TableMetaTest extends TestBase {
 		private String qNo;
 		@Column("url")
 		private String URL;
+		@Column
+		private String a;
 
 		@CreatedTimestampColumn
 		private long createdOn;
