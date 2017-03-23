@@ -40,6 +40,7 @@ public class TableMetaTest extends TestBase {
 		TableMeta<?> tableMeta = orm
 			.getTableMeta(Member.class);
 		assertTrue(tableMeta.hasColumn("id"));
+		assertTrue(tableMeta.hasColumn("q_no"));
 		assertFalse(tableMeta.hasColumn("unknown"));
 	}
 
@@ -66,6 +67,8 @@ public class TableMetaTest extends TestBase {
 		private String name;
 		@Column("e_mail")
 		private String email;
+		@Column("q_no")
+		private String qNo;
 
 		@CreatedTimestampColumn
 		private long createdOn;

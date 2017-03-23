@@ -124,7 +124,8 @@ class TableMeta<RowType extends Row<?>> {
 		}
 		Map<String, Field> fieldMap = new HashMap<>();
 		for (Field field : fields) {
-			fieldMap.put(field.getName(), field);
+			String capitalizedFieldName = field.getName().substring(0, 1).toUpperCase() + field.getName().substring(1);
+			fieldMap.put(Introspector.decapitalize(capitalizedFieldName), field);
 		}
 		for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 			String name = propertyDescriptor.getName();
