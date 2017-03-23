@@ -20,17 +20,20 @@ public class NamedColumnTest extends TestBase {
 			"id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT",
 			"member_name VARCHAR(255) NOT NULL",
 			"entry_name VARCHAR(255) NOT NULL",
-			"q_no VARCHAR(255) NOT NULL");
+			"q_no VARCHAR(255) NOT NULL",
+			"url VARCHAR(255) NOT NULL");
 
 		X created = orm.insert(X.class)
 			.value("member_name", "John")
 			.value("entry_name", "Foo")
 			.value("q_no", "qNo")
+			.value("url", "http://example.com")
 			.executeSelect();
 
 		assertEquals("John", created.getMemberName());
 		assertEquals("Foo", created.getEntryName());
 		assertEquals("qNo", created.getQNo());
+		assertEquals("http://example.com", created.getURL());
 	}
 
 	@Test
@@ -62,6 +65,9 @@ public class NamedColumnTest extends TestBase {
 
 		@Column("q_no")
 		private String qNo;
+
+		@Column("url")
+		private String URL;
 	}
 
 	@Getter
