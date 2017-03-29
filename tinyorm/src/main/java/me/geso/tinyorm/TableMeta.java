@@ -288,18 +288,9 @@ class TableMeta<RowType extends Row<?>> {
 			{
 				Inflate inflate = method.getAnnotation(Inflate.class);
 				if (inflate != null) {
-					String columnName = inflate.value();
-
-					if (inflaters.containsKey(columnName) && !inflaters.get(columnName).isEmpty()) {
-						throw new RuntimeException(String.format(
-							"Duplicated @Inflate in %s(%s).",
-							rowClass.getName(), columnName));
-					}
 					if (Modifier.isStatic(method.getModifiers())) {
-						if (inflaters.get(columnName) == null)  {
-							inflaters.put(columnName, new ArrayList<>());
-						}
-						inflaters.get(columnName).add(new MethodInflater(rowClass, method));
+						String columnName = inflate.value();
+						inflaters.put(columnName, Collections.singletonList(new MethodInflater(rowClass, method)));
 					} else {
 						throw new RuntimeException(
 							String.format(
@@ -311,17 +302,9 @@ class TableMeta<RowType extends Row<?>> {
 			{
 				Deflate deflate = method.getAnnotation(Deflate.class);
 				if (deflate != null) {
-					String columnName = deflate.value();
-					if (deflaters.containsKey(columnName) && !deflaters.get(columnName).isEmpty()) {
-						throw new RuntimeException(String.format(
-							"Duplicated @Deflate in %s(%s).",
-							rowClass.getName(), columnName));
-					}
 					if (Modifier.isStatic(method.getModifiers())) {
-						if (deflaters.get(columnName) == null)  {
-							deflaters.put(columnName, new ArrayList<>());
-						}
-						deflaters.get(columnName).add(new MethodDeflater(rowClass, method));
+						String columnName = deflate.value();
+						deflaters.put(columnName, Collections.singletonList(new MethodDeflater(rowClass, method)));
 					} else {
 						throw new RuntimeException(
 							String.format(
