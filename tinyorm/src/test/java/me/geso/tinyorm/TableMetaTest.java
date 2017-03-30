@@ -40,6 +40,8 @@ public class TableMetaTest extends TestBase {
 		TableMeta<?> tableMeta = orm
 			.getTableMeta(Member.class);
 		assertTrue(tableMeta.hasColumn("id"));
+		assertTrue(tableMeta.hasColumn("q_no"));
+		assertTrue(tableMeta.hasColumn("url"));
 		assertFalse(tableMeta.hasColumn("unknown"));
 	}
 
@@ -53,7 +55,7 @@ public class TableMetaTest extends TestBase {
 		final Field parameterNamesField = rowBuilder.getClass().getDeclaredField("parameterNames");
 		parameterNamesField.setAccessible(true);
 		final String[] parameterNames = (String[])parameterNamesField.get(rowBuilder);
-		assertThat(parameterNames, is(new String[]{"id", "name", "e_mail", "createdOn", "updatedOn"}));
+		assertThat(parameterNames, is(new String[]{"id", "name", "e_mail", "q_no", "url", "a", "createdOn", "updatedOn"}));
 	}
 
 	@Table("member")
@@ -66,6 +68,12 @@ public class TableMetaTest extends TestBase {
 		private String name;
 		@Column("e_mail")
 		private String email;
+		@Column("q_no")
+		private String qNo;
+		@Column("url")
+		private String URL;
+		@Column
+		private String a;
 
 		@CreatedTimestampColumn
 		private long createdOn;

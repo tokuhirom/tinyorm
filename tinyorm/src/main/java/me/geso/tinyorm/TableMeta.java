@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -124,7 +125,10 @@ class TableMeta<RowType extends Row<?>> {
 		}
 		Map<String, Field> fieldMap = new HashMap<>();
 		for (Field field : fields) {
-			fieldMap.put(field.getName(), field);
+			String fieldName = field.getName();
+			String capitalizedFieldName = fieldName.substring(0, 1).toUpperCase(Locale.ENGLISH)
+										  + (fieldName.length() > 0 ? fieldName.substring(1) : "");
+			fieldMap.put(Introspector.decapitalize(capitalizedFieldName), field);
 		}
 		for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 			String name = propertyDescriptor.getName();

@@ -3,15 +3,15 @@ package me.geso.tinyorm.annotations;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.sql.SQLException;
+
+import org.junit.Test;
+
 import lombok.Getter;
 import lombok.Setter;
 import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
-
-import org.junit.Test;
-
-import java.sql.SQLException;
 
 public class NamedColumnTest extends TestBase {
 	@Test
@@ -19,15 +19,21 @@ public class NamedColumnTest extends TestBase {
 		createTable("x",
 			"id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT",
 			"member_name VARCHAR(255) NOT NULL",
-			"entry_name VARCHAR(255) NOT NULL");
+			"entry_name VARCHAR(255) NOT NULL",
+			"q_no VARCHAR(255) NOT NULL",
+			"url VARCHAR(255) NOT NULL");
 
 		X created = orm.insert(X.class)
 			.value("member_name", "John")
 			.value("entry_name", "Foo")
+			.value("q_no", "qNo")
+			.value("url", "http://example.com")
 			.executeSelect();
 
 		assertEquals("John", created.getMemberName());
 		assertEquals("Foo", created.getEntryName());
+		assertEquals("qNo", created.getQNo());
+		assertEquals("http://example.com", created.getURL());
 	}
 
 	@Test
@@ -56,6 +62,12 @@ public class NamedColumnTest extends TestBase {
 
 		@Column("entry_name")
 		private String entryName;
+
+		@Column("q_no")
+		private String qNo;
+
+		@Column("url")
+		private String URL;
 	}
 
 	@Getter
