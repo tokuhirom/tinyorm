@@ -9,30 +9,42 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class TestBase {
 
-	protected final Connection connection;
-	protected final Connection readConnection;
-	protected final TinyORM orm;
+	protected static Connection connection;
+	protected static Connection readConnection;
+	protected static TinyORM orm;
 
 	protected TestBase() {
-		this.connection = buildConnection();
-		this.readConnection = buildReadConnection();
-		this.orm = new TinyORM(connection, readConnection);
 	}
 
-	protected Connection buildConnection() {
+	@BeforeClass
+	public static void connection() {
+		connection = buildConnection();
+		readConnection = buildReadConnection();
+		orm = new TinyORM(connection, readConnection);
+	}
+
+	@AfterClass
+	public static void closeConnection() {
+		orm.close();
+	}
+
+	protected static Connection buildConnection() {
 		return buildConnection(false);
 	}
 
-	protected Connection buildReadConnection() {
+	protected static Connection buildReadConnection() {
 		return buildConnection(true);
 	}
 
-	private Connection buildConnection(boolean isRead) {
+	private static Connection buildConnection(boolean isRead) {
 		try {
 			// この指定で､ログとれる｡
 			Class.forName("net.sf.log4jdbc.DriverSpy");
