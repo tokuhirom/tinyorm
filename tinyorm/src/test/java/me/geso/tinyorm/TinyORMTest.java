@@ -1,7 +1,9 @@
 package me.geso.tinyorm;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,6 +16,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -437,6 +440,32 @@ public class TinyORMTest extends TestBase {
 				return builder.toString();
 			}, orm.getConnection());
 			assertEquals("1:John\n2:Taro\n", got);
+		}
+	}
+
+	@Test
+	public void testExecuteStream() throws Exception {
+		orm.insert(Member.class)
+		   .value("name", "John")
+		   .execute();
+		orm.insert(Member.class)
+		   .value("name", "Taro")
+		   .execute();
+
+		String sql = "SELECT id, name FROM member ORDER BY id ASC";
+		try (Stream<ResultSet> stream = orm.executeStream(sql)) {
+			String got = stream
+				.map(rs -> {
+					try {
+						long id = rs.getLong(1);
+						String name = rs.getString(2);
+						return String.valueOf(id) + ':' + name;
+					} catch (SQLException e) {
+						throw new UncheckedRichSQLException(e);
+					}
+				})
+				.collect(Collectors.joining("\n"));
+			assertEquals("1:John\n2:Taro", got);
 		}
 	}
 
