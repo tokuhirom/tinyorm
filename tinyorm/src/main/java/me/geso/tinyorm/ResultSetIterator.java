@@ -41,7 +41,7 @@ public class ResultSetIterator<T> implements AutoCloseable, Iterator<T> {
     @Override
     public boolean hasNext() {
         try {
-            return !this.resultSet.isLast();
+            return this.resultSet.next();
         } catch (SQLException e) {
             throw new RuntimeException(new RichSQLException(e, query, params));
         }
@@ -50,7 +50,6 @@ public class ResultSetIterator<T> implements AutoCloseable, Iterator<T> {
     @Override
     public T next() {
         try {
-            this.resultSet.next();
             return callback.apply(this.resultSet);
         } catch (SQLException e) {
             throw new RuntimeException(new RichSQLException(e, query, params));
