@@ -13,6 +13,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
+
+import javax.inject.Provider;
+
+import net.moznion.db.transaction.manager.TransactionManager;
+import net.moznion.db.transaction.manager.TransactionScope;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +26,8 @@ import me.geso.jdbcutils.JDBCUtils;
 import me.geso.jdbcutils.Query;
 import me.geso.jdbcutils.QueryBuilder;
 import me.geso.jdbcutils.ResultSetCallback;
+import me.geso.jdbcutils.RichSQLException;
 import me.geso.jdbcutils.UncheckedRichSQLException;
-import net.moznion.db.transaction.manager.TransactionManager;
-import net.moznion.db.transaction.manager.TransactionScope;
-
-import javax.inject.Provider;
 
 /**
  * Tiny O/R Mapper implementation.
@@ -641,7 +644,7 @@ public class TinyORM implements Closeable {
 	 * @return column label list
 	 * @throws SQLException
 	 */
-	static public List<String> getColumnLabels(ResultSet rs) throws SQLException {
+	public static List<String> getColumnLabels(ResultSet rs) throws SQLException {
 		ResultSetMetaData metaData = rs.getMetaData();
 		List<String> columnLabels = new ArrayList<>(metaData.getColumnCount());
 		for (int i = 0; i < metaData.getColumnCount(); i++) {
@@ -771,8 +774,8 @@ public class TinyORM implements Closeable {
 	 * Execute query without callback.
 	 *
 	 * @param sql SQL
-	 * @param connection Database connection to use.
 	 * @param params Parameters
+	 * @param connection Database connection to use.
 	 */
 	public void executeQuery(final String sql, final List<Object> params, final Connection connection) {
 		try (final PreparedStatement ps = prepareStatement(sql, connection)) {
@@ -782,6 +785,63 @@ public class TinyORM implements Closeable {
 		} catch (final SQLException ex) {
 			throw new UncheckedRichSQLException(ex, sql, params);
 		}
+	}
+
+	/**
+	 * Create stream from query.
+	 * You must close the stream after use. I mean you should use try-with-resources for return value from this method.
+	 *
+	 * @param sql SQL
+	 * @param params Parameters
+	 * @param connection Database connection to use.
+	 * @return stream, that generates result set.
+	 */
+	public Stream<ResultSet> executeStream(final String sql, final List<Object> params, final Connection connection) {
+		try {
+			final PreparedStatement ps = prepareStatement(sql, connection);
+			JDBCUtils.fillPreparedStatementParams(ps, params);
+
+			final ResultSet rs = ps.executeQuery();
+			ResultSetIterator<ResultSet> iterator = new ResultSetIterator<>(ps, rs, sql, params, resultSet -> resultSet);
+			return iterator.toStream();
+		} catch (SQLException e) {
+			throw new RuntimeException(new RichSQLException(e, sql, params));
+		}
+	}
+
+	/**
+	 * Create stream from query.
+	 * You must close the stream after use. I mean you should use try-with-resources for return value from this method.
+	 *
+	 * @param sql SQL
+	 * @param connection Database connection to use.
+	 * @return stream, that generates result set.
+	 */
+	public Stream<ResultSet> executeStream(final String sql, final Connection connection) {
+		return executeStream(sql, Collections.emptyList(), connection);
+	}
+
+	/**
+	 * Create stream from query.
+	 * You must close the stream after use. I mean you should use try-with-resources for return value from this method.
+	 *
+	 * @param sql SQL
+	 * @param params Parameters
+	 * @return stream, that generates result set.
+	 */
+	public Stream<ResultSet> executeStream(final String sql, final List<Object> params) {
+		return executeStream(sql, params, getReadConnection());
+	}
+
+	/**
+	 * Create stream from query.
+	 * You must close the stream after use. I mean you should use try-with-resources for return value from this method.
+	 *
+	 * @param sql SQL
+	 * @return stream, that generates result set.
+	 */
+	public Stream<ResultSet> executeStream(final String sql) {
+		return executeStream(sql, Collections.emptyList());
 	}
 
 	/**
