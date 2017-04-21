@@ -4,9 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.sql.SQLException;
+import java.util.Optional;
 
 import org.junit.Test;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import me.geso.jdbcutils.RichSQLException;
@@ -48,6 +50,52 @@ public class NamedColumnTest extends TestBase {
 
 		assertNotNull(created.getCreatedAt());
 		assertNotNull(created.getUpdatedAt());
+	}
+
+	@Test
+	public void insertAndUpdateByBean() throws Exception {
+		createTable("x",
+					"id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT",
+					"member_name VARCHAR(255) NOT NULL",
+					"entry_name VARCHAR(255)",
+					"q_no VARCHAR(255) NOT NULL",
+					"url VARCHAR(255) NOT NULL");
+
+		XForm form = new XForm();
+		form.setMemberName("John");
+		form.setQNo("qNo");
+		form.setURL("http://example.com");
+
+		X created = orm.insert(X.class)
+					   .valueByBean(form)
+					   .executeSelect();
+
+		assertEquals("John", created.getMemberName());
+		assertEquals(null, created.getEntryName());
+		assertEquals("qNo", created.getQNo());
+		assertEquals("http://example.com", created.getURL());
+
+		XForm formForUpdate = new XForm();
+		formForUpdate.setMemberName("Tom");
+		formForUpdate.setQNo("P1");
+		formForUpdate.setURL("http://other.com");
+
+		created.update()
+		   .setBean(formForUpdate)
+		   .execute();
+
+		Optional<X> updated = created.refetch();
+		assertEquals("Tom", updated.get().getMemberName());
+		assertEquals(null, updated.get().getEntryName());
+		assertEquals("P1", updated.get().getQNo());
+		assertEquals("http://other.com", updated.get().getURL());
+	}
+
+	@Data
+	public static class XForm {
+		private String memberName;
+		private String qNo;
+		private String URL;
 	}
 
 	@Getter

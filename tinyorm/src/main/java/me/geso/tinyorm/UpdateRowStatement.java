@@ -5,6 +5,7 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -70,22 +71,17 @@ public class UpdateRowStatement<T extends Row<?>> {
 		}
 
 		try {
-			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(),
-				Object.class);
-			PropertyDescriptor[] propertyDescriptors = beanInfo
-				.getPropertyDescriptors();
+			BeanInfo beanInfo = Introspector.getBeanInfo(bean.getClass(), Object.class);
+			PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
 			for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
-				String name = propertyDescriptor.getName();
-				if (!tableMeta.hasColumn(name)) {
-					// Ignore values doesn't exists in Row bean.
-					continue;
-				}
-				if (propertyDescriptor.getReadMethod() == null) {
+				Method readMethod = propertyDescriptor.getReadMethod();
+				if (readMethod == null) {
 					continue;
 				}
 
-				Object value = propertyDescriptor.getReadMethod().invoke(bean);
-				this.set(name, value);
+				Object value = readMethod.invoke(bean);
+				tableMeta.getColumnName(propertyDescriptor)
+					.ifPresent(columnName -> this.set(columnName, value));
 			}
 		} catch (IllegalAccessException | IllegalArgumentException
 				| InvocationTargetException | IntrospectionException e) {
