@@ -87,15 +87,16 @@ public class InsertStatement<T extends Row<?>> {
 	 */
 	public InsertStatement<T> valueByBean(Object valueBean) {
 		try {
-			BeanInfo beanInfo = Introspector.getBeanInfo(valueBean.getClass(),
-				Object.class);
-			for (PropertyDescriptor propertyDescriptor : beanInfo
-				.getPropertyDescriptors()) {
+			BeanInfo beanInfo = Introspector.getBeanInfo(valueBean.getClass(), Object.class);
+			for (PropertyDescriptor propertyDescriptor : beanInfo.getPropertyDescriptors()) {
 				Method readMethod = propertyDescriptor.getReadMethod();
-				if (readMethod != null) {
-					Object value = readMethod.invoke(valueBean);
-					this.value(propertyDescriptor.getName(), value);
+				if (readMethod == null) {
+					continue;
 				}
+
+				Object value = readMethod.invoke(valueBean);
+				tableMeta.getColumnName(propertyDescriptor)
+					.ifPresent(columnName -> this.value(columnName, value));
 			}
 			return this;
 		} catch (IntrospectionException | IllegalAccessException

@@ -556,6 +556,20 @@ class TableMeta<RowType extends Row<?>> {
 		return propertyDescriptorMap.containsKey(columnName);
 	}
 
+	public Optional<String> getColumnName(PropertyDescriptor beanPropertyDescriptor) {
+		return propertyDescriptorMap
+			.entrySet()
+			.stream()
+			.filter(entry -> {
+				PropertyDescriptor propertyDescriptor = entry.getValue();
+				return propertyDescriptor.getPropertyType().isAssignableFrom(beanPropertyDescriptor.getPropertyType())
+			   		&& propertyDescriptor.getReadMethod().getName().equals(beanPropertyDescriptor.getReadMethod().getName())
+					&& propertyDescriptor.getWriteMethod().getName().equals(beanPropertyDescriptor.getWriteMethod().getName());
+			})
+			.findFirst()
+			.map(Map.Entry::getKey);
+	}
+
 	RowType createRowFromResultSet(
 			final Class<RowType> klass,
 			final ResultSet rs,
