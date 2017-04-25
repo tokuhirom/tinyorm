@@ -444,6 +444,23 @@ public class TinyORMTest extends TestBase {
 	}
 
 	@Test
+	public void testExecuteStreamEmpty() throws Exception {
+		String sql = "SELECT id, name FROM member ORDER BY id ASC";
+		try (Stream<ResultSet> stream = orm.executeStream(sql)) {
+			String got = stream
+				.map(rs -> {
+					try {
+						return rs.getString(2);
+					} catch (SQLException e) {
+						throw new UncheckedRichSQLException(e);
+					}
+				})
+				.collect(Collectors.joining("\n"));
+			assertEquals("", got);
+		}
+	}
+
+	@Test
 	public void testExecuteStream() throws Exception {
 		orm.insert(Member.class)
 		   .value("name", "John")

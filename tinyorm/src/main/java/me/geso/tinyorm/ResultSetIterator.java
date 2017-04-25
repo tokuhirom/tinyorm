@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
@@ -18,6 +19,7 @@ public class ResultSetIterator<T> implements AutoCloseable, Iterator<T> {
     private final String query;
     private final List<Object> params;
     private final ResultSetIteratorCallback<T> callback;
+    private boolean existsNext;
 
     public ResultSetIterator(PreparedStatement preparedStatement, ResultSet resultSet, String query,
                              List<Object> params, ResultSetIteratorCallback<T> callback) {
@@ -41,7 +43,8 @@ public class ResultSetIterator<T> implements AutoCloseable, Iterator<T> {
     @Override
     public boolean hasNext() {
         try {
-            return !this.resultSet.isLast();
+            this.existsNext = this.resultSet.next();
+            return existsNext;
         } catch (SQLException e) {
             throw new RuntimeException(new RichSQLException(e, query, params));
         }
@@ -49,8 +52,11 @@ public class ResultSetIterator<T> implements AutoCloseable, Iterator<T> {
 
     @Override
     public T next() {
+        if (!this.existsNext) {
+            throw new NoSuchElementException();
+        }
+
         try {
-            this.resultSet.next();
             return callback.apply(this.resultSet);
         } catch (SQLException e) {
             throw new RuntimeException(new RichSQLException(e, query, params));

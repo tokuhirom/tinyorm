@@ -24,6 +24,17 @@ public class ListSelectStatementTest extends TestBase {
     }
 
     @Test
+    public void testExecuteStreamEmpty() throws Exception {
+        try (Stream<Member> stream = orm.search(Member.class)
+                                        .orderBy("id DESC")
+                                        .executeStream()) {
+            assertThat(
+                    stream.map(Member::getName).collect(Collectors.joining(",")),
+                    is(""));
+        }
+    }
+
+    @Test
     public void testExecuteStream() throws Exception {
         orm.insert(Member.class)
            .value("name", "John")
