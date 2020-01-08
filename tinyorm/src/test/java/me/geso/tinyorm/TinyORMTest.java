@@ -2,7 +2,10 @@ package me.geso.tinyorm;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 
 import java.sql.Connection;
@@ -17,6 +20,8 @@ import java.util.OptionalLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import javax.inject.Provider;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -666,6 +671,36 @@ public class TinyORMTest extends TestBase {
 			assertNotNull(connection);
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	@Test
+	public void testRenewClosedConnection() throws SQLException {
+		{
+			final Provider<Connection> connectionProvider = TestBase::buildConnection;
+			final Provider<Connection> readConnectionProvider = TestBase::buildConnection;
+			orm = new TinyORM(connectionProvider, readConnectionProvider);
+			assertSame(this.orm.getConnection(), this.orm.getConnection());
+			assertSame(this.orm.getReadConnection(), this.orm.getReadConnection());
+		}
+		// get new connection after close method called (in case of using connection pool)
+		{
+			final Provider<Connection> connectionProvider = TestBase::buildConnection;
+			final Provider<Connection> readConnectionProvider = TestBase::buildConnection;
+			orm = new TinyORM(connectionProvider, readConnectionProvider);
+			final Connection oldConnection = this.orm.getConnection();
+			final Connection oldReadConnection = this.orm.getReadConnection();
+			assertFalse(oldConnection.isClosed());
+			assertFalse(oldReadConnection.isClosed());
+
+			orm.close();
+
+			final Connection newConnection = this.orm.getConnection();
+			final Connection newReadConnection = this.orm.getReadConnection();
+			assertFalse(newConnection.isClosed());
+			assertFalse(newReadConnection.isClosed());
+			assertNotSame(oldConnection, newConnection);
+			assertNotSame(oldReadConnection, newReadConnection);
 		}
 	}
 
