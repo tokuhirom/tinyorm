@@ -1,41 +1,26 @@
 package me.geso.tinyorm;
 
-import java.beans.IntrospectionException;
-import java.io.Closeable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
-
-import javax.inject.Provider;
-
+import lombok.NonNull;
+import me.geso.jdbcutils.*;
 import net.moznion.db.transaction.manager.TransactionManager;
 import net.moznion.db.transaction.manager.TransactionScope;
+import org.slf4j.Logger;
 
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
-import me.geso.jdbcutils.JDBCUtils;
-import me.geso.jdbcutils.Query;
-import me.geso.jdbcutils.QueryBuilder;
-import me.geso.jdbcutils.ResultSetCallback;
-import me.geso.jdbcutils.RichSQLException;
-import me.geso.jdbcutils.UncheckedRichSQLException;
+import javax.inject.Provider;
+import java.beans.IntrospectionException;
+import java.io.Closeable;
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * Tiny O/R Mapper implementation.
  *
  * @author Tokuhiro Matsuno
  */
-@Slf4j
 public class TinyORM implements Closeable {
+	private static final Logger log = org.slf4j.LoggerFactory.getLogger(TinyORM.class);
 
 	private static final ConcurrentHashMap<Class<?>, TableMeta<?>> TABLE_META_REGISTRY = new ConcurrentHashMap<>();
 	private volatile Connection connection;

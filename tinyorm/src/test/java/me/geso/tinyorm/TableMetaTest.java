@@ -93,7 +93,7 @@ public class TableMetaTest extends TestBase {
 				"name VARCHAR(255) NOT NULL",
 				"createdOn BIGINT",
 				"updatedOn BIGINT");
-		try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO member (id,name,createdOn) VALUES (1,'hoge',3)")) {
+		try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO `member` (id,name,createdOn) VALUES (1,'hoge',3)")) {
 			preparedStatement.executeUpdate();
 		}
 		final TinyORM tinyORM = new TinyORM(connection);

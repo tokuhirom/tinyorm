@@ -4,9 +4,6 @@ import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class ConstructorIllegalArgumentException extends RuntimeException {
 	private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_WRAPPERS = buildPrimitivesToWrappers();
 

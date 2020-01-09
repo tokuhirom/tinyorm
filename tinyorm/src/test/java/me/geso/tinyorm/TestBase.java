@@ -1,7 +1,8 @@
 package me.geso.tinyorm;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.slf4j.Logger;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -9,13 +10,11 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public abstract class TestBase {
+	private static final Logger log = org.slf4j.LoggerFactory.getLogger(TestBase.class);
 
 	protected static Connection connection;
 	protected static Connection readConnection;
@@ -48,7 +47,7 @@ public abstract class TestBase {
 		try {
 			// この指定で､ログとれる｡
 			Class.forName("net.sf.log4jdbc.DriverSpy");
-			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
 
 			String dburl = System.getProperty("test.dburl");
 

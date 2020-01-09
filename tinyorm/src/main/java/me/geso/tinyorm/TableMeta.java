@@ -1,82 +1,41 @@
 package me.geso.tinyorm;
 
-import java.beans.BeanInfo;
-import java.beans.ConstructorProperties;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import lombok.NonNull;
+import lombok.ToString;
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.tinyorm.annotations.*;
+import me.geso.tinyorm.deflate.*;
+import me.geso.tinyorm.exception.ConstructorIllegalArgumentException;
+import me.geso.tinyorm.inflate.*;
+import me.geso.tinyorm.trigger.BeforeInsertHandler;
+import me.geso.tinyorm.trigger.BeforeUpdateHandler;
+import me.geso.tinyorm.trigger.Deflater;
+import me.geso.tinyorm.trigger.Inflater;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+import org.slf4j.Logger;
+
+import java.beans.*;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
-import me.geso.jdbcutils.JDBCUtils;
-import me.geso.jdbcutils.Query;
-import me.geso.tinyorm.annotations.BeforeInsert;
-import me.geso.tinyorm.annotations.BeforeUpdate;
-import me.geso.tinyorm.annotations.Column;
-import me.geso.tinyorm.annotations.CreatedTimestampColumn;
-import me.geso.tinyorm.annotations.CsvColumn;
-import me.geso.tinyorm.annotations.Deflate;
-import me.geso.tinyorm.annotations.Inflate;
-import me.geso.tinyorm.annotations.JsonColumn;
-import me.geso.tinyorm.annotations.PrimaryKey;
-import me.geso.tinyorm.annotations.SetColumn;
-import me.geso.tinyorm.annotations.Table;
-import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
-import me.geso.tinyorm.deflate.LocalDateDeflater;
-import me.geso.tinyorm.deflate.LocalDateTimeDeflater;
-import me.geso.tinyorm.deflate.LocalTimeDeflater;
-import me.geso.tinyorm.deflate.OptionalDeflater;
-import me.geso.tinyorm.deflate.SetDeflater;
-import me.geso.tinyorm.exception.ConstructorIllegalArgumentException;
-import me.geso.tinyorm.inflate.LocalDateInflater;
-import me.geso.tinyorm.inflate.LocalDateTimeInflater;
-import me.geso.tinyorm.inflate.LocalTimeInflater;
-import me.geso.tinyorm.inflate.OptionalInflater;
-import me.geso.tinyorm.inflate.SetInflater;
-import me.geso.tinyorm.trigger.BeforeInsertHandler;
-import me.geso.tinyorm.trigger.BeforeUpdateHandler;
-import me.geso.tinyorm.trigger.Deflater;
-import me.geso.tinyorm.trigger.Inflater;
-
-@Slf4j
 class TableMeta<RowType extends Row<?>> {
+	private static final Logger log = org.slf4j.LoggerFactory.getLogger(TableMeta.class);
+
 	private final String name;
 	private final List<PropertyDescriptor> primaryKeys;
 	// columnName -> propertyDescriptor
@@ -333,6 +292,8 @@ class TableMeta<RowType extends Row<?>> {
 	private static <T extends Row<?>> RowBuilder buildRowBuilder(
 			Class<?> rowClass) {
 		for (Constructor<?> constructor : rowClass.getConstructors()) {
+			// Note: lombok v1.16.20+ doesn't add `@ConstructorProperties` by defaut.
+			// You need to write `lombok.anyConstructor.addConstructorProperties=true` in lombok.config.
 			ConstructorProperties annotation = constructor
 				.getAnnotation(java.beans.ConstructorProperties.class);
 			if (annotation != null) {
@@ -670,9 +631,10 @@ class TableMeta<RowType extends Row<?>> {
 		}
 	}
 
-	@Slf4j
 	@ToString
 	static class MethodInflater implements Inflater {
+		private static final Logger log = org.slf4j.LoggerFactory.getLogger(MethodInflater.class);
+
 		private final Method method;
 		private final Class<?> rowClass;
 
