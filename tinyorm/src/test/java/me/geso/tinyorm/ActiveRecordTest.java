@@ -22,11 +22,11 @@ import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
 public class ActiveRecordTest extends TestBase {
 	@Before
 	public final void setupSchema() throws SQLException {
-		connection.prepareStatement("DROP TABLE IF EXISTS member")
+		connection.prepareStatement("DROP TABLE IF EXISTS `member`")
 			.executeUpdate();
 		connection
 			.prepareStatement(
-				"CREATE TABLE member (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), createdOn INT UNSIGNED DEFAULT NULL, updatedOn INT UNSIGNED DEFAULT NULL)")
+				"CREATE TABLE `member` (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), createdOn INT UNSIGNED DEFAULT NULL, updatedOn INT UNSIGNED DEFAULT NULL)")
 			.executeUpdate();
 	}
 
