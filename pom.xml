@@ -169,7 +169,7 @@
 				</executions>
 				<configuration>
 					<configLocation>checkstyle.xml</configLocation>
-					<violationSeveri>warning</violationSeveri>
+					<violationSeverity>warning</violationSeverity>
 					<encoding>UTF-8</encoding>
 					<consoleOutput>true</consoleOutput>
 					<outputFile>${project.build.directory}/site/checkstyle/checkstyle-result.xml</outputFile>

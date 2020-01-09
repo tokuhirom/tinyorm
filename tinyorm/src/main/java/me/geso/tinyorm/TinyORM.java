@@ -1,7 +1,12 @@
 package me.geso.tinyorm;
 
 import lombok.NonNull;
-import me.geso.jdbcutils.*;
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.QueryBuilder;
+import me.geso.jdbcutils.ResultSetCallback;
+import me.geso.jdbcutils.RichSQLException;
+import me.geso.jdbcutils.UncheckedRichSQLException;
 import net.moznion.db.transaction.manager.TransactionManager;
 import net.moznion.db.transaction.manager.TransactionScope;
 import org.slf4j.Logger;
@@ -9,8 +14,16 @@ import org.slf4j.Logger;
 import javax.inject.Provider;
 import java.beans.IntrospectionException;
 import java.io.Closeable;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 

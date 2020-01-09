@@ -32,8 +32,9 @@ public class ListSelectStatement<T extends Row<?>> extends
 
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
-		try (final PreparedStatement ps = isForUpdate() || isForceWriteConnection() ? orm.prepareStatement(sql) :
-				orm.prepareStatementForRead(sql)) {
+		try (final PreparedStatement ps = isForUpdate() || isForceWriteConnection()
+				? orm.prepareStatement(sql)
+				: orm.prepareStatementForRead(sql)) {
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 			try (final ResultSet rs = ps.executeQuery()) {
                 return orm.mapRowListFromResultSet(klass, rs);
@@ -55,8 +56,9 @@ public class ListSelectStatement<T extends Row<?>> extends
 		final String sql = query.getSQL();
 		final List<Object> params = query.getParameters();
 		try {
-			final PreparedStatement ps = isForUpdate() || isForceWriteConnection() ? orm.prepareStatement(sql) :
-				 orm.prepareStatementForRead(sql);
+			final PreparedStatement ps = isForUpdate() || isForceWriteConnection()
+					? orm.prepareStatement(sql)
+					: orm.prepareStatementForRead(sql);
 			JDBCUtils.fillPreparedStatementParams(ps, params);
 
 			final ResultSet rs = ps.executeQuery();
