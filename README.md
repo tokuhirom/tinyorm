@@ -65,7 +65,7 @@ db.insert(Member.class)
 This statement generate following query:
 
 ```sql
-INSERT INTO member (name) VALUES ('John')
+INSERT INTO `member` (name) VALUES ('John')
 ```
 
 If you want to use `ON DUPLICATE KEY UPDATE`, you can call `InsertStatement#onDuplicateKeyUpdate` method.

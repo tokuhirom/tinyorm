@@ -64,7 +64,7 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void singleSimple() throws SQLException, RichSQLException {
-		this.orm.updateBySQL("INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)");
+		this.orm.updateBySQL("INSERT INTO `member` (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)");
 
 		{
 			Member got = this.orm.singleBySQL(Member.class, "SELECT * FROM member WHERE name=?",
@@ -389,10 +389,10 @@ public class TinyORMTest extends TestBase {
 	public void testMapRowsFromResultSet() throws SQLException {
 		this.orm.getConnection()
 			.prepareStatement(
-				"INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
+				"INSERT INTO `member` (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
 			.executeUpdate();
 		try (PreparedStatement ps = this.orm.getConnection().prepareStatement(
-			"SELECT * FROM member")) {
+			"SELECT * FROM `member`")) {
 			try (ResultSet rs = ps.executeQuery()) {
 				this.orm.mapRowListFromResultSet(Member.class, rs);
 			}
@@ -713,10 +713,10 @@ public class TinyORMTest extends TestBase {
 	public void testGetColumnLabels() throws Exception {
 		this.orm.getConnection()
 				.prepareStatement(
-						"INSERT INTO member (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
+						"INSERT INTO `member` (name, createdOn, updatedOn) VALUES ('m1', UNIX_TIMESTAMP(NOW()), UNIX_TIMESTAMP(NOW()))")
 				.executeUpdate();
 		try (PreparedStatement ps = this.orm.getConnection().prepareStatement(
-				"SELECT * FROM member")) {
+				"SELECT * FROM `member`")) {
 			try (ResultSet rs = ps.executeQuery()) {
 				List<String> columnLabels = TinyORM.getColumnLabels(rs);
 				assertEquals("id,name,createdOn,updatedOn", columnLabels.stream().collect(Collectors.joining(",")));
