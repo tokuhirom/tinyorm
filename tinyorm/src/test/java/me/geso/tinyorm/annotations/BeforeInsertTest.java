@@ -1,21 +1,22 @@
 package me.geso.tinyorm.annotations;
 
-import static org.junit.Assert.assertEquals;
-
-import java.sql.SQLException;
-
-import org.junit.Test;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 import me.geso.jdbcutils.RichSQLException;
 import me.geso.tinyorm.InsertStatement;
 import me.geso.tinyorm.Row;
 import me.geso.tinyorm.TestBase;
+import org.junit.Test;
+import org.slf4j.Logger;
+
+import java.sql.SQLException;
+
+import static org.junit.Assert.assertEquals;
 
 public class BeforeInsertTest extends TestBase {
+	private static final Logger log = org.slf4j.LoggerFactory.getLogger(BeforeInsertTest.class);
+
 
 	@Test
 	public void test() throws SQLException, RichSQLException {
@@ -30,7 +31,6 @@ public class BeforeInsertTest extends TestBase {
 		assertEquals("hoge", created.getY());
 	}
 
-	@Slf4j
 	@Getter
 	@Setter
 	@ToString

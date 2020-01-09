@@ -1,5 +1,12 @@
 package me.geso.tinyorm;
 
+import lombok.ToString;
+import me.geso.jdbcutils.JDBCUtils;
+import me.geso.jdbcutils.Query;
+import me.geso.jdbcutils.QueryBuilder;
+import me.geso.jdbcutils.UncheckedRichSQLException;
+import org.slf4j.Logger;
+
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -14,21 +21,14 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
-import me.geso.jdbcutils.JDBCUtils;
-import me.geso.jdbcutils.Query;
-import me.geso.jdbcutils.QueryBuilder;
-import me.geso.jdbcutils.UncheckedRichSQLException;
-
 /**
  * UPDATE statement for one row.
  * 
  * @author Tokuhiro Matsuno
  */
 @ToString
-@Slf4j
 public class UpdateRowStatement<T extends Row<?>> {
+	private static final Logger log = org.slf4j.LoggerFactory.getLogger(UpdateRowStatement.class);
 
 	private final Object row;
 	private final Map<String, Object> set = new TreeMap<>();
