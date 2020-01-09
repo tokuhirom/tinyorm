@@ -48,7 +48,7 @@ public abstract class TestBase {
 		try {
 			// この指定で､ログとれる｡
 			Class.forName("net.sf.log4jdbc.DriverSpy");
-			Class.forName("com.mysql.jdbc.Driver").newInstance();
+			Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
 
 			String dburl = System.getProperty("test.dburl");
 
