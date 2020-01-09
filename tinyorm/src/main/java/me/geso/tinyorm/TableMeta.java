@@ -333,6 +333,8 @@ class TableMeta<RowType extends Row<?>> {
 	private static <T extends Row<?>> RowBuilder buildRowBuilder(
 			Class<?> rowClass) {
 		for (Constructor<?> constructor : rowClass.getConstructors()) {
+			// Note: lombok v1.16.20+ doesn't add `@ConstructorProperties` by defaut.
+			// You need to write `lombok.anyConstructor.addConstructorProperties=true` in lombok.config.
 			ConstructorProperties annotation = constructor
 				.getAnnotation(java.beans.ConstructorProperties.class);
 			if (annotation != null) {
