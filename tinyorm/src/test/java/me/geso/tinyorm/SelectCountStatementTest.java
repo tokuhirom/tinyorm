@@ -19,8 +19,8 @@ public class SelectCountStatementTest extends TestBase {
 
 	@Before
 	public void beforeHook() throws SQLException {
-		orm.updateBySQL("DROP TABLE IF EXISTS member");
-		orm.updateBySQL("CREATE TABLE member (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL)");
+		orm.updateBySQL("DROP TABLE IF EXISTS `member`");
+		orm.updateBySQL("CREATE TABLE `member` (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL)");
 	}
 
 	@Test

@@ -67,7 +67,7 @@ public class TinyORMTest extends TestBase {
 		this.orm.updateBySQL("INSERT INTO `member` (name, createdOn, updatedOn) VALUES ('m1',1410581698,1410581698)");
 
 		{
-			Member got = this.orm.singleBySQL(Member.class, "SELECT * FROM member WHERE name=?",
+			Member got = this.orm.singleBySQL(Member.class, "SELECT * FROM `member` WHERE name=?",
 					Arrays.asList("m1")).get();
 			assertEquals(1, got.getId());
 			assertEquals("m1", got.getName());
@@ -75,7 +75,7 @@ public class TinyORMTest extends TestBase {
 
 		// Specified connection
 		{
-			Member got = this.orm.singleBySQL(Member.class, "SELECT * FROM member WHERE name=?", Arrays.asList("m1"),
+			Member got = this.orm.singleBySQL(Member.class, "SELECT * FROM `member` WHERE name=?", Arrays.asList("m1"),
 					orm.getConnection()).get();
 			assertEquals(1, got.getId());
 			assertEquals("m1", got.getName());
@@ -115,7 +115,7 @@ public class TinyORMTest extends TestBase {
 			.executeSelect();
 
 		Member got = this.orm.singleBySQL(Member.class,
-			"SELECT * FROM member WHERE name=?", Arrays.asList("m2"))
+			"SELECT * FROM `member` WHERE name=?", Arrays.asList("m2"))
 			.get();
 		assertEquals(got.getId(), member2.getId());
 		assertEquals(got.getName(), "m2");
@@ -257,7 +257,7 @@ public class TinyORMTest extends TestBase {
 			List<Member> members = this.orm
 				.searchBySQL(
 					Member.class,
-					"SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC",
+					"SELECT id, id+1 AS idPlusOne FROM `member` ORDER BY id DESC",
 					Collections.emptyList());
 			System.out.println(members);
 			assertEquals(10, members.size());
@@ -274,7 +274,7 @@ public class TinyORMTest extends TestBase {
 		// With specified connection
 		{
 			List<Member> members = this.orm.searchBySQL(Member.class,
-					"SELECT id, id+1 AS idPlusOne FROM member ORDER BY id DESC", Collections.emptyList(),
+					"SELECT id, id+1 AS idPlusOne FROM `member` ORDER BY id DESC", Collections.emptyList(),
 					orm.getConnection());
 			System.out.println(members);
 			assertEquals(10, members.size());
@@ -291,7 +291,7 @@ public class TinyORMTest extends TestBase {
 			List<Blog> members = this.orm
 				.searchBySQL(
 					Blog.class,
-					"SELECT blog.*, member.name AS memberName FROM member INNER JOIN blog ON (blog.memberId=member.id) ORDER BY id DESC LIMIT 1",
+					"SELECT blog.*, member.name AS memberName FROM `member` INNER JOIN blog ON (blog.memberId=member.id) ORDER BY id DESC LIMIT 1",
 					Collections.emptyList());
 			assertEquals(1, members.size());
 			System.out.println(members.get(0).getExtraColumns());
@@ -312,7 +312,7 @@ public class TinyORMTest extends TestBase {
 
 		{
 			Paginated<Member> paginated = this.orm.searchBySQLWithPager(
-				Member.class, "SELECT * FROM member ORDER BY id DESC",
+				Member.class, "SELECT * FROM `member` ORDER BY id DESC",
 				Collections.emptyList(), 4);
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
@@ -324,7 +324,7 @@ public class TinyORMTest extends TestBase {
 		{
 			Paginated<Member> paginated = this.orm.searchBySQLWithPager(
 				Member.class,
-				"SELECT * FROM member WHERE id<7 ORDER BY id DESC",
+				"SELECT * FROM `member` WHERE id<7 ORDER BY id DESC",
 				Collections.emptyList(), 4);
 			assertEquals(paginated.getRows().size(), 4);
 			assertEquals(paginated.getEntriesPerPage(), 4);
@@ -336,7 +336,7 @@ public class TinyORMTest extends TestBase {
 		{
 			Paginated<Member> paginated = this.orm.searchBySQLWithPager(
 				Member.class,
-				"SELECT * FROM member WHERE id<? ORDER BY id DESC",
+				"SELECT * FROM `member` WHERE id<? ORDER BY id DESC",
 				Arrays.asList(3), 4);
 			assertEquals(paginated.getRows().size(), 2);
 			assertEquals(paginated.getEntriesPerPage(), 4);
@@ -348,7 +348,7 @@ public class TinyORMTest extends TestBase {
 		{
 			Paginated<Member> paginated = this.orm.searchBySQLWithPager(
 				Member.class,
-				"SELECT * FROM member WHERE id<? ORDER BY id DESC",
+				"SELECT * FROM `member` WHERE id<? ORDER BY id DESC",
 				Arrays.asList(3), 10);
 			assertEquals(paginated.getRows().size(), 2);
 			assertEquals(paginated.getEntriesPerPage(), 10);
@@ -422,7 +422,7 @@ public class TinyORMTest extends TestBase {
 			.execute();
 
 		{
-			String got = orm.executeQuery("SELECT id, name FROM member ORDER BY id ASC", (ResultSet rs) -> {
+			String got = orm.executeQuery("SELECT id, name FROM `member` ORDER BY id ASC", (ResultSet rs) -> {
 				StringBuilder builder = new StringBuilder();
 				while (rs.next()) {
 					long id = rs.getLong(1);
@@ -435,7 +435,7 @@ public class TinyORMTest extends TestBase {
 		}
 		// With specified connection
 		{
-			String got = orm.executeQuery("SELECT id, name FROM member ORDER BY id ASC", (ResultSet rs) -> {
+			String got = orm.executeQuery("SELECT id, name FROM `member` ORDER BY id ASC", (ResultSet rs) -> {
 				StringBuilder builder = new StringBuilder();
 				while (rs.next()) {
 					long id = rs.getLong(1);
@@ -450,7 +450,7 @@ public class TinyORMTest extends TestBase {
 
 	@Test
 	public void testExecuteStreamEmpty() throws Exception {
-		String sql = "SELECT id, name FROM member ORDER BY id ASC";
+		String sql = "SELECT id, name FROM `member` ORDER BY id ASC";
 		try (Stream<ResultSet> stream = orm.executeStream(sql)) {
 			String got = stream
 				.map(rs -> {
@@ -474,7 +474,7 @@ public class TinyORMTest extends TestBase {
 		   .value("name", "Taro")
 		   .execute();
 
-		String sql = "SELECT id, name FROM member ORDER BY id ASC";
+		String sql = "SELECT id, name FROM `member` ORDER BY id ASC";
 		try (Stream<ResultSet> stream = orm.executeStream(sql)) {
 			String got = stream
 				.map(rs -> {
