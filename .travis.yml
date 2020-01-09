@@ -1,6 +1,7 @@
 language: java
+dist: trusty
 jdk:
-  - oraclejdk8
+  - openjdk8
 before_install:
   - mysql -e "CREATE DATABASE IF NOT EXISTS test;" -uroot
   - mysql -e "CREATE USER 'read_only'@'localhost';" -uroot
