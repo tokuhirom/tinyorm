@@ -770,7 +770,7 @@ public class TinyORMTest extends TestBase {
 		}
 	}
 
-	@Test(expected = com.mysql.jdbc.exceptions.MySQLTimeoutException.class)
+	@Test(expected = com.mysql.cj.jdbc.exceptions.MySQLTimeoutException.class)
 	public void testQueryForLongTimeout() throws Throwable {
 		orm.setQueryTimeout(1);
 		try {
