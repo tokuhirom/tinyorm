@@ -88,7 +88,7 @@ public class TableMetaTest extends TestBase {
 	@Test
 	public void testConstructorRowBuilderException() throws Exception {
 		// Scenario: wrong number of arguments
-		createTable("members",
+		createTable("member",
 				"id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY",
 				"name VARCHAR(255) NOT NULL",
 				"createdOn BIGINT",
