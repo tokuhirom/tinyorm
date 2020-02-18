@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import me.geso.jdbcutils.JDBCUtils;
@@ -41,6 +42,13 @@ public class ListSelectStatement<T extends Row<?>> extends
             }
 		} catch (final SQLException ex) {
 			throw new UncheckedRichSQLException(ex, sql, params);
+		}
+	}
+
+	public Paginated<T> executeWithPagination(long entriesPerPage) {
+		try (Stream<T> stream = executeStream()) {
+			return new Paginated<>(stream.limit(entriesPerPage + 1).collect(Collectors.toList()),
+								   entriesPerPage);
 		}
 	}
 
