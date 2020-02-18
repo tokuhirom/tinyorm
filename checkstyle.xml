@@ -4,6 +4,10 @@
 <module name="Checker">
 	<property name="severity" value="warning" />
 	<property name="charset" value="utf-8" />
+	<module name="LineLength">
+		<property name="max" value="200" />
+		<property name="tabWidth" value="4" />
+	</module>
 	<module name="TreeWalker">
 		<property name="tabWidth" value="4" />
 		<module name="ConstantName">
@@ -23,10 +27,6 @@
 		</module>
 		<module name="TypeName">
 			<property name="format" value="^[A-Z][a-zA-Z0-9]+$" />
-		</module>
-		<module name="LineLength">
-			<property name="max" value="200" />
-			<property name="tabWidth" value="4" />
 		</module>
 		<module name="EmptyForIteratorPad" />
 		<module name="MethodParamPad" />
