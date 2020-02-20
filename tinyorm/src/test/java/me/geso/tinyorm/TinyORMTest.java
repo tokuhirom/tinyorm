@@ -35,6 +35,7 @@ import me.geso.tinyorm.annotations.CreatedTimestampColumn;
 import me.geso.tinyorm.annotations.PrimaryKey;
 import me.geso.tinyorm.annotations.Table;
 import me.geso.tinyorm.annotations.UpdatedTimestampColumn;
+import net.moznion.db.transaction.manager.TransactionManager;
 
 public class TinyORMTest extends TestBase {
 
@@ -701,6 +702,14 @@ public class TinyORMTest extends TestBase {
 			assertFalse(newReadConnection.isClosed());
 			assertNotSame(oldConnection, newConnection);
 			assertNotSame(oldReadConnection, newReadConnection);
+		}
+		// the connection of TransactionManager should be refreshed
+		{
+			final TransactionManager oldTransactionManager = orm.getTransactionManager();
+			assertFalse(oldTransactionManager.getConnection().isClosed());
+			orm.close();
+			final TransactionManager newTransactionManager = orm.getTransactionManager();
+			assertFalse(newTransactionManager.getConnection().isClosed());
 		}
 	}
 
