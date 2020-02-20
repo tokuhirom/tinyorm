@@ -867,15 +867,21 @@ public class TinyORM implements Closeable {
 	@Override
 	public void close() {
 		try {
-			if (connection != null) {
-				connection.close();
-				connection = null;
-			}
-
-			if (readConnection != null) {
-				if (!readConnection.isClosed()) {
-					readConnection.close();
+			synchronized (this) {
+				if (connection != null) {
+					if (!connection.isClosed()) {
+						connection.close();
+					}
+					connection = null;
+				}
+				if (readConnection != null) {
+					if (!readConnection.isClosed()) {
+						readConnection.close();
+					}
 					readConnection = null;
+				}
+				if (transactionManager != null) {
+					transactionManager = null;
 				}
 			}
 		} catch (SQLException e) {
