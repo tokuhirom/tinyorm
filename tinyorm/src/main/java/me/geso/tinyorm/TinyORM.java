@@ -871,12 +871,14 @@ public class TinyORM implements Closeable {
 				connection.close();
 				connection = null;
 			}
-
 			if (readConnection != null) {
 				if (!readConnection.isClosed()) {
 					readConnection.close();
 					readConnection = null;
 				}
+			}
+			if (transactionManager != null) {
+				transactionManager = null;
 			}
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
