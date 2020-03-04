@@ -3,6 +3,8 @@ package me.geso.tinyorm;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,8 +34,9 @@ public class ListSelectStatementTest extends TestBase {
             assertThat(list.getEntriesPerPage(), is(1L));
             assertThat(list.getHasNextPage(), is(false));
         }
+        final List<Member> members = new ArrayList<>();
         for (int i = 0; i<3; i++) {
-            orm.insert(Member.class).value("name", "name").execute();
+            members.add(orm.insert(Member.class).value("name", "name").executeSelect());
         }
         // first page
         {
@@ -55,6 +58,12 @@ public class ListSelectStatementTest extends TestBase {
             assertThat(list.getRows().size(), is(3));
             assertThat(list.getEntriesPerPage(), is(4L));
             assertThat(list.getHasNextPage(), is(false));
+        }
+        // with offset
+        {
+            Paginated<Member> list = orm.search(Member.class).orderBy("id").offset(1).executeWithPagination(1);
+            assertThat(list.getRows().size(), is(1));
+            assertThat(list.getRows().get(0).getId(), is(members.get(1).getId()));
         }
     }
 

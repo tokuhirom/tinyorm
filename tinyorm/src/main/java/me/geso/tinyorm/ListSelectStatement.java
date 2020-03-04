@@ -46,8 +46,8 @@ public class ListSelectStatement<T extends Row<?>> extends
 	}
 
 	public Paginated<T> executeWithPagination(long entriesPerPage) {
-		try (Stream<T> stream = executeStream()) {
-			return new Paginated<>(stream.limit(entriesPerPage + 1).collect(Collectors.toList()),
+		try (Stream<T> stream = this.limit(entriesPerPage + 1).executeStream()) {
+			return new Paginated<>(stream.collect(Collectors.toList()),
 								   entriesPerPage);
 		}
 	}
