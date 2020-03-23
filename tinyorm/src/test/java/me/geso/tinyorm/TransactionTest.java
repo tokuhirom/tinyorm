@@ -1,6 +1,8 @@
 package me.geso.tinyorm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import net.moznion.db.transaction.manager.TransactionScope;
 
@@ -72,6 +74,16 @@ public class TransactionTest extends TestBase {
 		}
 		Optional<X> row = orm.single(X.class).where("a=?", "hoge").execute();
 		assertEquals(row.isPresent(), false);
+	}
+
+	@Test
+	public void testHasActiveTransaction() throws SQLException {
+		assertFalse(orm.hasActiveTransaction());
+		try (TransactionScope txn = orm.createTransactionScope()) {
+			assertTrue(orm.hasActiveTransaction());
+			orm.transactionCommit();
+		}
+		assertFalse(orm.hasActiveTransaction());
 	}
 
 	@Table("x")
