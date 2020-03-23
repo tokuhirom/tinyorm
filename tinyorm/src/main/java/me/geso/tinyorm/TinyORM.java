@@ -868,6 +868,9 @@ public class TinyORM implements Closeable {
 	public void close() {
 		try {
 			synchronized (this) {
+				if (hasActiveTransaction()) {
+					return;
+				}
 				if (connection != null) {
 					if (!connection.isClosed()) {
 						connection.close();
@@ -955,5 +958,12 @@ public class TinyORM implements Closeable {
 	 */
 	public void transactionRollback() throws SQLException {
 		getTransactionManager().txnRollback();
+	}
+
+	/**
+	 * Check if any active transaction exists.
+	 */
+	public boolean hasActiveTransaction() {
+		return transactionManager != null && !transactionManager.getActiveTransactions().isEmpty();
 	}
 }
