@@ -67,25 +67,29 @@ public class TinyORM implements Closeable {
 	}
 
 	public Connection getConnection() {
-		if (connection == null) {
-			if (connectionProvider == null) {
-				throw new RuntimeException("Connection provider is null");
-			}
-
-			synchronized (this) { // For multi-threads, protect from duplicated borrowing
-				if (connection == null) {
-					connection = connectionProvider.get();
-					transactionManager = new TransactionManager(connection);
+		try {
+			if (connection == null || connection.isClosed()) {
+				if (connectionProvider == null) {
+					throw new RuntimeException("Connection provider is null");
 				}
-				// otherwise, connection has been borrowed by another thread
+
+				synchronized (this) { // For multi-threads, protect from duplicated borrowing
+					if (connection == null || connection.isClosed()) {
+						connection = connectionProvider.get();
+						transactionManager = new TransactionManager(connection);
+					}
+					// otherwise, connection has been borrowed by another thread
+				}
 			}
+		} catch (SQLException ex) {
+			throw new RuntimeException("Failed to get connection from connection provider", ex);
 		}
 		return connection;
 	}
 
 	public Connection getReadConnection() {
 		try {
-			if (connection != null && !connection.getAutoCommit()) {
+			if (connection != null && !connection.isClosed() && !connection.getAutoCommit()) {
 				// If transaction has been started, return the connection which has taken the transaction.
 				return connection;
 			}
@@ -100,23 +104,27 @@ public class TinyORM implements Closeable {
 			}
 		}
 
-		if (readConnection == null) {
-			if (readConnectionProvider == null) {
-				if (connectionProvider != null) {
-					// For lazily borrowing with single connection
-					readConnection = getConnection(); // use the same connection as write/read
-					return readConnection;
+		try {
+			if (readConnection == null || readConnection.isClosed()) {
+				if (readConnectionProvider == null) {
+					if (connectionProvider != null) {
+						// For lazily borrowing with single connection
+						readConnection = getConnection(); // use the same connection as write/read
+						return readConnection;
+					}
+
+					throw new RuntimeException("Read connection provider is null");
 				}
 
-				throw new RuntimeException("Read connection provider is null");
-			}
-
-			synchronized (this) { // For multi-threads, protect from duplicated borrowing
-				if (readConnection == null) {
-					readConnection = readConnectionProvider.get();
+				synchronized (this) { // For multi-threads, protect from duplicated borrowing
+					if (readConnection == null) {
+						readConnection = readConnectionProvider.get();
+					}
+					// otherwise, connection has been borrowed by another thread
 				}
-				// otherwise, connection has been borrowed by another thread
 			}
+		} catch (SQLException ex) {
+			throw new RuntimeException("Failed to get connection from connection provider", ex);
 		}
 		return readConnection;
 	}
